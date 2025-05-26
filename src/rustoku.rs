@@ -21,7 +21,7 @@ pub enum RustokuError {
     DuplicateValues,
 }
 
-/// A Sudoku puzzle rustoku that uses backtracking and bitmasking for efficient constraint tracking.
+/// A Sudoku puzzle solver that uses backtracking and bitmasking for efficient constraint tracking.
 ///
 /// This struct provides methods to initialize a Sudoku board, check if a number can be placed in a cell,
 /// place and remove numbers, and solve the Sudoku puzzle using a recursive backtracking algorithm.
