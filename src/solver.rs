@@ -2,17 +2,21 @@ use rand::rng;
 use rand::seq::SliceRandom;
 use thiserror::Error;
 
-/// Represents a Sudoku puzzle solver with efficient bitmasking for constraint tracking.
+/// Represents the types of errors that can occur while working with Sudoku puzzles.
 ///
-/// This struct maintains the current state of the Sudoku board and uses bitmasks to
-/// efficiently track which numbers are present in each row, column, and 3x3 box.
-/// The bitmasks enable fast validation and candidate computation during the solving process.
+/// This enum defines various error cases that can occur while working with Sudoku puzzles:
+/// - The number of clues provided for puzzle generation is not between 17 and 81
+/// - The input string does not contain exactly 81 characters
+/// - The input string contains characters other than digits `0-9` or `.` or `_`
+/// - The initial board contains duplicate values in rows, columns, or 3x3 boxes
 #[derive(Debug, Error)]
 pub enum SudokuError {
+    #[error("Clues must be between 17 and 81 for a valid Sudoku puzzle")]
+    InvalidClueCount,
     #[error("Input string must be exactly 81 characters long")]
-    InvalidLength,
+    InvalidInputLength,
     #[error("Input string must contain only digits '0'-'9'")]
-    InvalidCharacter,
+    InvalidInputCharacter,
     #[error("Initial board contains duplicates")]
     DuplicateValues,
 }
@@ -84,7 +88,7 @@ impl TryFrom<&str> for SudokuSolver {
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         if s.len() != 81 {
-            return Err(SudokuError::InvalidLength);
+            return Err(SudokuError::InvalidInputLength);
         }
         let mut bytes = [0u8; 81];
         for (i, ch) in s.bytes().enumerate() {
@@ -92,7 +96,7 @@ impl TryFrom<&str> for SudokuSolver {
                 b'0'..=b'9' => bytes[i] = ch - b'0',
                 b'.' => bytes[i] = 0, // Treat '.' as empty cell
                 b'_' => bytes[i] = 0, // Treat '_' as empty cell
-                _ => return Err(SudokuError::InvalidCharacter),
+                _ => return Err(SudokuError::InvalidInputCharacter),
             }
         }
         bytes.try_into()
@@ -230,8 +234,8 @@ impl SudokuSolver {
     /// more than `num_clues` if it's impossible to remove more numbers
     /// while maintaining a unique solution.
     pub fn generate(num_clues: usize) -> Result<[[u8; 9]; 9], SudokuError> {
-        if num_clues > 81 {
-            return Err(SudokuError::InvalidLength);
+        if !(17..=81).contains(&num_clues) {
+            return Err(SudokuError::InvalidClueCount);
         }
 
         // Start with a fully solved board
@@ -356,14 +360,14 @@ mod tests {
     fn test_try_from_with_invalid_length() {
         let s = "53..7...."; // Too short
         let solver = SudokuSolver::try_from(s);
-        assert!(matches!(solver, Err(SudokuError::InvalidLength)));
+        assert!(matches!(solver, Err(SudokuError::InvalidInputLength)));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..7X"; // 'X'
         let solver = SudokuSolver::try_from(s);
-        assert!(matches!(solver, Err(SudokuError::InvalidCharacter)));
+        assert!(matches!(solver, Err(SudokuError::InvalidInputCharacter)));
     }
 
     #[test]
@@ -454,8 +458,8 @@ mod tests {
     #[test]
     fn test_generate_with_30_clues() {
         let num_clues = 30;
-        let puzzle = SudokuSolver::generate(num_clues).expect("Failed to generate puzzle");
-        let mut solver = SudokuSolver::new(puzzle).expect("Generated puzzle should be valid");
+        let puzzle = SudokuSolver::generate(num_clues).unwrap();
+        let mut solver = SudokuSolver::new(puzzle).unwrap();
 
         // Ensure the puzzle has the correct number of clues
         let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
@@ -472,5 +476,19 @@ mod tests {
             1,
             "Generated puzzle should have a unique solution"
         );
+    }
+
+    #[test]
+    fn test_generate_with_too_few_clues() {
+        let num_clues = 16; // Below the minimum valid clue count
+        let result = SudokuSolver::generate(num_clues);
+        assert!(matches!(result, Err(SudokuError::InvalidClueCount)));
+    }
+
+    #[test]
+    fn test_generate_with_too_many_clues() {
+        let num_clues = 82; // Above the maximum valid clue count
+        let result = SudokuSolver::generate(num_clues);
+        assert!(matches!(result, Err(SudokuError::InvalidClueCount)));
     }
 }
