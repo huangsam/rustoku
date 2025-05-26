@@ -11,6 +11,6 @@
 //! - Provides method to generate a random Sudoku puzzle
 //! - Includes a utility function for printing the board
 
-mod rustoku;
+mod core;
 
-pub use rustoku::{Rustoku, RustokuError, print_board};
+pub use core::{Rustoku, RustokuError, print_board};

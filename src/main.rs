@@ -24,6 +24,11 @@ enum Commands {
         #[arg(short, long)]
         all: bool,
     },
+    /// Checks if a given Sudoku puzzle is solved correctly
+    Check {
+        /// The Sudoku puzzle string (81 characters: 0-9 for numbers)
+        puzzle: String,
+    },
 }
 
 fn main() -> Result<(), RustokuError> {
@@ -68,6 +73,15 @@ fn main() -> Result<(), RustokuError> {
                 print_board(&solution);
             } else {
                 println!("No solution found for the given puzzle.");
+            }
+        }
+        Commands::Check { puzzle } => {
+            println!("Checking if the puzzle is solved correctly: {}", puzzle);
+            let solver = Rustoku::try_from(puzzle.as_str())?;
+            if solver.is_solved() {
+                println!("The puzzle is solved correctly!");
+            } else {
+                println!("The puzzle is NOT solved correctly.");
             }
         }
     }
