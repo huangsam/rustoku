@@ -26,7 +26,7 @@ enum Commands {
     },
     /// Checks if a given Sudoku puzzle is solved correctly
     Check {
-        /// The Sudoku puzzle string (81 characters: 0-9 for numbers)
+        /// The Sudoku puzzle string (81 characters: 0-9 for numbers, . or _ for empty cells)
         puzzle: String,
     },
 }
