@@ -287,7 +287,13 @@ impl Rustoku {
 }
 
 /// Prints the current state of the Sudoku board to the console.
-/// Empty cells are shown as dots for clarity.
+///
+/// The board is formatted with horizontal and vertical separators to visually
+/// distinguish the 3x3 boxes. This function is useful for displaying the board
+/// in a human-readable format during debugging or while solving a puzzle.
+///
+/// It also prints a line representation of the board at the end, which is a single string
+/// containing all numbers in row-major order, with empty cells represented by dots (`.`).
 ///
 /// # Example
 ///
