@@ -52,7 +52,7 @@ pub enum RustokuError {
 /// use rustoku::Rustoku;
 /// let board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
 /// let rustoku = Rustoku::try_from(board).unwrap();
-/// assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
+/// assert!(rustoku.is_solved());
 /// ```
 #[derive(Debug, Clone)]
 pub struct Rustoku {
