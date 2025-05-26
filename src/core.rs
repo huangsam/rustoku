@@ -481,27 +481,29 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_with_30_clues() {
-        let num_clues = 30;
-        let puzzle = Rustoku::generate(num_clues).unwrap();
-        let mut rustoku = Rustoku::new(puzzle).unwrap();
+    fn test_generate_with_enough_clues() {
+        for &num_clues in &[17, 30, 50, 70, 81] {
+            let puzzle = Rustoku::generate(num_clues).unwrap();
+            let mut rustoku = Rustoku::new(puzzle).unwrap();
 
-        // Ensure the puzzle has the correct number of clues
-        let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
-        assert!(
-            clues_count >= num_clues,
-            "Expected at least {} clues, but found {} clues",
-            num_clues,
-            clues_count
-        );
+            // Ensure the puzzle has at least the specified number of clues
+            let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
+            assert!(
+                clues_count >= num_clues,
+                "Expected at least {} clues, but found {} clues",
+                num_clues,
+                clues_count
+            );
 
-        // Ensure the puzzle has a unique solution
-        let solutions = rustoku.solve_all();
-        assert_eq!(
-            solutions.len(),
-            1,
-            "Generated puzzle should have a unique solution"
-        );
+            // Ensure the puzzle has a unique solution
+            let solutions = rustoku.solve_all();
+            assert_eq!(
+                solutions.len(),
+                1,
+                "Generated puzzle with {} clues should have a unique solution",
+                num_clues
+            );
+        }
     }
 
     #[test]
