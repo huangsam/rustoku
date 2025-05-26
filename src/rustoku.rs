@@ -21,7 +21,7 @@ pub enum RustokuError {
     DuplicateValues,
 }
 
-/// A Sudoku puzzle solver that uses backtracking and bitmasking for efficient constraint tracking.
+/// A Sudoku puzzle rustoku that uses backtracking and bitmasking for efficient constraint tracking.
 ///
 /// This struct provides methods to initialize a Sudoku board, check if a number can be placed in a cell,
 /// place and remove numbers, and solve the Sudoku puzzle using a recursive backtracking algorithm.
@@ -37,8 +37,8 @@ pub enum RustokuError {
 /// ```
 /// use rustoku::Rustoku;
 /// let board = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
-/// let mut solver = Rustoku::try_from(board).unwrap();
-/// assert!(solver.solve_any().is_some());
+/// let mut rustoku = Rustoku::try_from(board).unwrap();
+/// assert!(rustoku.solve_any().is_some());
 /// ```
 ///
 /// Generate a Sudoku puzzle:
@@ -53,8 +53,8 @@ pub enum RustokuError {
 /// ```
 /// use rustoku::Rustoku;
 /// let board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
-/// let solver = Rustoku::try_from(board).unwrap();
-/// assert!(solver.is_solved(), "The Sudoku puzzle should be solved");
+/// let rustoku = Rustoku::try_from(board).unwrap();
+/// assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
 /// ```
 #[derive(Debug, Clone)]
 pub struct Rustoku {
@@ -110,7 +110,7 @@ impl Rustoku {
     /// Initializes the bitmasks for rows, columns, and boxes based on the initial board.
     /// Returns an error if the board contains duplicates.
     pub fn new(initial_board: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
-        let mut solver = Self {
+        let mut rustoku = Self {
             board: initial_board,
             row_masks: [0; 9],
             col_masks: [0; 9],
@@ -121,13 +121,13 @@ impl Rustoku {
         for (i, &num) in initial_board.iter().flatten().enumerate() {
             if num != 0 {
                 let (r, c) = (i / 9, i % 9);
-                if !solver.is_safe(r, c, num) {
+                if !rustoku.is_safe(r, c, num) {
                     return Err(RustokuError::DuplicateValues);
                 }
-                solver.place_number(r, c, num);
+                rustoku.place_number(r, c, num);
             }
         }
-        Ok(solver)
+        Ok(rustoku)
     }
 
     /// Helper to calculate the box index for a given row and column.
@@ -241,8 +241,8 @@ impl Rustoku {
         }
 
         // Start with a fully solved board
-        let mut solver = Rustoku::new([[0; 9]; 9])?;
-        let mut board = solver.solve_any().ok_or(RustokuError::DuplicateValues)?;
+        let mut rustoku = Rustoku::new([[0; 9]; 9])?;
+        let mut board = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
 
         // Shuffle all cell coordinates
         let mut cells: Vec<(usize, usize)> =
@@ -368,36 +368,36 @@ mod tests {
 
     #[test]
     fn test_try_from_with_valid_input() {
-        let solver = Rustoku::try_from(UNIQUE_PUZZLE);
-        assert!(solver.is_ok());
+        let rustoku = Rustoku::try_from(UNIQUE_PUZZLE);
+        assert!(rustoku.is_ok());
     }
 
     #[test]
     fn test_try_from_with_invalid_length() {
         let s = "53..7...."; // Too short
-        let solver = Rustoku::try_from(s);
-        assert!(matches!(solver, Err(RustokuError::InvalidInputLength)));
+        let rustoku = Rustoku::try_from(s);
+        assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..7X"; // 'X'
-        let solver = Rustoku::try_from(s);
-        assert!(matches!(solver, Err(RustokuError::InvalidInputCharacter)));
+        let rustoku = Rustoku::try_from(s);
+        assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
     }
 
     #[test]
     fn test_try_from_with_duplicate_initial_values() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..55...8..79";
-        let solver = Rustoku::try_from(s);
-        assert!(matches!(solver, Err(RustokuError::DuplicateValues)));
+        let rustoku = Rustoku::try_from(s);
+        assert!(matches!(rustoku, Err(RustokuError::DuplicateValues)));
     }
 
     #[test]
     fn test_solve_any_with_solvable_sudoku() {
         let s = UNIQUE_PUZZLE;
-        let mut solver = Rustoku::try_from(s).unwrap();
-        let option = solver.solve_any();
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let option = rustoku.solve_any();
         assert!(option.is_some());
 
         let expected_solution = [
@@ -422,10 +422,10 @@ mod tests {
     #[test]
     fn test_solve_until_with_bound() {
         let s = UNIQUE_PUZZLE;
-        let mut solver = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::try_from(s).unwrap();
 
         // Test with bound = 1 (find only one solution)
-        let solutions = solver.solve_until(1);
+        let solutions = rustoku.solve_until(1);
         assert_eq!(
             solutions.len(),
             1,
@@ -433,7 +433,7 @@ mod tests {
         );
 
         // Test with bound = 0 (find all solutions)
-        let all_solutions = solver.solve_until(0);
+        let all_solutions = rustoku.solve_until(0);
         assert_eq!(
             all_solutions.len(),
             1,
@@ -450,8 +450,8 @@ mod tests {
     #[test]
     fn test_solve_all_with_unique_solution() {
         let s = UNIQUE_PUZZLE;
-        let mut solver = Rustoku::try_from(s).unwrap();
-        let solutions = solver.solve_all();
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let solutions = rustoku.solve_all();
         assert_eq!(
             solutions.len(),
             1,
@@ -462,8 +462,8 @@ mod tests {
     #[test]
     fn test_solve_all_with_multiple_solutions() {
         let s = TWO_PUZZLE;
-        let mut solver = Rustoku::try_from(s).unwrap();
-        let solutions = solver.solve_all();
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let solutions = rustoku.solve_all();
         assert_eq!(
             solutions.len(),
             2,
@@ -475,7 +475,7 @@ mod tests {
     fn test_generate_with_30_clues() {
         let num_clues = 30;
         let puzzle = Rustoku::generate(num_clues).unwrap();
-        let mut solver = Rustoku::new(puzzle).unwrap();
+        let mut rustoku = Rustoku::new(puzzle).unwrap();
 
         // Ensure the puzzle has the correct number of clues
         let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
@@ -486,7 +486,7 @@ mod tests {
         );
 
         // Ensure the puzzle has a unique solution
-        let solutions = solver.solve_all();
+        let solutions = rustoku.solve_all();
         assert_eq!(
             solutions.len(),
             1,
@@ -511,8 +511,8 @@ mod tests {
     #[test]
     fn test_is_solved_with_valid_solution() {
         let s = UNIQUE_PUZZLE;
-        let mut solver = Rustoku::try_from(s).unwrap();
-        let solution = solver.solve_any().unwrap();
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let solution = rustoku.solve_any().unwrap();
 
         let new_solver = Rustoku::new(solution).unwrap();
         assert!(new_solver.is_solved(), "The Sudoku puzzle should be solved");
@@ -521,7 +521,7 @@ mod tests {
     #[test]
     fn test_is_solved_with_unsolved_board() {
         let s = UNIQUE_PUZZLE;
-        let solver = Rustoku::try_from(s).unwrap();
-        assert!(!solver.is_solved(), "The board should not be valid");
+        let rustoku = Rustoku::try_from(s).unwrap();
+        assert!(!rustoku.is_solved(), "The board should not be valid");
     }
 }
