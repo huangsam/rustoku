@@ -106,7 +106,7 @@ impl TryFrom<&str> for Rustoku {
 }
 
 impl Rustoku {
-    /// Creates a new Rustoku from a 9x9 board.
+    /// Creates a new `Rustoku` from a 9x9 board.
     /// Initializes the bitmasks for rows, columns, and boxes based on the initial board.
     /// Returns an error if the board contains duplicates.
     pub fn new(initial_board: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
@@ -275,8 +275,8 @@ impl Rustoku {
 
     /// Checks if the Sudoku puzzle is solved.
     ///
-    /// Returns `true` if all cells are filled and the board is valid,
-    /// `false` otherwise.
+    /// Returns `true` if all cells are filled with positive integers and the
+    /// board is valid, `false` otherwise.
     pub fn is_solved(&self) -> bool {
         // Check if all cells are filled
         if self.board.iter().flatten().any(|&val| val == 0) {
