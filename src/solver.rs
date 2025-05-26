@@ -29,30 +29,28 @@ pub enum SudokuError {
 ///
 /// # Examples
 ///
-/// Solving a Sudoku puzzle:
+/// Solve a Sudoku puzzle:
 /// ```
 /// use rustoku::SudokuSolver;
-/// let board = [
-///     [5, 3, 0, 0, 7, 0, 0, 0, 0],
-///     [6, 0, 0, 1, 9, 5, 0, 0, 0],
-///     [0, 9, 8, 0, 0, 0, 0, 6, 0],
-///     [8, 0, 0, 0, 6, 0, 0, 0, 3],
-///     [4, 0, 0, 8, 0, 3, 0, 0, 1],
-///     [7, 0, 0, 0, 2, 0, 0, 0, 6],
-///     [0, 6, 0, 0, 0, 0, 2, 8, 0],
-///     [0, 0, 0, 4, 1, 9, 0, 0, 5],
-///     [0, 0, 0, 0, 8, 0, 0, 7, 9],
-/// ];
-/// let mut solver = SudokuSolver::new(board).unwrap();
-/// println!("Solved: {}", solver.solve_any().is_some());
+/// let board = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+/// let mut solver = SudokuSolver::try_from(board).unwrap();
+/// assert!(solver.solve_any().is_some());
 /// ```
 ///
-/// Generating a Sudoku puzzle:
+/// Generate a Sudoku puzzle:
 /// ```
 /// use rustoku::SudokuSolver;
 /// let puzzle = SudokuSolver::generate(30).unwrap();
 /// let solution = SudokuSolver::new(puzzle).unwrap().solve_all();
-/// println!("Number of solutions: {}", solution.len());
+/// assert_eq!(solution.len(), 1);
+/// ```
+///
+/// Check if a Sudoku puzzle is solved:
+/// ```
+/// use rustoku::SudokuSolver;
+/// let board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+/// let solver = SudokuSolver::try_from(board).unwrap();
+/// assert!(solver.is_solved(), "The Sudoku puzzle should be solved");
 /// ```
 #[derive(Debug, Clone)]
 pub struct SudokuSolver {
@@ -269,6 +267,20 @@ impl SudokuSolver {
         }
 
         Ok(board)
+    }
+
+    /// Checks if the Sudoku puzzle is solved.
+    ///
+    /// Returns `true` if all cells are filled and the board is valid,
+    /// `false` otherwise.
+    pub fn is_solved(&self) -> bool {
+        // Check if all cells are filled
+        if self.board.iter().flatten().any(|&val| val == 0) {
+            return false;
+        }
+
+        // Check if the filled board is valid
+        SudokuSolver::new(self.board).is_ok()
     }
 }
 
@@ -490,5 +502,22 @@ mod tests {
         let num_clues = 82; // Above the maximum valid clue count
         let result = SudokuSolver::generate(num_clues);
         assert!(matches!(result, Err(SudokuError::InvalidClueCount)));
+    }
+
+    #[test]
+    fn test_is_solved_with_valid_solution() {
+        let s = UNIQUE_PUZZLE;
+        let mut solver = SudokuSolver::try_from(s).unwrap();
+        let solution = solver.solve_any().unwrap();
+
+        let new_solver = SudokuSolver::new(solution).unwrap();
+        assert!(new_solver.is_solved(), "The Sudoku puzzle should be solved");
+    }
+
+    #[test]
+    fn test_is_solved_with_unsolved_board() {
+        let s = UNIQUE_PUZZLE;
+        let solver = SudokuSolver::try_from(s).unwrap();
+        assert!(!solver.is_solved(), "The board should not be valid");
     }
 }
