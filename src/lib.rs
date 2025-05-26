@@ -1,15 +1,13 @@
-//! A Sudoku puzzle solver implemented in Rust with efficient bitmasking for constraint tracking.
+//! A Sudoku library implemented in Rust with efficient bitmasking for constraint tracking.
 //!
-//! This module provides a `Rustoku` struct that can solve 9x9 Sudoku puzzles using a
-//! backtracking algorithm. The implementation uses bitmasks to efficiently track constraints
-//! for rows, columns, and 3x3 boxes, enabling fast validation and candidate computation
+//! This library provides a `Rustoku` struct that can solve and generate 9x9 Sudoku puzzles.
+//! The implementation uses bitmasks to efficiently track constraints for
+//! rows, columns, and 3x3 boxes, enabling fast validation and candidate computation
 //! during the solving process.
 //!
-//! # Features
-//! - Supports initialization from a 2D array, a flat byte array, or a string representation
-//! - Provides methods to solve for one solution, multiple solutions, all solutions
-//! - Provides method to generate a random Sudoku puzzle
-//! - Includes a utility function for printing the board
+//! The library also provides a `print_board` utility to print the Sudoku board in a
+//! human-readable format. The output includes the matrix-like representation of the
+//! board as well as the one-line representation for easy copying and pasting.
 
 mod core;
 
