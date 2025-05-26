@@ -335,10 +335,14 @@ pub fn print_board(board: &[[u8; 9]; 9]) {
 
 /// Builds a string representation of the Sudoku board.
 fn build_line(board: &[[u8; 9]; 9]) -> String {
-    board.iter().flatten().map(|&n| match n {
-        0 => '.',
-        n => (n + b'0') as char,
-    }).collect()
+    board
+        .iter()
+        .flatten()
+        .map(|&n| match n {
+            0 => '.',
+            n => (n + b'0') as char,
+        })
+        .collect()
 }
 
 #[cfg(test)]
