@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::{SudokuError, SudokuSolver, print_sudoku_board};
+use rustoku::{Rustoku, RustokuError, print_board};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A Sudoku puzzle solver and generator", long_about = None)]
@@ -26,14 +26,14 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), SudokuError> {
+fn main() -> Result<(), RustokuError> {
     let cli = Cli::parse();
 
     match &cli.command {
         Commands::Generate { clues } => {
             println!("Generating a Sudoku puzzle with {} clues...", clues);
-            let puzzle = SudokuSolver::generate(*clues)?;
-            print_sudoku_board(&puzzle);
+            let puzzle = Rustoku::generate(*clues)?;
+            print_board(&puzzle);
 
             let puzzle_string: String = puzzle
                 .iter()
@@ -54,18 +54,18 @@ fn main() -> Result<(), SudokuError> {
         }
         Commands::Solve { puzzle, all } => {
             println!("Attempting to solve puzzle: {}", puzzle);
-            let mut solver = SudokuSolver::try_from(puzzle.as_str())?;
+            let mut solver = Rustoku::try_from(puzzle.as_str())?;
 
             if *all {
                 let solutions = solver.solve_all();
                 println!("Found {} solution(s):", solutions.len());
                 solutions.iter().enumerate().for_each(|(i, solution)| {
                     println!("\n--- Solution {} ---", i + 1);
-                    print_sudoku_board(solution);
+                    print_board(solution);
                 });
             } else if let Some(solution) = solver.solve_any() {
                 println!("\nSolution found:");
-                print_sudoku_board(&solution);
+                print_board(&solution);
             } else {
                 println!("No solution found for the given puzzle.");
             }
