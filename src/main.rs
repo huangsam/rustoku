@@ -31,6 +31,18 @@ enum Commands {
     },
 }
 
+/// Prints a single line representation of the Sudoku board.
+///
+/// This output is useful for compact display or logging purposes.
+/// Empty cells are represented by dots (`.`), and filled cells by their respective numbers.
+fn line(board: &[[u8; 9]; 9]) -> String {
+    board
+        .iter()
+        .flatten()
+        .map(|&n| if n == 0 { '.' } else { (n + b'0') as char })
+        .collect()
+}
+
 fn main() -> Result<(), RustokuError> {
     let cli = Cli::parse();
 
@@ -40,21 +52,10 @@ fn main() -> Result<(), RustokuError> {
             let puzzle = Rustoku::generate(*clues)?;
             print_board(&puzzle);
 
-            let puzzle_string: String = puzzle
-                .iter()
-                .flatten()
-                .map(|&n| if n == 0 { '.' } else { (n + b'0') as char })
-                .collect();
-
             let executable = std::env::args()
                 .next()
-                .unwrap_or_else(|| "rustoku".to_string());
-            let command = if executable.contains("cargo") {
-                format!("cargo run -- solve \"{}\"", puzzle_string)
-            } else {
-                format!("{} solve \"{}\"", executable, puzzle_string)
-            };
-
+                .unwrap_or_else(|| "cargo run".to_string());
+            let command = format!("{} solve \"{}\"", executable, line(&puzzle));
             println!("\nTo solve this puzzle, run:\n{}", command);
         }
         Commands::Solve { puzzle, all } => {
@@ -67,10 +68,12 @@ fn main() -> Result<(), RustokuError> {
                 solutions.iter().enumerate().for_each(|(i, solution)| {
                     println!("\n--- Solution {} ---", i + 1);
                     print_board(solution);
+                    println!("Line representation: {}", line(solution));
                 });
             } else if let Some(solution) = solver.solve_any() {
                 println!("\nSolution found:");
                 print_board(&solution);
+                println!("Line representation: {}", line(&solution));
             } else {
                 println!("No solution found for the given puzzle.");
             }
