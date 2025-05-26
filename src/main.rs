@@ -31,61 +31,35 @@ enum Commands {
     },
 }
 
-/// Prints a single line representation of the Sudoku board.
-///
-/// This output is useful for compact display or logging purposes.
-/// Empty cells are represented by dots (`.`), and filled cells by their respective numbers.
-fn line(board: &[[u8; 9]; 9]) -> String {
-    board
-        .iter()
-        .flatten()
-        .map(|&n| if n == 0 { '.' } else { (n + b'0') as char })
-        .collect()
-}
-
 fn main() -> Result<(), RustokuError> {
     let cli = Cli::parse();
 
-    match &cli.command {
+    match cli.command {
         Commands::Generate { clues } => {
-            println!("Generating a Sudoku puzzle with {} clues...", clues);
-            let puzzle = Rustoku::generate(*clues)?;
+            let puzzle = Rustoku::generate(clues)?;
             print_board(&puzzle);
-
-            let executable = std::env::args()
-                .next()
-                .unwrap_or_else(|| "cargo run".to_string());
-            let command = format!("{} solve '{}'", executable, line(&puzzle));
-            println!("\nTo solve this puzzle, run:\n{}", command);
         }
         Commands::Solve { puzzle, all } => {
-            println!("Attempting to solve puzzle: {}", puzzle);
-            let mut solver = Rustoku::try_from(puzzle.as_str())?;
-
-            if *all {
-                let solutions = solver.solve_all();
-                println!("Found {} solution(s):", solutions.len());
+            let mut rustoku = Rustoku::try_from(puzzle.as_str())?;
+            if all {
+                let solutions = rustoku.solve_all();
                 solutions.iter().enumerate().for_each(|(i, solution)| {
                     println!("\n--- Solution {} ---", i + 1);
                     print_board(solution);
-                    println!("Line representation: {}", line(solution));
                 });
-            } else if let Some(solution) = solver.solve_any() {
-                println!("\nSolution found:");
+                println!("Found {} solution(s).", solutions.len());
+            } else if let Some(solution) = rustoku.solve_any() {
                 print_board(&solution);
-                println!("Line representation: {}", line(&solution));
             } else {
-                println!("No solution found for the given puzzle.");
+                println!("No solution found.");
             }
         }
         Commands::Check { puzzle } => {
-            println!("Checking if the puzzle is solved correctly: {}", puzzle);
-            let solver = Rustoku::try_from(puzzle.as_str())?;
-            if solver.is_solved() {
-                println!("The puzzle is solved correctly!");
-            } else {
-                println!("The puzzle is NOT solved correctly.");
-            }
+            let rustoku = Rustoku::try_from(puzzle.as_str())?;
+            println!(
+                "The puzzle is {}solved correctly.",
+                if rustoku.is_solved() { "" } else { "NOT " }
+            );
         }
     }
 

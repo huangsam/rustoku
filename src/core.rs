@@ -21,15 +21,13 @@ pub enum RustokuError {
     DuplicateValues,
 }
 
-/// A Sudoku puzzle solver that uses backtracking and bitmasking for efficient constraint tracking.
+/// A core Sudoku primitive that uses backtracking and bitmasking for efficient constraint tracking.
 ///
-/// This struct provides methods to initialize a Sudoku board, check if a number can be placed in a cell,
-/// place and remove numbers, and solve the Sudoku puzzle using a recursive backtracking algorithm.
-/// It supports finding one solution, multiple solutions, or all solutions to the puzzle.
-///
-/// It also supports generating a Sudoku puzzle with a unique solution based on the number of clues
-/// specified. The generated puzzle will have a number of initially filled cells that is close to
-/// the specified `num_clues`, while ensuring that the puzzle remains solvable with a unique solution.
+/// This struct supports the ability to:
+/// - Initialize from a 2D array, a flat byte array, or a string representation
+/// - Solve a Sudoku puzzle using backtracking with Minimum Remaining Values (MRV)
+/// - Generate a Sudoku puzzle with a unique solution based on the number of clues specified
+/// - Check if a Sudoku puzzle is solved correctly
 ///
 /// # Examples
 ///
@@ -292,6 +290,8 @@ impl Rustoku {
 /// Empty cells are shown as dots for clarity.
 ///
 /// # Example
+///
+/// Prints a Sudoku board in a formatted way:
 /// ```
 /// use rustoku::print_board;
 /// let board = [
@@ -329,6 +329,17 @@ pub fn print_board(board: &[[u8; 9]; 9]) {
             println!("{}", horizontal_line); // Horizontal separator after every 3rd row
         }
     }
+
+    println!("Line format: {}", build_line(board)); // Line representation
+}
+
+/// Builds a string representation of the Sudoku board.
+fn build_line(board: &[[u8; 9]; 9]) -> String {
+    board
+        .iter()
+        .flatten()
+        .map(|&n| char::from(n + b'0'))
+        .collect()
 }
 
 #[cfg(test)]
