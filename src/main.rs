@@ -55,7 +55,7 @@ fn main() -> Result<(), RustokuError> {
             let executable = std::env::args()
                 .next()
                 .unwrap_or_else(|| "cargo run".to_string());
-            let command = format!("{} solve \"{}\"", executable, line(&puzzle));
+            let command = format!("{} solve '{}'", executable, line(&puzzle));
             println!("\nTo solve this puzzle, run:\n{}", command);
         }
         Commands::Solve { puzzle, all } => {
