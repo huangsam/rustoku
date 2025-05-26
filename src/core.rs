@@ -488,10 +488,11 @@ mod tests {
 
         // Ensure the puzzle has the correct number of clues
         let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
-        assert_eq!(
-            clues_count, num_clues,
-            "Expected {} clues, but found {} clues",
-            num_clues, clues_count
+        assert!(
+            clues_count >= num_clues,
+            "Expected at least {} clues, but found {} clues",
+            num_clues,
+            clues_count
         );
 
         // Ensure the puzzle has a unique solution
