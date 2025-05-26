@@ -293,7 +293,7 @@ impl Rustoku {
 /// in a human-readable format during debugging or while solving a puzzle.
 ///
 /// It also prints a line representation of the board at the end, which is a single string
-/// containing all numbers in row-major order, with empty cells represented by dots (`.`).
+/// containing all numbers in row-major order, with empty cells represented by dots.
 ///
 /// # Example
 ///

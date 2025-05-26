@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rust-build:
+    name: Rust
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run cargo build
+        run: cargo build
+      - name: Run cargo test
+        run: cargo test
+      - name: Run cargo clippy
+        run: cargo clippy --no-deps
+      - name: Run cargo doc
+        run: cargo doc --no-deps
