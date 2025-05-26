@@ -353,10 +353,12 @@ fn build_line(board: &[[u8; 9]; 9]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Rustoku, RustokuError};
+    use super::{Rustoku, RustokuError, build_line};
 
     const UNIQUE_PUZZLE: &str =
         "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    const UNIQUE_SOLUTION: &str =
+        "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
     const TWO_PUZZLE: &str =
         "2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..";
 
@@ -417,24 +419,11 @@ mod tests {
     fn test_solve_any_with_solvable_sudoku() {
         let s = UNIQUE_PUZZLE;
         let mut rustoku = Rustoku::try_from(s).unwrap();
-        let option = rustoku.solve_any();
-        assert!(option.is_some());
-
-        let expected_solution = [
-            [5, 3, 4, 6, 7, 8, 9, 1, 2],
-            [6, 7, 2, 1, 9, 5, 3, 4, 8],
-            [1, 9, 8, 3, 4, 2, 5, 6, 7],
-            [8, 5, 9, 7, 6, 1, 4, 2, 3],
-            [4, 2, 6, 8, 5, 3, 7, 9, 1],
-            [7, 1, 3, 9, 2, 4, 8, 5, 6],
-            [9, 6, 1, 5, 3, 7, 2, 8, 4],
-            [2, 8, 7, 4, 1, 9, 6, 3, 5],
-            [3, 4, 5, 2, 8, 6, 1, 7, 9],
-        ];
+        let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
-            option.unwrap(),
-            expected_solution,
+            build_line(&solution),
+            UNIQUE_SOLUTION,
             "Solution does not match the expected result"
         );
     }
@@ -530,12 +519,9 @@ mod tests {
 
     #[test]
     fn test_is_solved_with_valid_solution() {
-        let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
-        let solution = rustoku.solve_any().unwrap();
-
-        let new_solver = Rustoku::new(solution).unwrap();
-        assert!(new_solver.is_solved(), "The Sudoku puzzle should be solved");
+        let s = UNIQUE_SOLUTION;
+        let rustoku = Rustoku::try_from(s).unwrap();
+        assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
     }
 
     #[test]
