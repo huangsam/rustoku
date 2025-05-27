@@ -54,7 +54,6 @@ pub enum RustokuError {
 /// let rustoku = Rustoku::try_from(board).unwrap();
 /// assert!(rustoku.is_solved());
 /// ```
-#[derive(Debug, Clone)]
 pub struct Rustoku {
     /// The Sudoku board itself, where 0 represents an empty cell
     board: [[u8; 9]; 9],
