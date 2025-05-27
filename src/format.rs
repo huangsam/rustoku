@@ -11,7 +11,7 @@
 ///
 /// # Example
 ///
-/// Prints a Sudoku board in a formatted way:
+/// Print a Sudoku board in a formatted way:
 /// ```
 /// use rustoku::format::print_board;
 /// let board = [
