@@ -102,8 +102,7 @@ impl TryFrom<&str> for Rustoku {
         for (i, ch) in s.bytes().enumerate() {
             match ch {
                 b'0'..=b'9' => bytes[i] = ch - b'0',
-                b'.' => bytes[i] = 0, // Treat '.' as empty cell
-                b'_' => bytes[i] = 0, // Treat '_' as empty cell
+                b'.' | b'_' => bytes[i] = 0, // Treat '.' and '_' as empty cells
                 _ => return Err(RustokuError::InvalidInputCharacter),
             }
         }
