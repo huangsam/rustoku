@@ -1,4 +1,8 @@
-//! Formatting module for Sudoku boards.
+//! Formatting module for Rustoku data structures.
+//!
+//! This module provides functions to format the Sudoku board and its solve path
+//! in various ways. It also includes a simple utility to print the board to
+//! the console.
 
 /// Prints the current state of the Sudoku board to the console.
 ///
@@ -33,6 +37,10 @@ pub fn print_board(board: &[[u8; 9]; 9]) {
 }
 
 /// Formats the Sudoku board into a grid representation.
+///
+/// This function takes a 9x9 Sudoku board and formats it into a grid with
+/// horizontal and vertical separators to visually distinguish the 3x3 boxes.
+/// Each cell is represented by its number, with empty cells shown as a dot (`.`).
 pub fn format_grid(board: &[[u8; 9]; 9]) -> Vec<String> {
     let mut grid = Vec::new();
     let horizontal_line = "+-------+-------+-------+";
@@ -61,6 +69,9 @@ pub fn format_grid(board: &[[u8; 9]; 9]) -> Vec<String> {
 }
 
 /// Formats the Sudoku board into a single line string representation.
+///
+/// This function converts the board into a single string where each number is
+/// represented by its digit, and empty cells are represented by a dot (`.`).
 pub fn format_line(board: &[[u8; 9]; 9]) -> String {
     board
         .iter()
@@ -73,6 +84,10 @@ pub fn format_line(board: &[[u8; 9]; 9]) -> String {
 }
 
 /// Formats a path of moves in the Sudoku solving process into a vector of strings.
+///
+/// This function takes a vector of tuples representing moves in the format `(row, column, value)`
+/// and formats them into a human-readable string. Each move is represented as `(row, column, value)`,
+/// where `row` and `column` are 1-based indices, and `value` is the number placed in that cell.
 pub fn format_solve_path(path: &[(usize, usize, u8)]) -> Vec<String> {
     if path.is_empty() {
         vec!["(No moves recorded)".to_string()]
