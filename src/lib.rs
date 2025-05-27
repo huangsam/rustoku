@@ -11,4 +11,4 @@
 
 mod core;
 
-pub use core::{Rustoku, RustokuError, print_board};
+pub use core::{Rustoku, RustokuError, RustokuSolution, print_board};

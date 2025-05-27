@@ -21,7 +21,19 @@ pub enum RustokuError {
     DuplicateValues,
 }
 
-/// A core Sudoku primitive that uses backtracking and bitmasking for efficient constraint tracking.
+/// Represents a solved Sudoku board and the solution path.
+///
+/// Most of the time, users just want to see the solved board, but this struct also
+/// provides the sequence of moves that led to the solution, which can be useful for debugging
+/// or understanding the solving process.
+pub struct RustokuSolution {
+    /// The solved Sudoku board, represented as a 2D array
+    pub board: [[u8; 9]; 9],
+    /// The sequence of moves (row, col, value) made to reach the solution
+    pub solve_path: Vec<(usize, usize, u8)>,
+}
+
+/// A core Sudoku primitive that uses backtracking and bitmasking for constraints.
 ///
 /// This struct supports the ability to:
 /// - Initialize from a 2D array, a flat byte array, or a string representation
@@ -65,9 +77,6 @@ pub struct Rustoku {
     box_masks: [u16; 9],
 }
 
-/// Creates a new `Rustoku` from a flat 81-byte array (row-major order).
-/// Useful for compact board representations.
-/// Returns an error if the board contains duplicates.
 impl TryFrom<[u8; 81]> for Rustoku {
     type Error = RustokuError;
 
@@ -80,8 +89,6 @@ impl TryFrom<[u8; 81]> for Rustoku {
     }
 }
 
-/// Creates a new `Rustoku` from a static string of 81 characters (`0-9` or `.` or `_`).
-/// Returns an error if the string is not valid or contains duplicates.
 impl TryFrom<&str> for Rustoku {
     type Error = RustokuError;
 
@@ -103,9 +110,6 @@ impl TryFrom<&str> for Rustoku {
 }
 
 impl Rustoku {
-    /// Creates a new `Rustoku` from a 9x9 board.
-    /// Initializes the bitmasks for rows, columns, and boxes based on the initial board.
-    /// Returns an error if the board contains duplicates.
     pub fn new(initial_board: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
         let mut rustoku = Self {
             board: initial_board,
@@ -127,25 +131,19 @@ impl Rustoku {
         Ok(rustoku)
     }
 
-    /// Helper to calculate the box index for a given row and column.
     fn get_box_idx(r: usize, c: usize) -> usize {
         (r / 3) * 3 + (c / 3)
     }
 
-    /// Checks if a number can be placed at a given row and column.
-    /// Uses bitmasks for efficient checking.
     fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
 
-        // Check if the bit is already set in any of the masks
         !((self.row_masks[r] & bit_to_check != 0)
             || (self.col_masks[c] & bit_to_check != 0)
             || (self.box_masks[box_idx] & bit_to_check != 0))
     }
 
-    /// Places a number on the board and updates the masks.
-    /// Assumes `is_safe` has already been called and returned true.
     fn place_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_set = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -156,8 +154,6 @@ impl Rustoku {
         self.box_masks[box_idx] |= bit_to_set;
     }
 
-    /// Removes a number from the board and updates the masks.
-    /// Used during backtracking.
     fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_unset = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -168,8 +164,6 @@ impl Rustoku {
         self.box_masks[box_idx] &= !bit_to_unset;
     }
 
-    /// Finds the next empty cell using MRV (Minimum Remaining Values).
-    /// Returns `Some((r, c))` or `None` if the board is full.
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         (0..9)
             .flat_map(|r| (0..9).map(move |c| (r, c)))
@@ -177,10 +171,15 @@ impl Rustoku {
             .min_by_key(|&(r, c)| (1..=9).filter(|&num| self.is_safe(r, c, num)).count())
     }
 
-    /// Recursively solves the Sudoku puzzle up to a certain bound.
+    /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
     /// If `bound` is `0`, it finds all solutions.
     /// Returns the number of solutions found so far.
-    fn solve_until_recursive(&mut self, solutions: &mut Vec<[[u8; 9]; 9]>, bound: usize) -> usize {
+    fn solve_until_recursive(
+        &mut self,
+        solutions: &mut Vec<RustokuSolution>,
+        path: &mut Vec<(usize, usize, u8)>,
+        bound: usize,
+    ) -> usize {
         if let Some((r, c)) = self.find_next_empty_cell() {
             let mut count = 0;
             let mut nums: Vec<u8> = (1..=9).collect();
@@ -188,10 +187,11 @@ impl Rustoku {
             for num in nums {
                 if self.is_safe(r, c, num) {
                     self.place_number(r, c, num);
-                    count += self.solve_until_recursive(solutions, bound);
+                    path.push((r, c, num));
+                    count += self.solve_until_recursive(solutions, path, bound);
+                    path.pop();
                     self.remove_number(r, c, num);
 
-                    // Stop if we've reached the bound
                     if bound > 0 && solutions.len() >= bound {
                         return count;
                     }
@@ -200,38 +200,35 @@ impl Rustoku {
             count
         } else {
             // If no empty cell, a solution is found. Add it to the list
-            solutions.push(self.board);
+            solutions.push(RustokuSolution {
+                board: self.board,
+                solve_path: path.clone(),
+            });
             1
         }
     }
 
-    /// Solves the Sudoku puzzle up to a certain bound.
+    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
     /// If `bound` is `0`, it finds all solutions.
-    pub fn solve_until(&mut self, bound: usize) -> Vec<[[u8; 9]; 9]> {
+    pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
         let mut solutions = Vec::new();
-        self.solve_until_recursive(&mut solutions, bound);
+        let mut path = Vec::new();
+        self.solve_until_recursive(&mut solutions, &mut path, bound);
         solutions
     }
 
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
-    /// Returns `Some([[u8; 9]; 9])` if a solution is found, `None` otherwise.
-    pub fn solve_any(&mut self) -> Option<[[u8; 9]; 9]> {
+    /// Returns `Some(RustokuSolution)` if a solution is found, `None` otherwise.
+    pub fn solve_any(&mut self) -> Option<RustokuSolution> {
         self.solve_until(1).into_iter().next()
     }
 
     /// Finds all possible solutions for the Sudoku puzzle.
     /// Returns a vector of all solutions found.
-    pub fn solve_all(&mut self) -> Vec<[[u8; 9]; 9]> {
+    pub fn solve_all(&mut self) -> Vec<RustokuSolution> {
         self.solve_until(0)
     }
 
-    /// Generates a new Sudoku puzzle with a unique solution.
-    ///
-    /// The `num_clues` parameter specifies the desired number of initially
-    /// filled cells (clues) in the generated puzzle. Fewer clues generally
-    /// result in a harder puzzle. The actual number of clues may be slightly
-    /// more than `num_clues` if it's impossible to remove more numbers
-    /// while maintaining a unique solution.
     pub fn generate(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
         if !(17..=81).contains(&num_clues) {
             return Err(RustokuError::InvalidClueCount);
@@ -239,7 +236,10 @@ impl Rustoku {
 
         // Start with a fully solved board
         let mut rustoku = Rustoku::new([[0; 9]; 9])?;
-        let mut board = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
+        let mut board = rustoku
+            .solve_any()
+            .ok_or(RustokuError::DuplicateValues)?
+            .board;
 
         // Shuffle all cell coordinates
         let mut cells: Vec<(usize, usize)> =
@@ -270,17 +270,10 @@ impl Rustoku {
         Ok(board)
     }
 
-    /// Checks if the Sudoku puzzle is solved.
-    ///
-    /// Returns `true` if all cells are filled with positive integers and the
-    /// board is valid, `false` otherwise.
     pub fn is_solved(&self) -> bool {
-        // Check if all cells are filled
         if self.board.iter().flatten().any(|&val| val == 0) {
             return false;
         }
-
-        // Check if the filled board is valid
         Rustoku::new(self.board).is_ok()
     }
 }
@@ -421,7 +414,7 @@ mod tests {
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
-            build_line(&solution),
+            build_line(&solution.board),
             UNIQUE_SOLUTION,
             "Solution does not match the expected result"
         );
@@ -450,7 +443,7 @@ mod tests {
 
         // Ensure the solution found with bound = 1 matches the solution found with bound = 0
         assert_eq!(
-            solutions[0], all_solutions[0],
+            solutions[0].board, all_solutions[0].board,
             "Solution with bound = 1 does not match the solution with bound = 0"
         );
     }

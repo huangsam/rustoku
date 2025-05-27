@@ -45,11 +45,11 @@ fn main() -> Result<(), RustokuError> {
                 let solutions = rustoku.solve_all();
                 solutions.iter().enumerate().for_each(|(i, solution)| {
                     println!("\n--- Solution {} ---", i + 1);
-                    print_board(solution);
+                    print_board(&solution.board);
                 });
                 println!("Found {} solution(s).", solutions.len());
             } else if let Some(solution) = rustoku.solve_any() {
-                print_board(&solution);
+                print_board(&solution.board);
             } else {
                 println!("No solution found.");
             }
