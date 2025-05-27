@@ -45,7 +45,7 @@ pub struct RustokuSolution {
 ///
 /// Solve a Sudoku puzzle:
 /// ```
-/// use rustoku::Rustoku;
+/// use rustoku::core::Rustoku;
 /// let board = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
 /// let mut rustoku = Rustoku::try_from(board).unwrap();
 /// assert!(rustoku.solve_any().is_some());
@@ -53,7 +53,7 @@ pub struct RustokuSolution {
 ///
 /// Generate a Sudoku puzzle:
 /// ```
-/// use rustoku::Rustoku;
+/// use rustoku::core::Rustoku;
 /// let puzzle = Rustoku::generate(30).unwrap();
 /// let solution = Rustoku::new(puzzle).unwrap().solve_all();
 /// assert_eq!(solution.len(), 1);
@@ -61,7 +61,7 @@ pub struct RustokuSolution {
 ///
 /// Check if a Sudoku puzzle is solved:
 /// ```
-/// use rustoku::Rustoku;
+/// use rustoku::core::Rustoku;
 /// let board = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
 /// let rustoku = Rustoku::try_from(board).unwrap();
 /// assert!(rustoku.is_solved());

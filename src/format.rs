@@ -11,7 +11,7 @@
 ///
 /// Prints a Sudoku board in a formatted way:
 /// ```
-/// use rustoku::print_board;
+/// use rustoku::format::print_board;
 /// let board = [
 ///     [5, 3, 4, 6, 7, 8, 9, 1, 2],
 ///     [6, 7, 2, 1, 9, 5, 3, 4, 8],
