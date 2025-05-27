@@ -90,7 +90,7 @@ impl fmt::Display for RustokuSolution {
 /// ```
 pub struct Rustoku {
     /// The Sudoku board itself, where 0 represents an empty cell
-    board: [[u8; 9]; 9],
+    pub board: [[u8; 9]; 9],
     /// Bitmask to track used numbers in each row (1-9 mapped to bits 0-8)
     row_masks: [u16; 9],
     /// Bitmask to track used numbers in each column (1-9 mapped to bits 0-8)

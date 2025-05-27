@@ -30,6 +30,11 @@ enum Commands {
         /// The Sudoku puzzle string (81 characters: 0-9 for numbers, . or _ for empty cells)
         puzzle: String,
     },
+    /// Displays the Sudoku puzzle in a grid-like format
+    Show {
+        /// The Sudoku puzzle string (81 characters: 0-9 for numbers, . or _ for empty cells)
+        puzzle: String,
+    },
 }
 
 fn main() -> Result<(), RustokuError> {
@@ -61,6 +66,10 @@ fn main() -> Result<(), RustokuError> {
                 "The puzzle is {}solved correctly.",
                 if rustoku.is_solved() { "" } else { "NOT " }
             );
+        }
+        Commands::Show { puzzle } => {
+            let rustoku = Rustoku::try_from(puzzle.as_str())?;
+            print_board(&rustoku.board);
         }
     }
 
