@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use rustoku::{Rustoku, RustokuError, print_board};
+use rustoku::core::{Rustoku, RustokuError};
+use rustoku::format::print_board;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A Sudoku puzzle solver and generator", long_about = None)]

@@ -9,6 +9,5 @@
 //! human-readable format. The output includes the matrix-like representation of the
 //! board as well as the one-line representation for easy copying and pasting.
 
-mod core;
-
-pub use core::{Rustoku, RustokuError, RustokuSolution, print_board};
+pub mod core;
+pub mod format;
