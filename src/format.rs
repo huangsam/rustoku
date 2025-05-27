@@ -1,3 +1,5 @@
+//! Formatting module for Sudoku boards.
+
 /// Prints the current state of the Sudoku board to the console.
 ///
 /// The board is formatted with horizontal and vertical separators to visually

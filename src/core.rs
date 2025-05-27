@@ -1,3 +1,5 @@
+//! Core functionality for the Rustoku Sudoku solver and generator.
+
 use rand::rng;
 use rand::seq::SliceRandom;
 use thiserror::Error;
