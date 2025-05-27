@@ -396,8 +396,8 @@ mod tests {
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
-            format_line(&solution.board),
             UNIQUE_SOLUTION,
+            format_line(&solution.board),
             "Solution does not match the expected result"
         );
     }
@@ -410,16 +410,16 @@ mod tests {
         // Test with bound = 1 (find only one solution)
         let solutions = rustoku.solve_until(1);
         assert_eq!(
-            solutions.len(),
             1,
+            solutions.len(),
             "Expected exactly one solution with bound = 1"
         );
 
         // Test with bound = 0 (find all solutions)
         let all_solutions = rustoku.solve_until(0);
         assert_eq!(
-            all_solutions.len(),
             1,
+            all_solutions.len(),
             "Expected exactly one solution for this board with bound = 0"
         );
 
@@ -436,8 +436,8 @@ mod tests {
         let mut rustoku = Rustoku::try_from(s).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
-            solutions.len(),
             1,
+            solutions.len(),
             "Expected a unique solution for the board"
         );
     }
@@ -448,8 +448,8 @@ mod tests {
         let mut rustoku = Rustoku::try_from(s).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
-            solutions.len(),
             2,
+            solutions.len(),
             "Expected two solutions for the given board"
         );
     }
@@ -472,8 +472,8 @@ mod tests {
             // Ensure the puzzle has a unique solution
             let solutions = rustoku.solve_all();
             assert_eq!(
-                solutions.len(),
                 1,
+                solutions.len(),
                 "Generated puzzle with {} clues should have a unique solution",
                 num_clues
             );

@@ -135,7 +135,7 @@ mod tests {
             "+-------+-------+-------+",
         ];
 
-        assert_eq!(format_grid(&board), expected);
+        assert_eq!(expected, format_grid(&board));
     }
 
     #[test]
@@ -154,7 +154,7 @@ mod tests {
 
         let expected =
             "53.678912672195348198342567859761423426853791713924856961537284287419635345286179";
-        assert_eq!(format_line(&board), expected);
+        assert_eq!(expected, format_line(&board));
     }
 
     #[test]
@@ -177,7 +177,7 @@ mod tests {
             "+-------+-------+-------+",
         ];
 
-        assert_eq!(format_grid(&board), expected);
+        assert_eq!(expected, format_grid(&board));
     }
 
     #[test]
@@ -185,21 +185,21 @@ mod tests {
         let board = [[0; 9]; 9];
         let expected =
             ".................................................................................";
-        assert_eq!(format_line(&board), expected);
+        assert_eq!(expected, format_line(&board));
     }
 
     #[test]
     fn test_format_solve_path_one_line() {
         let path = vec![(0, 0, 5), (1, 1, 3), (2, 2, 4), (3, 3, 6), (4, 4, 7)];
         let expected = vec!["(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)"];
-        assert_eq!(format_solve_path(&path), expected);
+        assert_eq!(expected, format_solve_path(&path));
     }
 
     #[test]
     fn test_format_solve_path_no_moves() {
         let path: Vec<(usize, usize, u8)> = vec![];
         let expected = vec!["(No moves recorded)".to_string()];
-        assert_eq!(format_solve_path(&path), expected);
+        assert_eq!(expected, format_solve_path(&path));
     }
 
     #[test]
@@ -216,6 +216,6 @@ mod tests {
             "(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)",
             "(6, 6, 8)",
         ];
-        assert_eq!(format_solve_path(&path), expected);
+        assert_eq!(expected, format_solve_path(&path));
     }
 }
