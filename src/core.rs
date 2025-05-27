@@ -133,10 +133,12 @@ impl Rustoku {
         Ok(rustoku)
     }
 
+    /// Returns the index of the 3x3 box for a given row and column.
     fn get_box_idx(r: usize, c: usize) -> usize {
         (r / 3) * 3 + (c / 3)
     }
 
+    /// Checks if placing a number in the given cell is safe according to Sudoku rules.
     fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -146,6 +148,7 @@ impl Rustoku {
             || (self.box_masks[box_idx] & bit_to_check != 0))
     }
 
+    /// Places a number in the Sudoku board and updates the corresponding masks.
     fn place_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_set = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -156,6 +159,7 @@ impl Rustoku {
         self.box_masks[box_idx] |= bit_to_set;
     }
 
+    /// Removes a number from the Sudoku board and updates the masks accordingly.
     fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_unset = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -166,6 +170,7 @@ impl Rustoku {
         self.box_masks[box_idx] &= !bit_to_unset;
     }
 
+    /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         (0..9)
             .flat_map(|r| (0..9).map(move |c| (r, c)))
@@ -174,8 +179,6 @@ impl Rustoku {
     }
 
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
-    /// If `bound` is `0`, it finds all solutions.
-    /// Returns the number of solutions found so far.
     fn solve_until_recursive(
         &mut self,
         solutions: &mut Vec<RustokuSolution>,
@@ -194,6 +197,7 @@ impl Rustoku {
                     path.pop();
                     self.remove_number(r, c, num);
 
+                    // If a bound is set and the number of solutions reaches it, stop further exploration
                     if bound > 0 && solutions.len() >= bound {
                         return count;
                     }
@@ -211,7 +215,8 @@ impl Rustoku {
     }
 
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
-    /// If `bound` is `0`, it finds all solutions.
+    ///
+    /// If `bound` is `0`, it finds all solutions. Otherwise, it finds up to `bound` solutions.
     pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
         let mut solutions = Vec::new();
         let mut path = Vec::new();
@@ -220,17 +225,26 @@ impl Rustoku {
     }
 
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
+    ///
     /// Returns `Some(RustokuSolution)` if a solution is found, `None` otherwise.
     pub fn solve_any(&mut self) -> Option<RustokuSolution> {
         self.solve_until(1).into_iter().next()
     }
 
     /// Finds all possible solutions for the Sudoku puzzle.
+    ///
     /// Returns a vector of all solutions found.
     pub fn solve_all(&mut self) -> Vec<RustokuSolution> {
         self.solve_until(0)
     }
 
+    /// Generates a new Sudoku puzzle with a unique solution.
+    ///
+    /// The `num_clues` parameter specifies the desired number of initially
+    /// filled cells (clues) in the generated puzzle. Fewer clues generally
+    /// result in a harder puzzle. The actual number of clues may be slightly
+    /// more than `num_clues` if it's impossible to remove more numbers
+    /// while maintaining a unique solution.
     pub fn generate(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
         if !(17..=81).contains(&num_clues) {
             return Err(RustokuError::InvalidClueCount);
@@ -272,6 +286,10 @@ impl Rustoku {
         Ok(board)
     }
 
+    /// Checks if the Sudoku puzzle is solved correctly.
+    ///
+    /// A puzzle is considered solved if all cells are filled and the board does not
+    /// contain duplicates across rows, columns, and 3x3 boxes.
     pub fn is_solved(&self) -> bool {
         if self.board.iter().flatten().any(|&val| val == 0) {
             return false;
