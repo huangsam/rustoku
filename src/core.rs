@@ -1,5 +1,8 @@
 //! Core functionality for the Rustoku Sudoku solver and generator.
 
+use std::fmt;
+
+use super::format::*;
 use rand::rng;
 use rand::seq::SliceRandom;
 use thiserror::Error;
@@ -33,6 +36,23 @@ pub struct RustokuSolution {
     pub board: [[u8; 9]; 9],
     /// The sequence of moves (row, col, value) made to reach the solution
     pub solve_path: Vec<(usize, usize, u8)>,
+}
+
+/// Formats the board and solve path into a human-readable string representation.
+///
+/// First we format the board into a grid representation and line format.
+/// Then we format the solve path into a string representation of moves.
+impl fmt::Display for RustokuSolution {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", format_grid(&self.board).join("\n"))?;
+        writeln!(f, "Line format: {}", format_line(&self.board))?;
+        writeln!(
+            f,
+            "Solve path:\n{}",
+            format_solve_path(&self.solve_path).join("\n")
+        )?;
+        Ok(())
+    }
 }
 
 /// A core Sudoku primitive that uses backtracking and bitmasking for constraints.

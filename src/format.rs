@@ -28,11 +28,7 @@
 /// print_board(&board);
 /// ```
 pub fn print_board(board: &[[u8; 9]; 9]) {
-    let grid = format_grid(board);
-    for line in grid {
-        println!("{}", line);
-    }
-
+    println!("{}", format_grid(board).join("\n"));
     println!("Line format: {}", format_line(board));
 }
 
@@ -74,6 +70,20 @@ pub fn format_line(board: &[[u8; 9]; 9]) -> String {
             n => (n + b'0') as char,
         })
         .collect()
+}
+
+/// Formats a path of moves in the Sudoku solving process into a vector of strings.
+pub fn format_solve_path(path: &[(usize, usize, u8)]) -> Vec<String> {
+    if path.is_empty() {
+        vec!["(No moves recorded)".to_string()]
+    } else {
+        path.iter()
+            .map(|(r, c, val)| format!("({}, {}, {})", r + 1, c + 1, val))
+            .collect::<Vec<String>>()
+            .chunks(5) // Break into chunks of 5 moves
+            .map(|chunk| chunk.join(" -> "))
+            .collect::<Vec<String>>()
+    }
 }
 
 #[cfg(test)]
@@ -161,5 +171,36 @@ mod tests {
         let expected =
             ".................................................................................";
         assert_eq!(format_line(&board), expected);
+    }
+
+    #[test]
+    fn test_format_solve_path_one_line() {
+        let path = vec![(0, 0, 5), (1, 1, 3), (2, 2, 4), (3, 3, 6), (4, 4, 7)];
+        let expected = vec!["(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)"];
+        assert_eq!(format_solve_path(&path), expected);
+    }
+
+    #[test]
+    fn test_format_solve_path_no_moves() {
+        let path: Vec<(usize, usize, u8)> = vec![];
+        let expected = vec!["(No moves recorded)".to_string()];
+        assert_eq!(format_solve_path(&path), expected);
+    }
+
+    #[test]
+    fn test_format_solve_path_multiple_lines() {
+        let path = vec![
+            (0, 0, 5),
+            (1, 1, 3),
+            (2, 2, 4),
+            (3, 3, 6),
+            (4, 4, 7),
+            (5, 5, 8),
+        ];
+        let expected = vec![
+            "(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)",
+            "(6, 6, 8)",
+        ];
+        assert_eq!(format_solve_path(&path), expected);
     }
 }
