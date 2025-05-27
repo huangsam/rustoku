@@ -33,7 +33,7 @@ pub fn print_board(board: &[[u8; 9]; 9]) {
         println!("{}", line);
     }
 
-    println!("Line format: {}", format_line(board)); // Line representation
+    println!("Line format: {}", format_line(board));
 }
 
 /// Formats the Sudoku board into a grid representation.
