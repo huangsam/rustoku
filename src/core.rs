@@ -202,12 +202,11 @@ impl Rustoku {
             .flat_map(|r| (0..9).map(move |c| (r, c)))
             .filter(|&(r, c)| self.board[r][c] == 0);
 
-        let cell_with_min_options = empty_cells.min_by_key(|&(r, c)| {
+        // Find the cell with the minimum number of possible values, if any
+        empty_cells.min_by_key(|&(r, c)| {
             let possible_values = (1..=9).filter(|&num| self.is_safe(r, c, num));
             possible_values.count()
-        });
-
-        cell_with_min_options
+        })
     }
 
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
