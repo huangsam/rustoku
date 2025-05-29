@@ -198,10 +198,16 @@ impl Rustoku {
 
     /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
-        (0..9)
+        let empty_cells = (0..9)
             .flat_map(|r| (0..9).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[r][c] == 0)
-            .min_by_key(|&(r, c)| (1..=9).filter(|&num| self.is_safe(r, c, num)).count())
+            .filter(|&(r, c)| self.board[r][c] == 0);
+
+        let cell_with_min_options = empty_cells.min_by_key(|&(r, c)| {
+            let possible_values = (1..=9).filter(|&num| self.is_safe(r, c, num));
+            possible_values.count()
+        });
+
+        cell_with_min_options
     }
 
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
