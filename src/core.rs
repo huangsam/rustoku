@@ -38,6 +38,7 @@ pub enum RustokuError {
 /// Most of the time, users just want to see the solved board, but this struct also
 /// provides the sequence of moves that led to the solution, which can be useful for debugging
 /// or understanding the solving process.
+#[derive(Debug, Clone)]
 pub struct RustokuSolution {
     /// The solved Sudoku board, represented as a 2D array
     pub board: [[u8; 9]; 9],
@@ -95,6 +96,7 @@ impl fmt::Display for RustokuSolution {
 /// let rustoku = Rustoku::try_from(board).unwrap();
 /// assert!(rustoku.is_solved());
 /// ```
+#[derive(Debug, Copy, Clone)]
 pub struct Rustoku {
     /// The Sudoku board itself, where 0 represents an empty cell
     pub board: [[u8; 9]; 9],
