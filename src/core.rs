@@ -212,104 +212,66 @@ impl Rustoku {
     /// Returns true if any placements were made.
     fn hidden_singles(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
         let mut changed = false;
-        let mut progress = Vec::new();
 
-        // Rows
+        // Helper closure to avoid code duplication for rows, columns, and boxes
+        let mut check_unit_for_hidden_singles = |cells_in_unit: &[(usize, usize)]| {
+            let mut unit_changed = false;
+            // For each possible number (1-9)
+            for num_val in 1..=9 {
+                let bit = 1 << (num_val - 1);
+                let mut found_pos = None;
+                let mut count = 0;
+
+                // Iterate through cells in the current unit
+                for &(r, c) in cells_in_unit.iter() {
+                    if self.board[r][c] == 0 {
+                        // If cell is empty
+                        // Check if 'num_val' is a possible candidate in this cell
+                        let possible_candidates_mask = self.get_possible_candidates_mask(r, c);
+                        if possible_candidates_mask & bit != 0 {
+                            count += 1;
+                            found_pos = Some((r, c)); // Store the last valid position found
+                        }
+                    }
+                }
+
+                // If 'num_val' was a candidate in exactly one empty cell in this unit
+                if count == 1 {
+                    if let Some((hr, hc)) = found_pos {
+                        self.place_number(hr, hc, num_val);
+                        path.push((hr, hc, num_val));
+                        unit_changed = true;
+                    }
+                }
+            }
+            unit_changed
+        };
+
+        // Check rows
         for r in 0..9 {
-            for num in 1..=9 {
-                let bit = 1 << (num - 1);
-                if self.row_masks[r] & bit != 0 {
-                    continue;
-                }
-                let mut pos = None;
-                for c in 0..9 {
-                    if self.board[r][c] == 0
-                        && self.col_masks[c] & bit == 0
-                        && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
-                    {
-                        if pos.is_some() {
-                            pos = None;
-                            break;
-                        }
-                        pos = Some((r, c));
-                    }
-                }
-                if let Some((r, c)) = pos {
-                    self.place_number(r, c, num);
-                    progress.push((r, c, num));
-                    changed = true;
-                }
-            }
+            let cells_in_row: Vec<(usize, usize)> = (0..9).map(|c| (r, c)).collect();
+            changed |= check_unit_for_hidden_singles(&cells_in_row);
         }
 
-        // Columns
+        // Check columns
         for c in 0..9 {
-            for num in 1..=9 {
-                let bit = 1 << (num - 1);
-                if self.col_masks[c] & bit != 0 {
-                    continue;
-                }
-                let mut pos = None;
-                for r in 0..9 {
-                    if self.board[r][c] == 0
-                        && self.row_masks[r] & bit == 0
-                        && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
-                    {
-                        if pos.is_some() {
-                            pos = None;
-                            break;
-                        }
-                        pos = Some((r, c));
-                    }
-                }
-                if let Some((r, c)) = pos {
-                    self.place_number(r, c, num);
-                    progress.push((r, c, num));
-                    changed = true;
-                }
-            }
+            let cells_in_col: Vec<(usize, usize)> = (0..9).map(|r| (r, c)).collect();
+            changed |= check_unit_for_hidden_singles(&cells_in_col);
         }
 
-        // Boxes
+        // Check boxes
         for box_idx in 0..9 {
-            let box_r = (box_idx / 3) * 3;
-            let box_c = (box_idx % 3) * 3;
-            for num in 1..=9 {
-                let bit = 1 << (num - 1);
-                if self.box_masks[box_idx] & bit != 0 {
-                    continue;
-                }
-                let mut pos = None;
-                for dr in 0..3 {
-                    for dc in 0..3 {
-                        let r = box_r + dr;
-                        let c = box_c + dc;
-                        if self.board[r][c] == 0
-                            && self.row_masks[r] & bit == 0
-                            && self.col_masks[c] & bit == 0
-                        {
-                            if pos.is_some() {
-                                pos = None;
-                                break;
-                            }
-                            pos = Some((r, c));
-                        }
-                    }
-                    if pos.is_none() {
-                        break;
-                    }
-                }
-                if let Some((r, c)) = pos {
-                    self.place_number(r, c, num);
-                    progress.push((r, c, num));
-                    changed = true;
+            let mut cells_in_box: Vec<(usize, usize)> = Vec::new();
+            let start_r = (box_idx / 3) * 3;
+            let start_c = (box_idx % 3) * 3;
+            for dr in 0..3 {
+                for dc in 0..3 {
+                    cells_in_box.push((start_r + dr, start_c + dc));
                 }
             }
+            changed |= check_unit_for_hidden_singles(&cells_in_box);
         }
 
-        for (r, c, num) in progress {
-            path.push((r, c, num));
-        }
         changed
     }
 
