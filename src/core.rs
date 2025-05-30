@@ -279,24 +279,19 @@ impl Rustoku {
     ///
     /// Returns `true` if propagation was successful (no contradiction), `false` otherwise.
     /// Updates the `path` with any numbers placed by propagation.
-    fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>, path_len_before: usize) -> bool {
         loop {
-            let mut changed = false;
-            changed |= self.naked_singles(path);
-            changed |= self.hidden_singles(path);
+            let changed = self.naked_singles(path) | self.hidden_singles(path);
 
             // Fast contradiction check: for each empty cell, if no possible value, fail
             for r in 0..9 {
                 for c in 0..9 {
-                    if self.board[r][c] == 0 {
-                        let mask = self.get_possible_candidates_mask(r, c);
-                        if mask == 0 {
-                            // Undo placements made in this propagation
-                            while let Some((r, c, num)) = path.pop() {
-                                self.remove_number(r, c, num);
-                            }
-                            return false;
+                    if self.board[r][c] == 0 && self.get_possible_candidates_mask(r, c) == 0 {
+                        while path.len() > path_len_before {
+                            let (r, c, num) = path.pop().unwrap();
+                            self.remove_number(r, c, num);
                         }
+                        return false;
                     }
                 }
             }
@@ -317,11 +312,7 @@ impl Rustoku {
     ) -> usize {
         let path_len_before = path.len();
 
-        if !self.propagate_constraints(path) {
-            while path.len() > path_len_before {
-                let (r, c, num) = path.pop().unwrap();
-                self.remove_number(r, c, num);
-            }
+        if !self.propagate_constraints(path, path_len_before) {
             return 0;
         }
 
