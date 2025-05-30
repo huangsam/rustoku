@@ -171,9 +171,9 @@ impl Rustoku {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
 
-        !((self.row_masks[r] & bit_to_check != 0)
-            || (self.col_masks[c] & bit_to_check != 0)
-            || (self.box_masks[box_idx] & bit_to_check != 0))
+        (self.row_masks[r] & bit_to_check == 0)
+            && (self.col_masks[c] & bit_to_check == 0)
+            && (self.box_masks[box_idx] & bit_to_check == 0)
     }
 
     /// Places a number in the Sudoku board and updates the corresponding masks.
@@ -200,15 +200,32 @@ impl Rustoku {
 
     /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
-        let empty_cells = (0..9)
-            .flat_map(|r| (0..9).map(move |c| (r, c)))
-            .filter(|&(r, c)| self.board[r][c] == 0);
-
-        // Find the cell with the minimum number of possible values, if any
-        empty_cells.min_by_key(|&(r, c)| {
-            let possible_values = (1..=9).filter(|&num| self.is_safe(r, c, num));
-            possible_values.count()
-        })
+        let mut min_count = 10;
+        let mut min_cell = None;
+        for r in 0..9 {
+            for c in 0..9 {
+                if self.board[r][c] == 0 {
+                    let mut count = 0;
+                    let row_mask = self.row_masks[r];
+                    let col_mask = self.col_masks[c];
+                    let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+                    let used = row_mask | col_mask | box_mask;
+                    for num in 1..=9 {
+                        if used & (1 << (num - 1)) == 0 {
+                            count += 1;
+                        }
+                    }
+                    if count < min_count {
+                        min_count = count;
+                        min_cell = Some((r, c));
+                        if min_count == 1 {
+                            return min_cell;
+                        }
+                    }
+                }
+            }
+        }
+        min_cell
     }
 
     /// Applies the naked singles technique.
@@ -217,23 +234,34 @@ impl Rustoku {
     /// Returns a vector of `(row, col, value)` for each placement made.
     fn naked_singles(&mut self) -> Vec<(usize, usize, u8)> {
         let mut progress = Vec::new();
-        loop {
-            let mut changed = false;
+        let mut changed = true;
+        while changed {
+            changed = false;
             for r in 0..9 {
                 for c in 0..9 {
                     if self.board[r][c] == 0 {
-                        let singles: Vec<u8> = (1..=9).filter(|&n| self.is_safe(r, c, n)).collect();
-                        if singles.len() == 1 {
-                            let num = singles[0];
-                            self.place_number(r, c, num);
-                            progress.push((r, c, num));
+                        let row_mask = self.row_masks[r];
+                        let col_mask = self.col_masks[c];
+                        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+                        let used = row_mask | col_mask | box_mask;
+                        let mut singles = 0;
+                        let mut single_num = 0;
+                        for num in 1..=9 {
+                            if used & (1 << (num - 1)) == 0 {
+                                singles += 1;
+                                single_num = num;
+                                if singles > 1 {
+                                    break;
+                                }
+                            }
+                        }
+                        if singles == 1 {
+                            self.place_number(r, c, single_num);
+                            progress.push((r, c, single_num));
                             changed = true;
                         }
                     }
                 }
-            }
-            if !changed {
-                break;
             }
         }
         progress
@@ -245,18 +273,23 @@ impl Rustoku {
     /// Returns a vector of `(row, col, value)` for each placement made.
     fn hidden_singles(&mut self) -> Vec<(usize, usize, u8)> {
         let mut progress = Vec::new();
-        loop {
-            let mut changed = false;
+        let mut changed = true;
+        while changed {
+            changed = false;
 
-            // Check rows
+            // Rows
             for r in 0..9 {
                 for num in 1..=9 {
-                    if self.row_masks[r] & (1 << (num - 1)) != 0 {
+                    let bit = 1 << (num - 1);
+                    if self.row_masks[r] & bit != 0 {
                         continue;
                     }
                     let mut pos = None;
                     for c in 0..9 {
-                        if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                        if self.board[r][c] == 0
+                            && self.col_masks[c] & bit == 0
+                            && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
+                        {
                             if pos.is_some() {
                                 pos = None;
                                 break;
@@ -272,15 +305,19 @@ impl Rustoku {
                 }
             }
 
-            // Check columns
+            // Columns
             for c in 0..9 {
                 for num in 1..=9 {
-                    if self.col_masks[c] & (1 << (num - 1)) != 0 {
+                    let bit = 1 << (num - 1);
+                    if self.col_masks[c] & bit != 0 {
                         continue;
                     }
                     let mut pos = None;
                     for r in 0..9 {
-                        if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                        if self.board[r][c] == 0
+                            && self.row_masks[r] & bit == 0
+                            && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
+                        {
                             if pos.is_some() {
                                 pos = None;
                                 break;
@@ -296,12 +333,13 @@ impl Rustoku {
                 }
             }
 
-            // Check boxes
+            // Boxes
             for box_idx in 0..9 {
                 let box_r = (box_idx / 3) * 3;
                 let box_c = (box_idx % 3) * 3;
                 for num in 1..=9 {
-                    if self.box_masks[box_idx] & (1 << (num - 1)) != 0 {
+                    let bit = 1 << (num - 1);
+                    if self.box_masks[box_idx] & bit != 0 {
                         continue;
                     }
                     let mut pos = None;
@@ -309,7 +347,10 @@ impl Rustoku {
                         for dc in 0..3 {
                             let r = box_r + dr;
                             let c = box_c + dc;
-                            if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                            if self.board[r][c] == 0
+                                && self.row_masks[r] & bit == 0
+                                && self.col_masks[c] & bit == 0
+                            {
                                 if pos.is_some() {
                                     pos = None;
                                     break;
@@ -328,10 +369,6 @@ impl Rustoku {
                     }
                 }
             }
-
-            if !changed {
-                break;
-            }
         }
         progress
     }
@@ -342,39 +379,41 @@ impl Rustoku {
     /// Updates the `path` with any numbers placed by propagation.
     fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
         loop {
-            let mut changed_this_iteration = false;
-
-            // Apply naked singles
             let singles = self.naked_singles();
-            if !singles.is_empty() {
-                for &(r, c, num) in &singles {
-                    path.push((r, c, num));
-                }
-                changed_this_iteration = true;
-            }
-
-            // Apply hidden singles
             let hidden = self.hidden_singles();
-            if !hidden.is_empty() {
-                for &(r, c, num) in &hidden {
-                    path.push((r, c, num));
-                }
-                changed_this_iteration = true;
+            let changed = !singles.is_empty() || !hidden.is_empty();
+
+            for &(r, c, num) in singles.iter().chain(hidden.iter()) {
+                path.push((r, c, num));
             }
 
-            // Check for immediate contradiction after propagation (e.g., a cell with no possible values)
-            if self.board.iter().flatten().any(|&val| val == 0) {
-                if (0..9).any(|r| (0..9).any(|c| self.board[r][c] == 0 && (1..=9).filter(|&n| self.is_safe(r, c, n)).count() == 0)) {
-                    // Found an empty cell with no possible values - contradiction!
-                    return false;
+            // Fast contradiction check: for each empty cell, if no possible value, fail
+            for r in 0..9 {
+                for c in 0..9 {
+                    if self.board[r][c] == 0 {
+                        let row_mask = self.row_masks[r];
+                        let col_mask = self.col_masks[c];
+                        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+                        let used = row_mask | col_mask | box_mask;
+                        if used == 0x1FF {
+                            // All 9 bits set, no possible value
+                            // Undo placements made in this propagation
+                            for _ in 0..(singles.len() + hidden.len()) {
+                                if let Some((r, c, num)) = path.pop() {
+                                    self.remove_number(r, c, num);
+                                }
+                            }
+                            return false;
+                        }
+                    }
                 }
             }
 
-            if !changed_this_iteration {
-                break; // No more deductions can be made
+            if !changed {
+                break;
             }
         }
-        true // Propagation successful, no contradictions
+        true
     }
 
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
@@ -384,13 +423,9 @@ impl Rustoku {
         path: &mut Vec<(usize, usize, u8)>,
         bound: usize,
     ) -> usize {
-        // Save the path length before propagation to know how many placements were made
         let path_len_before = path.len();
 
-        // Propagate constraints (naked/hidden singles, etc.)
         if !self.propagate_constraints(path) {
-            // Contradiction found during propagation
-            // Undo all placements made during this propagation
             while path.len() > path_len_before {
                 let (r, c, num) = path.pop().unwrap();
                 self.remove_number(r, c, num);
@@ -398,12 +433,11 @@ impl Rustoku {
             return 0;
         }
 
-        // Start backtracking if there are still empty cells
         let result = if let Some((r, c)) = self.find_next_empty_cell() {
             let mut count = 0;
-            let mut nums: Vec<u8> = (1..=9).collect();
+            let mut nums: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
             nums.shuffle(&mut rng());
-            for num in nums {
+            for &num in &nums {
                 if self.is_safe(r, c, num) {
                     self.place_number(r, c, num);
                     path.push((r, c, num));
@@ -411,7 +445,6 @@ impl Rustoku {
                     path.pop();
                     self.remove_number(r, c, num);
 
-                    // If a bound is set and the number of solutions reaches it, stop further exploration
                     if bound > 0 && solutions.len() >= bound {
                         break;
                     }
@@ -419,7 +452,6 @@ impl Rustoku {
             }
             count
         } else {
-            // If no empty cell, a solution is found. Add it to the list
             solutions.push(RustokuSolution {
                 board: self.board,
                 solve_path: path.clone(),
@@ -427,7 +459,6 @@ impl Rustoku {
             1
         };
 
-        // Undo all placements made during propagation
         while path.len() > path_len_before {
             let (r, c, num) = path.pop().unwrap();
             self.remove_number(r, c, num);
@@ -480,8 +511,17 @@ impl Rustoku {
             .board;
 
         // Shuffle all cell coordinates
-        let mut cells: Vec<(usize, usize)> =
-            (0..9).flat_map(|r| (0..9).map(move |c| (r, c))).collect();
+        let mut cells: [(usize, usize); 81] = {
+            let mut arr = [(0, 0); 81];
+            let mut idx = 0;
+            for r in 0..9 {
+                for c in 0..9 {
+                    arr[idx] = (r, c);
+                    idx += 1;
+                }
+            }
+            arr
+        };
         cells.shuffle(&mut rng());
 
         let mut clues = 81;
