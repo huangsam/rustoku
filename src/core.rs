@@ -211,6 +211,131 @@ impl Rustoku {
         })
     }
 
+    /// Applies the naked singles technique.
+    ///
+    /// This technique fills in cells that have only one possible value.
+    /// Returns a vector of `(row, col, value)` for each placement made.
+    fn naked_singles(&mut self) -> Vec<(usize, usize, u8)> {
+        let mut progress = Vec::new();
+        loop {
+            let mut changed = false;
+            for r in 0..9 {
+                for c in 0..9 {
+                    if self.board[r][c] == 0 {
+                        let singles: Vec<u8> = (1..=9).filter(|&n| self.is_safe(r, c, n)).collect();
+                        if singles.len() == 1 {
+                            let num = singles[0];
+                            self.place_number(r, c, num);
+                            progress.push((r, c, num));
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+        progress
+    }
+
+    /// Applies the hidden singles technique.
+    ///
+    /// This technique fills in cells where a value can only go in one place in a row, column, or box.
+    /// Returns a vector of `(row, col, value)` for each placement made.
+    fn hidden_singles(&mut self) -> Vec<(usize, usize, u8)> {
+        let mut progress = Vec::new();
+        loop {
+            let mut changed = false;
+
+            // Check rows
+            for r in 0..9 {
+                for num in 1..=9 {
+                    if self.row_masks[r] & (1 << (num - 1)) != 0 {
+                        continue;
+                    }
+                    let mut pos = None;
+                    for c in 0..9 {
+                        if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                            if pos.is_some() {
+                                pos = None;
+                                break;
+                            }
+                            pos = Some((r, c));
+                        }
+                    }
+                    if let Some((r, c)) = pos {
+                        self.place_number(r, c, num);
+                        progress.push((r, c, num));
+                        changed = true;
+                    }
+                }
+            }
+
+            // Check columns
+            for c in 0..9 {
+                for num in 1..=9 {
+                    if self.col_masks[c] & (1 << (num - 1)) != 0 {
+                        continue;
+                    }
+                    let mut pos = None;
+                    for r in 0..9 {
+                        if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                            if pos.is_some() {
+                                pos = None;
+                                break;
+                            }
+                            pos = Some((r, c));
+                        }
+                    }
+                    if let Some((r, c)) = pos {
+                        self.place_number(r, c, num);
+                        progress.push((r, c, num));
+                        changed = true;
+                    }
+                }
+            }
+
+            // Check boxes
+            for box_idx in 0..9 {
+                let box_r = (box_idx / 3) * 3;
+                let box_c = (box_idx % 3) * 3;
+                for num in 1..=9 {
+                    if self.box_masks[box_idx] & (1 << (num - 1)) != 0 {
+                        continue;
+                    }
+                    let mut pos = None;
+                    for dr in 0..3 {
+                        for dc in 0..3 {
+                            let r = box_r + dr;
+                            let c = box_c + dc;
+                            if self.board[r][c] == 0 && self.is_safe(r, c, num) {
+                                if pos.is_some() {
+                                    pos = None;
+                                    break;
+                                }
+                                pos = Some((r, c));
+                            }
+                        }
+                        if pos.is_none() {
+                            break;
+                        }
+                    }
+                    if let Some((r, c)) = pos {
+                        self.place_number(r, c, num);
+                        progress.push((r, c, num));
+                        changed = true;
+                    }
+                }
+            }
+
+            if !changed {
+                break;
+            }
+        }
+        progress
+    }
+
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
     fn solve_until_recursive(
         &mut self,
@@ -218,7 +343,19 @@ impl Rustoku {
         path: &mut Vec<(usize, usize, u8)>,
         bound: usize,
     ) -> usize {
-        if let Some((r, c)) = self.find_next_empty_cell() {
+        // Apply naked singles
+        let singles = self.naked_singles();
+        for &(r, c, num) in &singles {
+            path.push((r, c, num));
+        }
+        // Apply hidden singles
+        let hidden = self.hidden_singles();
+        for &(r, c, num) in &hidden {
+            path.push((r, c, num));
+        }
+
+        // Start backtracking if there are still empty cells
+        let result = if let Some((r, c)) = self.find_next_empty_cell() {
             let mut count = 0;
             let mut nums: Vec<u8> = (1..=9).collect();
             nums.shuffle(&mut rng());
@@ -232,7 +369,7 @@ impl Rustoku {
 
                     // If a bound is set and the number of solutions reaches it, stop further exploration
                     if bound > 0 && solutions.len() >= bound {
-                        return count;
+                        break;
                     }
                 }
             }
@@ -244,7 +381,20 @@ impl Rustoku {
                 solve_path: path.clone(),
             });
             1
+        };
+
+        // Undo hidden singles from path
+        for _ in 0..hidden.len() {
+            let (r, c, num) = path.pop().unwrap();
+            self.remove_number(r, c, num);
         }
+        // Undo naked singles from path
+        for _ in 0..singles.len() {
+            let (r, c, num) = path.pop().unwrap();
+            self.remove_number(r, c, num);
+        }
+
+        result
     }
 
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
