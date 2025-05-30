@@ -279,7 +279,11 @@ impl Rustoku {
     ///
     /// Returns `true` if propagation was successful (no contradiction), `false` otherwise.
     /// Updates the `path` with any numbers placed by propagation.
-    fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>, path_len_before: usize) -> bool {
+    fn propagate_constraints(
+        &mut self,
+        path: &mut Vec<(usize, usize, u8)>,
+        path_len_before: usize,
+    ) -> bool {
         loop {
             let changed = self.naked_singles(path) | self.hidden_singles(path);
 
