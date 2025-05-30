@@ -162,31 +162,22 @@ impl Rustoku {
         let bit_to_remove = 1 << (num - 1);
         let box_idx = Self::get_box_idx(placed_r, placed_c);
 
-        // Update row
-        for c in 0..9 {
-            if self.board[placed_r][c] == 0 {
-                self.candidates[placed_r][c] &= !bit_to_remove;
+        // Helper to update candidates for a cell
+        let mut update_cell = |r: usize, c: usize| {
+            if self.board[r][c] == 0 {
+                self.candidates[r][c] &= !bit_to_remove;
             }
-        }
+        };
 
-        // Update column
-        for r in 0..9 {
-            if self.board[r][placed_c] == 0 {
-                self.candidates[r][placed_c] &= !bit_to_remove;
-            }
-        }
+        // Update row, column and box
+        for i in 0..9 {
+            update_cell(placed_r, i); // row
+            update_cell(i, placed_c); // column
 
-        // Update box
-        let box_start_r = (box_idx / 3) * 3;
-        let box_start_c = (box_idx % 3) * 3;
-        for dr in 0..3 {
-            for dc in 0..3 {
-                let r = box_start_r + dr;
-                let c = box_start_c + dc;
-                if self.board[r][c] == 0 {
-                    self.candidates[r][c] &= !bit_to_remove;
-                }
-            }
+            // Update box (converting from 1D to 2D coordinates)
+            let box_r = (box_idx / 3) * 3 + (i / 3);
+            let box_c = (box_idx % 3) * 3 + (i % 3);
+            update_cell(box_r, box_c);
         }
     }
 
@@ -209,48 +200,32 @@ impl Rustoku {
 
     /// Restores potential candidates in cells affected by removing a number.
     fn restore_affected_candidates(&mut self, removed_r: usize, removed_c: usize, num: u8) {
-        let bit = 1 << (num - 1);
+        let bit_to_restore = 1 << (num - 1);
         let box_idx = Self::get_box_idx(removed_r, removed_c);
 
-        // Helper to check if a cell can have num as a candidate
-        let can_have_candidate = |r: usize, c: usize, self_: &Self| -> bool {
-            if self_.board[r][c] != 0 {
-                return false;
-            }
+        // Helper to restore candidates for a cell
+        let mut restore_cell = |r: usize, c: usize| {
+            if self.board[r][c] == 0 {
+                // Check if the cell can have this number as a candidate
+                let row_has_num = self.row_masks[r] & bit_to_restore != 0;
+                let col_has_num = self.col_masks[c] & bit_to_restore != 0;
+                let box_has_num = self.box_masks[Self::get_box_idx(r, c)] & bit_to_restore != 0;
 
-            // Check if num is not present in row, column, or box
-            let row_has_num = self_.row_masks[r] & bit != 0;
-            let col_has_num = self_.col_masks[c] & bit != 0;
-            let box_has_num = self_.box_masks[Self::get_box_idx(r, c)] & bit != 0;
-
-            !row_has_num && !col_has_num && !box_has_num
-        };
-
-        // Update row
-        for c in 0..9 {
-            if can_have_candidate(removed_r, c, self) {
-                self.candidates[removed_r][c] |= bit;
-            }
-        }
-
-        // Update column
-        for r in 0..9 {
-            if can_have_candidate(r, removed_c, self) {
-                self.candidates[r][removed_c] |= bit;
-            }
-        }
-
-        // Update box
-        let box_start_r = (box_idx / 3) * 3;
-        let box_start_c = (box_idx % 3) * 3;
-        for dr in 0..3 {
-            for dc in 0..3 {
-                let r = box_start_r + dr;
-                let c = box_start_c + dc;
-                if can_have_candidate(r, c, self) {
-                    self.candidates[r][c] |= bit;
+                if !row_has_num && !col_has_num && !box_has_num {
+                    self.candidates[r][c] |= bit_to_restore;
                 }
             }
+        };
+
+        // Update row, column and box
+        for i in 0..9 {
+            restore_cell(removed_r, i); // row
+            restore_cell(i, removed_c); // column
+
+            // Update box (converting from 1D to 2D coordinates)
+            let box_r = (box_idx / 3) * 3 + (i / 3);
+            let box_c = (box_idx % 3) * 3 + (i % 3);
+            restore_cell(box_r, box_c);
         }
     }
 
