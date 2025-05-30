@@ -177,149 +177,150 @@ impl Rustoku {
         min_cell
     }
 
+    /// Returns a bitmask of possible candidates for a given empty cell.
+    ///
+    /// Assumes that `board[r][c] == 0`.
+    fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
+        let row_mask = self.row_masks[r];
+        let col_mask = self.col_masks[c];
+        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+        let used = row_mask | col_mask | box_mask;
+        // 0x1FF is 111111111 in binary (all 9 bits set)
+        // Inverting used and ANDing with 0x1FF gives us the available candidates.
+        !used & 0x1FF
+    }
+
     /// Applies the naked singles technique.
     ///
     /// This technique fills in cells that have only one possible value.
-    /// Returns a vector of `(row, col, value)` for each placement made.
-    fn naked_singles(&mut self) -> Vec<(usize, usize, u8)> {
+    /// Returns true if any placements were made.
+    fn naked_singles(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut changed = false;
         let mut progress = Vec::new();
-        let mut changed = true;
-        while changed {
-            changed = false;
-            for r in 0..9 {
-                for c in 0..9 {
-                    if self.board[r][c] == 0 {
-                        let row_mask = self.row_masks[r];
-                        let col_mask = self.col_masks[c];
-                        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
-                        let used = row_mask | col_mask | box_mask;
-                        let mut singles = 0;
-                        let mut single_num = 0;
-                        for num in 1..=9 {
-                            if used & (1 << (num - 1)) == 0 {
-                                singles += 1;
-                                single_num = num;
-                                if singles > 1 {
-                                    break;
-                                }
-                            }
-                        }
-                        if singles == 1 {
-                            self.place_number(r, c, single_num);
-                            progress.push((r, c, single_num));
-                            changed = true;
-                        }
+        for r in 0..9 {
+            for c in 0..9 {
+                if self.board[r][c] == 0 {
+                    let mask = self.get_possible_candidates_mask(r, c);
+                    if mask.count_ones() == 1 {
+                        let num = mask.trailing_zeros() as u8 + 1;
+                        self.place_number(r, c, num);
+                        progress.push((r, c, num));
+                        changed = true;
                     }
                 }
             }
         }
-        progress
+        for (r, c, num) in progress {
+            path.push((r, c, num));
+        }
+        changed
     }
 
     /// Applies the hidden singles technique.
     ///
     /// This technique fills in cells where a value can only go in one place in a row, column, or box.
-    /// Returns a vector of `(row, col, value)` for each placement made.
-    fn hidden_singles(&mut self) -> Vec<(usize, usize, u8)> {
+    /// Returns true if any placements were made.
+    fn hidden_singles(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut changed = false;
         let mut progress = Vec::new();
-        let mut changed = true;
-        while changed {
-            changed = false;
 
-            // Rows
-            for r in 0..9 {
-                for num in 1..=9 {
-                    let bit = 1 << (num - 1);
-                    if self.row_masks[r] & bit != 0 {
-                        continue;
-                    }
-                    let mut pos = None;
-                    for c in 0..9 {
-                        if self.board[r][c] == 0
-                            && self.col_masks[c] & bit == 0
-                            && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
-                        {
-                            if pos.is_some() {
-                                pos = None;
-                                break;
-                            }
-                            pos = Some((r, c));
-                        }
-                    }
-                    if let Some((r, c)) = pos {
-                        self.place_number(r, c, num);
-                        progress.push((r, c, num));
-                        changed = true;
-                    }
+        // Rows
+        for r in 0..9 {
+            for num in 1..=9 {
+                let bit = 1 << (num - 1);
+                if self.row_masks[r] & bit != 0 {
+                    continue;
                 }
-            }
-
-            // Columns
-            for c in 0..9 {
-                for num in 1..=9 {
-                    let bit = 1 << (num - 1);
-                    if self.col_masks[c] & bit != 0 {
-                        continue;
-                    }
-                    let mut pos = None;
-                    for r in 0..9 {
-                        if self.board[r][c] == 0
-                            && self.row_masks[r] & bit == 0
-                            && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
-                        {
-                            if pos.is_some() {
-                                pos = None;
-                                break;
-                            }
-                            pos = Some((r, c));
-                        }
-                    }
-                    if let Some((r, c)) = pos {
-                        self.place_number(r, c, num);
-                        progress.push((r, c, num));
-                        changed = true;
-                    }
-                }
-            }
-
-            // Boxes
-            for box_idx in 0..9 {
-                let box_r = (box_idx / 3) * 3;
-                let box_c = (box_idx % 3) * 3;
-                for num in 1..=9 {
-                    let bit = 1 << (num - 1);
-                    if self.box_masks[box_idx] & bit != 0 {
-                        continue;
-                    }
-                    let mut pos = None;
-                    for dr in 0..3 {
-                        for dc in 0..3 {
-                            let r = box_r + dr;
-                            let c = box_c + dc;
-                            if self.board[r][c] == 0
-                                && self.row_masks[r] & bit == 0
-                                && self.col_masks[c] & bit == 0
-                            {
-                                if pos.is_some() {
-                                    pos = None;
-                                    break;
-                                }
-                                pos = Some((r, c));
-                            }
-                        }
-                        if pos.is_none() {
+                let mut pos = None;
+                for c in 0..9 {
+                    if self.board[r][c] == 0
+                        && self.col_masks[c] & bit == 0
+                        && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
+                    {
+                        if pos.is_some() {
+                            pos = None;
                             break;
                         }
+                        pos = Some((r, c));
                     }
-                    if let Some((r, c)) = pos {
-                        self.place_number(r, c, num);
-                        progress.push((r, c, num));
-                        changed = true;
-                    }
+                }
+                if let Some((r, c)) = pos {
+                    self.place_number(r, c, num);
+                    progress.push((r, c, num));
+                    changed = true;
                 }
             }
         }
-        progress
+
+        // Columns
+        for c in 0..9 {
+            for num in 1..=9 {
+                let bit = 1 << (num - 1);
+                if self.col_masks[c] & bit != 0 {
+                    continue;
+                }
+                let mut pos = None;
+                for r in 0..9 {
+                    if self.board[r][c] == 0
+                        && self.row_masks[r] & bit == 0
+                        && self.box_masks[Self::get_box_idx(r, c)] & bit == 0
+                    {
+                        if pos.is_some() {
+                            pos = None;
+                            break;
+                        }
+                        pos = Some((r, c));
+                    }
+                }
+                if let Some((r, c)) = pos {
+                    self.place_number(r, c, num);
+                    progress.push((r, c, num));
+                    changed = true;
+                }
+            }
+        }
+
+        // Boxes
+        for box_idx in 0..9 {
+            let box_r = (box_idx / 3) * 3;
+            let box_c = (box_idx % 3) * 3;
+            for num in 1..=9 {
+                let bit = 1 << (num - 1);
+                if self.box_masks[box_idx] & bit != 0 {
+                    continue;
+                }
+                let mut pos = None;
+                for dr in 0..3 {
+                    for dc in 0..3 {
+                        let r = box_r + dr;
+                        let c = box_c + dc;
+                        if self.board[r][c] == 0
+                            && self.row_masks[r] & bit == 0
+                            && self.col_masks[c] & bit == 0
+                        {
+                            if pos.is_some() {
+                                pos = None;
+                                break;
+                            }
+                            pos = Some((r, c));
+                        }
+                    }
+                    if pos.is_none() {
+                        break;
+                    }
+                }
+                if let Some((r, c)) = pos {
+                    self.place_number(r, c, num);
+                    progress.push((r, c, num));
+                    changed = true;
+                }
+            }
+        }
+
+        for (r, c, num) in progress {
+            path.push((r, c, num));
+        }
+        changed
     }
 
     /// Helper function to apply all deterministic constraint propagation strategies.
@@ -328,29 +329,19 @@ impl Rustoku {
     /// Updates the `path` with any numbers placed by propagation.
     fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
         loop {
-            let singles = self.naked_singles();
-            let hidden = self.hidden_singles();
-            let changed = !singles.is_empty() || !hidden.is_empty();
-
-            for &(r, c, num) in singles.iter().chain(hidden.iter()) {
-                path.push((r, c, num));
-            }
+            let mut changed = false;
+            changed |= self.naked_singles(path);
+            changed |= self.hidden_singles(path);
 
             // Fast contradiction check: for each empty cell, if no possible value, fail
             for r in 0..9 {
                 for c in 0..9 {
                     if self.board[r][c] == 0 {
-                        let row_mask = self.row_masks[r];
-                        let col_mask = self.col_masks[c];
-                        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
-                        let used = row_mask | col_mask | box_mask;
-                        if used == 0x1FF {
-                            // All 9 bits set, no possible value
+                        let mask = self.get_possible_candidates_mask(r, c);
+                        if mask == 0 {
                             // Undo placements made in this propagation
-                            for _ in 0..(singles.len() + hidden.len()) {
-                                if let Some((r, c, num)) = path.pop() {
-                                    self.remove_number(r, c, num);
-                                }
+                            while let Some((r, c, num)) = path.pop() {
+                                self.remove_number(r, c, num);
                             }
                             return false;
                         }
