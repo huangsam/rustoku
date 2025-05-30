@@ -149,37 +149,27 @@ impl Rustoku {
 
     /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
-        let mut min_count = 10;
-        let mut min_cell = None;
+        let mut min = (10, None);
         for r in 0..9 {
             for c in 0..9 {
                 if self.board[r][c] == 0 {
-                    let mut count = 0;
-                    let row_mask = self.row_masks[r];
-                    let col_mask = self.col_masks[c];
-                    let box_mask = self.box_masks[Self::get_box_idx(r, c)];
-                    let used = row_mask | col_mask | box_mask;
-                    for num in 1..=9 {
-                        if used & (1 << (num - 1)) == 0 {
-                            count += 1;
-                        }
-                    }
-                    if count < min_count {
-                        min_count = count;
-                        min_cell = Some((r, c));
-                        if min_count == 1 {
-                            return min_cell;
+                    let count = self.get_possible_candidates_mask(r, c).count_ones() as u8;
+                    if count < min.0 {
+                        min = (count, Some((r, c)));
+                        if count == 1 {
+                            return min.1;
                         }
                     }
                 }
             }
         }
-        min_cell
+        min.1
     }
 
     /// Returns a bitmask of possible candidates for a given empty cell.
     ///
-    /// Assumes that `board[r][c] == 0`.
+    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
+    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
     fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
