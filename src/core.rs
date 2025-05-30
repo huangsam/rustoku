@@ -147,6 +147,20 @@ impl Rustoku {
         self.box_masks[box_idx] &= !bit_to_unset;
     }
 
+    /// Returns a bitmask of possible candidates for a given empty cell.
+    ///
+    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
+    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
+    fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
+        let row_mask = self.row_masks[r];
+        let col_mask = self.col_masks[c];
+        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+        let used = row_mask | col_mask | box_mask;
+        // 0x1FF is 111111111 in binary (all 9 bits set)
+        // Inverting used and ANDing with 0x1FF gives us the available candidates.
+        !used & 0x1FF
+    }
+
     /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         let mut min = (10, None);
@@ -164,20 +178,6 @@ impl Rustoku {
             }
         }
         min.1
-    }
-
-    /// Returns a bitmask of possible candidates for a given empty cell.
-    ///
-    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
-    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
-    fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
-        let row_mask = self.row_masks[r];
-        let col_mask = self.col_masks[c];
-        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
-        let used = row_mask | col_mask | box_mask;
-        // 0x1FF is 111111111 in binary (all 9 bits set)
-        // Inverting used and ANDing with 0x1FF gives us the available candidates.
-        !used & 0x1FF
     }
 
     /// Applies the naked singles technique.
