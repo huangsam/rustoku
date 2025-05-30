@@ -336,6 +336,47 @@ impl Rustoku {
         progress
     }
 
+    /// Helper function to apply all deterministic constraint propagation strategies.
+    ///
+    /// Returns `true` if propagation was successful (no contradiction), `false` otherwise.
+    /// Updates the `path` with any numbers placed by propagation.
+    fn propagate_constraints(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        loop {
+            let mut changed_this_iteration = false;
+
+            // Apply naked singles
+            let singles = self.naked_singles();
+            if !singles.is_empty() {
+                for &(r, c, num) in &singles {
+                    path.push((r, c, num));
+                }
+                changed_this_iteration = true;
+            }
+
+            // Apply hidden singles
+            let hidden = self.hidden_singles();
+            if !hidden.is_empty() {
+                for &(r, c, num) in &hidden {
+                    path.push((r, c, num));
+                }
+                changed_this_iteration = true;
+            }
+
+            // Check for immediate contradiction after propagation (e.g., a cell with no possible values)
+            if self.board.iter().flatten().any(|&val| val == 0) {
+                if (0..9).any(|r| (0..9).any(|c| self.board[r][c] == 0 && (1..=9).filter(|&n| self.is_safe(r, c, n)).count() == 0)) {
+                    // Found an empty cell with no possible values - contradiction!
+                    return false;
+                }
+            }
+
+            if !changed_this_iteration {
+                break; // No more deductions can be made
+            }
+        }
+        true // Propagation successful, no contradictions
+    }
+
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
     fn solve_until_recursive(
         &mut self,
@@ -343,15 +384,18 @@ impl Rustoku {
         path: &mut Vec<(usize, usize, u8)>,
         bound: usize,
     ) -> usize {
-        // Apply naked singles
-        let singles = self.naked_singles();
-        for &(r, c, num) in &singles {
-            path.push((r, c, num));
-        }
-        // Apply hidden singles
-        let hidden = self.hidden_singles();
-        for &(r, c, num) in &hidden {
-            path.push((r, c, num));
+        // Save the path length before propagation to know how many placements were made
+        let path_len_before = path.len();
+
+        // Propagate constraints (naked/hidden singles, etc.)
+        if !self.propagate_constraints(path) {
+            // Contradiction found during propagation
+            // Undo all placements made during this propagation
+            while path.len() > path_len_before {
+                let (r, c, num) = path.pop().unwrap();
+                self.remove_number(r, c, num);
+            }
+            return 0;
         }
 
         // Start backtracking if there are still empty cells
@@ -383,13 +427,8 @@ impl Rustoku {
             1
         };
 
-        // Undo hidden singles from path
-        for _ in 0..hidden.len() {
-            let (r, c, num) = path.pop().unwrap();
-            self.remove_number(r, c, num);
-        }
-        // Undo naked singles from path
-        for _ in 0..singles.len() {
+        // Undo all placements made during propagation
+        while path.len() > path_len_before {
             let (r, c, num) = path.pop().unwrap();
             self.remove_number(r, c, num);
         }
