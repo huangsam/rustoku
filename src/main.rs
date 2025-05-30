@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, RustokuError};
+use rustoku::core::Rustoku;
+use rustoku::error::RustokuError;
 use rustoku::format::print_board;
 
 #[derive(Parser, Debug)]

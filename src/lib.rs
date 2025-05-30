@@ -10,4 +10,6 @@
 //! board as well as the one-line representation for easy copying and pasting.
 
 pub mod core;
+pub mod error;
 pub mod format;
+pub mod solution;

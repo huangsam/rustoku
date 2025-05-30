@@ -7,61 +7,10 @@
 //! This module also defines `RustokuSolution` for representing solved boards, along with their
 //! solve paths, and `RustokuError` for handling errors like invalid inputs.
 
-use std::fmt;
-
-use super::format::*;
+use crate::error::RustokuError;
+use crate::solution::RustokuSolution;
 use rand::rng;
 use rand::seq::SliceRandom;
-use thiserror::Error;
-
-/// Represents the types of errors that can occur while working with Sudoku puzzles.
-///
-/// This enum defines various error cases that can occur while working with Sudoku puzzles:
-/// - The number of clues provided for puzzle generation is not between 17 and 81
-/// - The input string does not contain exactly 81 characters
-/// - The input string contains characters other than digits `0-9` or `.` or `_`
-/// - The initial board contains duplicate values in rows, columns, or 3x3 boxes
-#[derive(Debug, Error)]
-pub enum RustokuError {
-    #[error("Clues must be between 17 and 81 for a valid Sudoku puzzle")]
-    InvalidClueCount,
-    #[error("Input string must be exactly 81 characters long")]
-    InvalidInputLength,
-    #[error("Input string must contain only digits '0'-'9'")]
-    InvalidInputCharacter,
-    #[error("Initial board contains duplicates")]
-    DuplicateValues,
-}
-
-/// Represents a solved Sudoku board and the solution path.
-///
-/// Most of the time, users just want to see the solved board, but this struct also
-/// provides the sequence of moves that led to the solution, which can be useful for debugging
-/// or understanding the solving process.
-#[derive(Debug, Clone)]
-pub struct RustokuSolution {
-    /// The solved Sudoku board, represented as a 2D array
-    pub board: [[u8; 9]; 9],
-    /// The sequence of moves (row, col, value) made to reach the solution
-    pub solve_path: Vec<(usize, usize, u8)>,
-}
-
-/// Formats the board and solve path into a human-readable string representation.
-///
-/// First we format the board into a grid representation and line format.
-/// Then we format the solve path into a string representation of moves.
-impl fmt::Display for RustokuSolution {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{}", format_grid(&self.board).join("\n"))?;
-        writeln!(f, "Line format: {}", format_line(&self.board))?;
-        writeln!(
-            f,
-            "Solve path:\n{}",
-            format_solve_path(&self.solve_path).join("\n")
-        )?;
-        Ok(())
-    }
-}
 
 /// A core Sudoku primitive that uses backtracking and bitmasking for constraints.
 ///
