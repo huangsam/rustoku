@@ -55,6 +55,8 @@ pub struct Rustoku {
     col_masks: [u16; 9],
     /// Bitmask to track used numbers in each 3x3 box (1-9 mapped to bits 0-8)
     box_masks: [u16; 9],
+    /// Candidate mask for each cell (1-9 mapped to bits 0-8, with 1 indicating a valid candidate)
+    candidates: [[u16; 9]; 9],
 }
 
 impl TryFrom<[u8; 81]> for Rustoku {
@@ -95,6 +97,7 @@ impl Rustoku {
             row_masks: [0; 9],
             col_masks: [0; 9],
             box_masks: [0; 9],
+            candidates: [[0x1FF; 9]; 9], // Initialize all cells with all candidates (0x1FF = 111111111 in binary)
         };
 
         // Initialize the masks based on the given initial board
@@ -107,6 +110,18 @@ impl Rustoku {
                 rustoku.place_number(r, c, num);
             }
         }
+
+        // Initialize the candidates for all empty cells
+        for r in 0..9 {
+            for c in 0..9 {
+                if rustoku.board[r][c] == 0 {
+                    rustoku.candidates[r][c] = rustoku.compute_candidates_mask(r, c);
+                } else {
+                    rustoku.candidates[r][c] = 0; // No candidates for filled cells
+                }
+            }
+        }
+
         Ok(rustoku)
     }
 
@@ -134,6 +149,45 @@ impl Rustoku {
         self.row_masks[r] |= bit_to_set;
         self.col_masks[c] |= bit_to_set;
         self.box_masks[box_idx] |= bit_to_set;
+
+        // This cell has no candidates now
+        self.candidates[r][c] = 0;
+
+        // Update candidates for affected cells in the same row, column, and box
+        self.update_affected_candidates(r, c, num);
+    }
+
+    /// Updates the candidates for all cells affected by placing a number.
+    fn update_affected_candidates(&mut self, placed_r: usize, placed_c: usize, num: u8) {
+        let bit_to_remove = 1 << (num - 1);
+        let box_idx = Self::get_box_idx(placed_r, placed_c);
+
+        // Update row
+        for c in 0..9 {
+            if self.board[placed_r][c] == 0 {
+                self.candidates[placed_r][c] &= !bit_to_remove;
+            }
+        }
+
+        // Update column
+        for r in 0..9 {
+            if self.board[r][placed_c] == 0 {
+                self.candidates[r][placed_c] &= !bit_to_remove;
+            }
+        }
+
+        // Update box
+        let box_start_r = (box_idx / 3) * 3;
+        let box_start_c = (box_idx % 3) * 3;
+        for dr in 0..3 {
+            for dc in 0..3 {
+                let r = box_start_r + dr;
+                let c = box_start_c + dc;
+                if self.board[r][c] == 0 {
+                    self.candidates[r][c] &= !bit_to_remove;
+                }
+            }
+        }
     }
 
     /// Removes a number from the Sudoku board and updates the masks accordingly.
@@ -145,19 +199,71 @@ impl Rustoku {
         self.row_masks[r] &= !bit_to_unset;
         self.col_masks[c] &= !bit_to_unset;
         self.box_masks[box_idx] &= !bit_to_unset;
+
+        // Recompute candidates for this cell
+        self.candidates[r][c] = self.compute_candidates_mask(r, c);
+
+        // Restore potential candidates in affected cells
+        self.restore_affected_candidates(r, c, num);
     }
 
-    /// Returns a bitmask of possible candidates for a given empty cell.
+    /// Restores potential candidates in cells affected by removing a number.
+    fn restore_affected_candidates(&mut self, removed_r: usize, removed_c: usize, num: u8) {
+        let bit = 1 << (num - 1);
+        let box_idx = Self::get_box_idx(removed_r, removed_c);
+
+        // Helper to check if a cell can have num as a candidate
+        let can_have_candidate = |r: usize, c: usize, self_: &Self| -> bool {
+            if self_.board[r][c] != 0 {
+                return false;
+            }
+
+            // Check if num is not present in row, column, or box
+            let row_has_num = self_.row_masks[r] & bit != 0;
+            let col_has_num = self_.col_masks[c] & bit != 0;
+            let box_has_num = self_.box_masks[Self::get_box_idx(r, c)] & bit != 0;
+
+            !row_has_num && !col_has_num && !box_has_num
+        };
+
+        // Update row
+        for c in 0..9 {
+            if can_have_candidate(removed_r, c, self) {
+                self.candidates[removed_r][c] |= bit;
+            }
+        }
+
+        // Update column
+        for r in 0..9 {
+            if can_have_candidate(r, removed_c, self) {
+                self.candidates[r][removed_c] |= bit;
+            }
+        }
+
+        // Update box
+        let box_start_r = (box_idx / 3) * 3;
+        let box_start_c = (box_idx % 3) * 3;
+        for dr in 0..3 {
+            for dc in 0..3 {
+                let r = box_start_r + dr;
+                let c = box_start_c + dc;
+                if can_have_candidate(r, c, self) {
+                    self.candidates[r][c] |= bit;
+                }
+            }
+        }
+    }
+
+    /// Computes the bitmask of possible candidates for a given empty cell.
     ///
-    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
-    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
-    fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
+    /// This method combines the row, column, and box masks, inverting and masking
+    /// with `0x1FF` to keep only the lower 9 bits.
+    fn compute_candidates_mask(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
         let box_mask = self.box_masks[Self::get_box_idx(r, c)];
         let used = row_mask | col_mask | box_mask;
         // 0x1FF is 111111111 in binary (all 9 bits set)
-        // Inverting used and ANDing with 0x1FF gives us the available candidates.
         !used & 0x1FF
     }
 
@@ -167,7 +273,7 @@ impl Rustoku {
         for r in 0..9 {
             for c in 0..9 {
                 if self.board[r][c] == 0 {
-                    let count = self.get_possible_candidates_mask(r, c).count_ones() as u8;
+                    let count = self.candidates[r][c].count_ones() as u8;
                     if count < min.0 {
                         min = (count, Some((r, c)));
                         if count == 1 {
@@ -190,7 +296,7 @@ impl Rustoku {
         for r in 0..9 {
             for c in 0..9 {
                 if self.board[r][c] == 0 {
-                    let mask = self.get_possible_candidates_mask(r, c);
+                    let mask = self.candidates[r][c];
                     if mask.count_ones() == 1 {
                         let num = mask.trailing_zeros() as u8 + 1;
                         self.place_number(r, c, num);
@@ -227,8 +333,7 @@ impl Rustoku {
                     if self.board[r][c] == 0 {
                         // If cell is empty
                         // Check if 'num_val' is a possible candidate in this cell
-                        let possible_candidates_mask = self.get_possible_candidates_mask(r, c);
-                        if possible_candidates_mask & bit != 0 {
+                        if self.candidates[r][c] & bit != 0 {
                             count += 1;
                             found_pos = Some((r, c)); // Store the last valid position found
                         }
@@ -275,6 +380,176 @@ impl Rustoku {
         changed
     }
 
+    /// Applies the naked pairs technique.
+    ///
+    /// This technique identifies pairs of cells in a unit (row, column, or box)
+    /// that have exactly the same two candidates and removes those candidates
+    /// from all other cells in that unit.
+    /// Returns true if any placements were made.
+    fn naked_pairs(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut changed = false;
+
+        // Helper to process a unit (row, column, or box)
+        let mut process_unit = |cells: &[(usize, usize)]| {
+            let mut empty_cells: Vec<(usize, usize, u16)> = Vec::new(); // (r, c, candidates mask)
+            for &(r, c) in cells {
+                if self.board[r][c] == 0 {
+                    empty_cells.push((r, c, self.candidates[r][c]));
+                }
+            }
+
+            for i in 0..empty_cells.len() {
+                let (r1, c1, mask1) = empty_cells[i];
+                if mask1.count_ones() == 2 {
+                    // Exactly two candidates
+                    for j in i + 1..empty_cells.len() {
+                        let (r2, c2, mask2) = empty_cells[j];
+                        if mask1 == mask2 && (r1, c1) != (r2, c2) {
+                            // Same mask and different cells
+                            // Remove these candidates from other cells in the unit
+                            let pair_mask = mask1; // The two candidates
+                            for &(r_other, c_other, _) in empty_cells.iter() {
+                                if (r_other, c_other) != (r1, c1) && (r_other, c_other) != (r2, c2)
+                                {
+                                    let original_mask = self.candidates[r_other][c_other];
+                                    self.candidates[r_other][c_other] &= !pair_mask; // Remove candidates
+                                    if self.candidates[r_other][c_other] != original_mask {
+                                        changed = true; // Candidates were removed
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Check rows
+        for r in 0..9 {
+            let cells: Vec<(usize, usize)> = (0..9).map(|c| (r, c)).collect();
+            process_unit(&cells);
+        }
+
+        // Check columns
+        for c in 0..9 {
+            let cells: Vec<(usize, usize)> = (0..9).map(|r| (r, c)).collect();
+            process_unit(&cells);
+        }
+
+        // Check boxes
+        for box_idx in 0..9 {
+            let mut cells: Vec<(usize, usize)> = Vec::new();
+            let start_r = (box_idx / 3) * 3;
+            let start_c = (box_idx % 3) * 3;
+            for dr in 0..3 {
+                for dc in 0..3 {
+                    cells.push((start_r + dr, start_c + dc));
+                }
+            }
+            process_unit(&cells);
+        }
+
+        // After eliminating candidates, check for new naked singles
+        if changed {
+            self.naked_singles(path); // This will place any new singles
+        }
+
+        changed
+    }
+
+    /// Applies the hidden pairs technique.
+    ///
+    /// This technique identifies pairs of candidates in a unit (row, column, or box)
+    /// that can only appear in exactly two cells and removes all other candidates
+    /// from those cells.
+    /// Returns true if any candidates were eliminated.
+    fn hidden_pairs(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut changed = false;
+
+        // Helper to process a unit (row, column, or box)
+        let mut process_unit = |cells: &[(usize, usize)]| {
+            let mut empty_cells: Vec<(usize, usize, u16)> = Vec::new(); // (r, c, candidates mask)
+            for &(r, c) in cells {
+                if self.board[r][c] == 0 {
+                    empty_cells.push((r, c, self.candidates[r][c]));
+                }
+            }
+
+            let mut candidate_positions: [Vec<(usize, usize)>; 9] =
+                std::array::from_fn(|_| Vec::new()); // For each number 1-9
+
+            for &(r, c, mask) in &empty_cells {
+                for num in 1..=9 {
+                    if (mask & (1 << (num - 1))) != 0 {
+                        candidate_positions[num - 1].push((r, c));
+                    }
+                }
+            }
+
+            for pair_num in 0..7 {
+                // Only need to check up to 7 for pairs (1-9, but pairs are two numbers)
+                for next_num in pair_num + 1..9 {
+                    // Pairs of numbers
+                    let num1 = pair_num as u8 + 1; // 1-9
+                    let num2 = next_num as u8 + 1; // 1-9
+                    let positions_num1 = &candidate_positions[pair_num];
+                    let positions_num2 = &candidate_positions[next_num];
+
+                    if positions_num1.len() == 2 && positions_num2.len() == 2 {
+                        let common_positions: Vec<_> = positions_num1
+                            .iter()
+                            .filter(|&&(r1, c1)| {
+                                positions_num2.iter().any(|&(r2, c2)| r1 == r2 && c1 == c2)
+                            })
+                            .collect();
+                        if common_positions.len() == 2 {
+                            // Exactly the same two positions for both numbers
+                            let pair_mask = (1 << (num1 - 1)) | (1 << (num2 - 1));
+                            for &(r, c) in common_positions {
+                                let original_mask = self.candidates[r][c];
+                                self.candidates[r][c] &= pair_mask; // Keep only the pair candidates
+                                if self.candidates[r][c] != original_mask {
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Check rows
+        for r in 0..9 {
+            let cells: Vec<(usize, usize)> = (0..9).map(|c| (r, c)).collect();
+            process_unit(&cells);
+        }
+
+        // Check columns
+        for c in 0..9 {
+            let cells: Vec<(usize, usize)> = (0..9).map(|r| (r, c)).collect();
+            process_unit(&cells);
+        }
+
+        // Check boxes
+        for box_idx in 0..9 {
+            let mut cells: Vec<(usize, usize)> = Vec::new();
+            let start_r = (box_idx / 3) * 3;
+            let start_c = (box_idx % 3) * 3;
+            for dr in 0..3 {
+                for dc in 0..3 {
+                    cells.push((start_r + dr, start_c + dc));
+                }
+            }
+            process_unit(&cells);
+        }
+
+        if changed {
+            self.naked_singles(path); // Check for new singles after changes
+        }
+
+        changed
+    }
+
     /// Helper function to apply all deterministic constraint propagation strategies.
     ///
     /// Returns `true` if propagation was successful (no contradiction), `false` otherwise.
@@ -285,12 +560,16 @@ impl Rustoku {
         path_len_before: usize,
     ) -> bool {
         loop {
-            let changed = self.naked_singles(path) | self.hidden_singles(path);
+            let mut changed = false;
+            changed |= self.naked_singles(path);
+            changed |= self.hidden_singles(path);
+            changed |= self.naked_pairs(path);
+            changed |= self.hidden_pairs(path);
 
             // Fast contradiction check: for each empty cell, if no possible value, fail
             for r in 0..9 {
                 for c in 0..9 {
-                    if self.board[r][c] == 0 && self.get_possible_candidates_mask(r, c) == 0 {
+                    if self.board[r][c] == 0 && self.candidates[r][c] == 0 {
                         while path.len() > path_len_before {
                             let (r, c, num) = path.pop().unwrap();
                             self.remove_number(r, c, num);
@@ -322,19 +601,22 @@ impl Rustoku {
 
         let result = if let Some((r, c)) = self.find_next_empty_cell() {
             let mut count = 0;
-            let mut nums: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            let candidates_mask = self.candidates[r][c];
+            let mut nums: Vec<u8> = (0..9)
+                .filter(|&i| candidates_mask & (1 << i) != 0)
+                .map(|i| i + 1)
+                .collect();
             nums.shuffle(&mut rng());
-            for &num in &nums {
-                if self.is_safe(r, c, num) {
-                    self.place_number(r, c, num);
-                    path.push((r, c, num));
-                    count += self.solve_until_recursive(solutions, path, bound);
-                    path.pop();
-                    self.remove_number(r, c, num);
 
-                    if bound > 0 && solutions.len() >= bound {
-                        break;
-                    }
+            for &num in &nums {
+                self.place_number(r, c, num);
+                path.push((r, c, num));
+                count += self.solve_until_recursive(solutions, path, bound);
+                path.pop();
+                self.remove_number(r, c, num);
+
+                if bound > 0 && solutions.len() >= bound {
+                    break;
                 }
             }
             count
