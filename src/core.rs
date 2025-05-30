@@ -110,6 +110,20 @@ impl Rustoku {
         Ok(rustoku)
     }
 
+    /// Checks if the Sudoku puzzle is solved correctly.
+    ///
+    /// A puzzle is considered solved if all cells are filled and the board does not
+    /// contain duplicates across rows, columns, and 3x3 boxes.
+    pub fn is_solved(&self) -> bool {
+        if self.board.iter().flatten().any(|&val| val == 0) {
+            return false;
+        }
+        Rustoku::new(self.board).is_ok()
+    }
+}
+
+// Basic board manipulation methods
+impl Rustoku {
     /// Returns the index of the 3x3 box for a given row and column.
     fn get_box_idx(r: usize, c: usize) -> usize {
         (r / 3) * 3 + (c / 3)
@@ -179,7 +193,10 @@ impl Rustoku {
         }
         min.1
     }
+}
 
+// Constraint propagation techniques
+impl Rustoku {
     /// Applies the naked singles technique.
     ///
     /// A naked single occurs if an empty cell has only one possible candidate.
@@ -429,7 +446,10 @@ impl Rustoku {
         }
         true // Propagation successful
     }
+}
 
+// Solving methods
+impl Rustoku {
     /// Recursively solves the Sudoku puzzle up to a certain bound, tracking the solve path.
     fn solve_until_recursive(
         &mut self,
@@ -500,7 +520,10 @@ impl Rustoku {
     pub fn solve_all(&mut self) -> Vec<RustokuSolution> {
         self.solve_until(0)
     }
+}
 
+// Generation methods
+impl Rustoku {
     /// Generates a new Sudoku puzzle with a unique solution.
     ///
     /// The `num_clues` parameter specifies the desired number of initially
@@ -556,17 +579,6 @@ impl Rustoku {
         }
 
         Ok(board)
-    }
-
-    /// Checks if the Sudoku puzzle is solved correctly.
-    ///
-    /// A puzzle is considered solved if all cells are filled and the board does not
-    /// contain duplicates across rows, columns, and 3x3 boxes.
-    pub fn is_solved(&self) -> bool {
-        if self.board.iter().flatten().any(|&val| val == 0) {
-            return false;
-        }
-        Rustoku::new(self.board).is_ok()
     }
 }
 
