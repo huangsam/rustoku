@@ -22,6 +22,16 @@ use rand::seq::SliceRandom;
 /// result in a harder puzzle. The actual number of clues may be slightly
 /// more than `num_clues` if it's impossible to remove more numbers
 /// while maintaining a unique solution.
+///
+/// # Example
+///
+/// Generate a puzzle with 30 clues:
+/// ```
+/// use rustoku::core::generate_puzzle;
+/// let puzzle = generate_puzzle(30).unwrap();
+/// assert_eq!(puzzle.len(), 9);
+/// assert_eq!(puzzle[0].len(), 9);
+/// ```
 pub fn generate_puzzle(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
     if !(17..=81).contains(&num_clues) {
         return Err(RustokuError::InvalidClueCount);
