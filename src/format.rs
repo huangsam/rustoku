@@ -4,36 +4,32 @@
 //! in various ways. It also includes a simple utility to print the board to
 //! the console.
 
-/// Prints the current state of the Sudoku board to the console.
+use crate::core::{RustokuBoard, RustokuSolution};
+use std::fmt;
+
+/// Formats the board and solve path into a human-readable string representation.
 ///
-/// The board is formatted with horizontal and vertical separators to visually
-/// distinguish the 3x3 boxes. This function is useful for displaying the board
-/// in a human-readable format during debugging or while solving a puzzle.
-///
-/// It also prints a line representation of the board at the end, which is a single string
-/// containing all numbers in row-major order, with empty cells represented by dots.
-///
-/// # Example
-///
-/// Print a Sudoku board in a formatted way:
-/// ```
-/// use rustoku::format::print_board;
-/// let board = [
-///     [5, 3, 4, 6, 7, 8, 9, 1, 2],
-///     [6, 7, 2, 1, 9, 5, 3, 4, 8],
-///     [1, 9, 8, 3, 4, 2, 5, 6, 7],
-///     [8, 5, 9, 7, 6, 1, 4, 2, 3],
-///     [4, 2, 6, 8, 5, 3, 7, 9, 1],
-///     [7, 1, 3, 9, 2, 4, 8, 5, 6],
-///     [9, 6, 1, 5, 3, 7, 2, 8, 4],
-///     [2, 8, 7, 4, 1, 9, 6, 3, 5],
-///     [3, 4, 5, 2, 8, 6, 1, 7, 9],
-/// ];
-/// print_board(&board);
-/// ```
-pub fn print_board(board: &[[u8; 9]; 9]) {
-    println!("{}", format_grid(board).join("\n"));
-    println!("Line format: {}", format_line(board));
+/// First we format the board into a grid representation and line format.
+/// Then we format the solve path into a string representation of moves.
+impl fmt::Display for RustokuSolution {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", self.board)?;
+        writeln!(
+            f,
+            "Solve path:\n{}",
+            format_solve_path(&self.solve_path).join("\n")
+        )?;
+        Ok(())
+    }
+}
+
+/// Formats the Sudoku board into a human-readable string representation.
+impl fmt::Display for RustokuBoard {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;
+        writeln!(f, "Line format: {}", format_line(&self.cells))?;
+        Ok(())
+    }
 }
 
 /// Formats the Sudoku board into a grid representation.

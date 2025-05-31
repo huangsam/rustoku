@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, RustokuTechniques, generate_puzzle};
+use rustoku::core::{Rustoku, RustokuBoard, RustokuTechniques, generate_puzzle};
 use rustoku::error::RustokuError;
-use rustoku::format::print_board;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A Sudoku puzzle solver and generator", long_about = None)]
@@ -44,11 +43,11 @@ fn main() -> Result<(), RustokuError> {
     match cli.command {
         Commands::Generate { clues } => {
             let puzzle = generate_puzzle(clues)?;
-            print_board(&puzzle);
+            println!("{}", RustokuBoard::new(puzzle));
         }
         Commands::Solve { puzzle, all } => {
-            let mut rustoku =
-                Rustoku::try_from(puzzle.as_str())?.with_techniques(RustokuTechniques::ALL);
+            let mut rustoku = Rustoku::try_from(puzzle.as_str())?;
+            rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
             if all {
                 let solutions = rustoku.solve_all();
                 solutions.iter().enumerate().for_each(|(i, solution)| {
@@ -71,7 +70,7 @@ fn main() -> Result<(), RustokuError> {
         }
         Commands::Show { puzzle } => {
             let rustoku = Rustoku::try_from(puzzle.as_str())?;
-            print_board(&rustoku.board);
+            println!("{}", rustoku.board);
         }
     }
 

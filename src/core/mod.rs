@@ -7,10 +7,22 @@
 //! This module also includes a function to generate new Sudoku puzzles with a specified
 //! number of clues, ensuring that the generated puzzle has a unique solution.
 
-mod monolith;
+// mod monolith;
+// pub use self::monolith::{Rustoku, RustokuTechniques};
 
-pub use self::monolith::{Rustoku, RustokuTechniques};
+mod board;
+mod candidates;
+mod entrypoint;
+mod masks;
+mod solution;
+mod techniques;
+
 use crate::error::RustokuError;
+pub use board::RustokuBoard;
+pub use entrypoint::Rustoku;
+pub use solution::RustokuSolution;
+pub use techniques::RustokuTechniques;
+
 use rand::rng;
 use rand::seq::SliceRandom;
 
@@ -54,23 +66,23 @@ pub fn generate_puzzle(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
             break;
         }
 
-        let original = board[r][c];
-        board[r][c] = 0;
+        let original = board.cells[r][c];
+        board.cells[r][c] = 0;
 
-        if Rustoku::new(board)?.solve_until(2).len() != 1 {
-            board[r][c] = original; // Restore if not unique
+        if Rustoku::new(board.cells)?.solve_until(2).len() != 1 {
+            board.cells[r][c] = original; // Restore if not unique
         } else {
             clues -= 1;
         }
     }
 
     // Check if the generated puzzle has a unique solution
-    if Rustoku::new(board)?.solve_until(2).len() != 1 {
+    if Rustoku::new(board.cells)?.solve_until(2).len() != 1 {
         // If not unique, return an error
         return Err(RustokuError::MissingUniqueSolution);
     }
 
-    Ok(board)
+    Ok(board.cells)
 }
 
 #[cfg(test)]
@@ -107,9 +119,9 @@ mod tests {
         let solver_from_bytes = Rustoku::try_from(flat_bytes).unwrap();
         let solver_from_str = Rustoku::try_from(board_str.as_str()).unwrap();
 
-        assert_eq!(solver_from_new.board, solver_from_bytes.board);
-        assert_eq!(solver_from_new.board, solver_from_str.board);
-        assert_eq!(solver_from_bytes.board, solver_from_str.board);
+        assert_eq!(solver_from_new.board.cells, solver_from_bytes.board.cells);
+        assert_eq!(solver_from_new.board.cells, solver_from_str.board.cells);
+        assert_eq!(solver_from_bytes.board.cells, solver_from_str.board.cells);
     }
 
     #[test]
@@ -147,7 +159,7 @@ mod tests {
 
         assert_eq!(
             UNIQUE_SOLUTION,
-            format_line(&solution.board),
+            format_line(&solution.board.cells),
             "Solution does not match the expected result"
         );
     }
@@ -175,7 +187,7 @@ mod tests {
 
         // Ensure the solution found with bound = 1 matches the solution found with bound = 0
         assert_eq!(
-            solutions[0].board, all_solutions[0].board,
+            solutions[0].board.cells, all_solutions[0].board.cells,
             "Solution with bound = 1 does not match the solution with bound = 0"
         );
     }
@@ -213,7 +225,7 @@ mod tests {
 
         assert_eq!(
             UNIQUE_SOLUTION,
-            format_line(&solution.board),
+            format_line(&solution.board.cells),
             "Solution does not match the expected result with all techniques"
         );
     }

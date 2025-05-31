@@ -12,4 +12,3 @@
 pub mod core;
 pub mod error;
 pub mod format;
-pub mod solution;
