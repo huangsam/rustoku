@@ -1,6 +1,13 @@
 use super::board::RustokuBoard;
 use super::masks::RustokuMasks;
 
+/// Represents the candidates cache for a Rustoku puzzle.
+///
+/// This struct holds a 9x9 grid of candidate masks for each cell in the Rustoku board.
+/// Each cell's candidates are represented as a bitmask, where each bit corresponds to a number
+/// from 1 to 9. A bit set to 1 indicates that the corresponding number is a candidate for that cell.
+/// The `RustokuCandidates` struct provides methods to get and set candidate masks for specific cells,
+/// as well as to update the candidates based on the current state of the board and masks.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct RustokuCandidates {
     cache: [[u16; 9]; 9],

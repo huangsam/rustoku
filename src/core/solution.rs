@@ -1,5 +1,3 @@
-//! Solution module for Rustoku.
-
 use super::board::RustokuBoard;
 
 /// Represents a solved Sudoku board and the solution path.

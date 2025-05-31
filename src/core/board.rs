@@ -2,8 +2,12 @@ use crate::error::RustokuError;
 
 /// Represents a Rustoku board, which is a 9x9 grid of cells.
 ///
-/// Each cell can contain a number from 1 to 9, or be empty (represented by 0).
-/// There are a few methods to manipulate and query the board state.
+/// Each cell can contain a number from 1 to 9, or be empty (is 0).
+///
+/// There are multiple ways to create a `RustokuBoard`:
+/// - Using a 2D array of `u8` with dimensions 9x9
+/// - Using a 1D array of `u8` with length 81
+/// - Using a string representation with length 81
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RustokuBoard {
     pub cells: [[u8; 9]; 9],
@@ -43,7 +47,6 @@ impl RustokuBoard {
     // You might also add methods to get an iterator over a row, column, or box's cells.
 }
 
-// Move TryFrom<[u8; 81]> here
 impl TryFrom<[u8; 81]> for RustokuBoard {
     type Error = RustokuError;
 
@@ -61,7 +64,6 @@ impl TryFrom<[u8; 81]> for RustokuBoard {
     }
 }
 
-// Move TryFrom<&str> here
 impl TryFrom<&str> for RustokuBoard {
     type Error = RustokuError;
 

@@ -1,3 +1,8 @@
+/// Masks for Rustoku puzzle, representing the state of rows, columns, and boxes.
+///
+/// This struct holds bitmasks for each row, column, and 3x3 box in the Rustoku board.
+/// Each bit in the masks corresponds to a number from 1 to 9, where a bit set to 1 indicates
+/// that the corresponding number is present in that row, column, or box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RustokuMasks {
     pub row_masks: [u16; 9],
