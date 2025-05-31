@@ -7,9 +7,9 @@
 //! This module also includes a function to generate new Sudoku puzzles with a specified
 //! number of clues, ensuring that the generated puzzle has a unique solution.
 
-mod board;
+mod monolith;
 
-pub use self::board::{Rustoku, RustokuTechniques};
+pub use self::monolith::{Rustoku, RustokuTechniques};
 use crate::error::RustokuError;
 use rand::rng;
 use rand::seq::SliceRandom;
