@@ -1,5 +1,5 @@
 use crate::error::RustokuError;
-use bitflags::bitflags; // You'll need to add `bitflags = "1.3"` to your Cargo.toml
+use bitflags::bitflags;
 
 bitflags! {
     /// A bitmask to control which human-like solving techniques are applied during propagation.
