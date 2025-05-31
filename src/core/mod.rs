@@ -6,8 +6,8 @@
 
 mod board;
 mod generator;
-mod propagation;
 mod solver;
+mod validator;
 
 pub use self::board::Rustoku;
 
