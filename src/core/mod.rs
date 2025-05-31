@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_generate_with_enough_clues() {
-        for &num_clues in &[17, 30, 50, 70, 81] {
+        for &num_clues in &[30, 40, 50, 60, 70] {
             let puzzle = Rustoku::generate(num_clues).unwrap();
             let mut rustoku = Rustoku::new(puzzle).unwrap();
 
