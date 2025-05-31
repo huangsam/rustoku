@@ -8,7 +8,6 @@
 //! number of clues, ensuring that the generated puzzle has a unique solution.
 
 mod board;
-mod client;
 
 pub use self::board::{Rustoku, RustokuTechniques};
 use crate::error::RustokuError;
