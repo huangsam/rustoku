@@ -38,6 +38,7 @@ fn benchmark_solve_any(c: &mut Criterion) {
 fn benchmark_solve_all(c: &mut Criterion) {
     let mut group = c.benchmark_group("Solve All Sudoku Puzzles");
 
+    // Benchmark `solve_all` for a unique puzzle
     group.bench_function("solve_all_unique", |b| {
         let board = RustokuBoard::try_from(UNIQUE_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
@@ -46,6 +47,7 @@ fn benchmark_solve_all(c: &mut Criterion) {
         });
     });
 
+    // Benchmark `solve_all` for a puzzle with two solutions
     group.bench_function("solve_all_two_solutions", |b| {
         let board = RustokuBoard::try_from(TWO_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
@@ -60,14 +62,14 @@ fn benchmark_solve_all(c: &mut Criterion) {
 fn benchmark_generate_board(c: &mut Criterion) {
     let mut group = c.benchmark_group("Generate Sudoku Puzzles");
 
-    // Benchmarking `generate_board` with a moderate number of clues
+    // Benchmark `generate_board` with a moderate number of clues
     group.bench_function("generate_board_40_clues", |b| {
         b.iter(|| {
             black_box(generate_board(40).unwrap());
         });
     });
 
-    // Benchmarking `generate_board` with fewer clues (often harder to generate)
+    // Benchmark `generate_board` with fewer clues (often harder to generate)
     group.bench_function("generate_board_25_clues", |b| {
         b.iter(|| {
             black_box(generate_board(25).unwrap());
