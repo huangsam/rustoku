@@ -43,6 +43,9 @@ pub struct Rustoku {
     pub(super) col_masks: [u16; 9],
     /// Bitmask to track used numbers in each 3x3 box (1-9 mapped to bits 0-8)
     pub(super) box_masks: [u16; 9],
+    /// Cache of possible candidates for each cell (0 if cell is filled).
+    /// Indexed by [row][col].
+    pub(super) candidates_cache: [[u16; 9]; 9],
 }
 
 impl TryFrom<[u8; 81]> for Rustoku {
@@ -76,7 +79,7 @@ impl TryFrom<&str> for Rustoku {
     }
 }
 
-/// Initialization and validation methods for Sudoku puzzles.
+/// Initialization methods for Sudoku puzzles.
 impl Rustoku {
     pub fn new(initial_board: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
         let mut rustoku = Self {
@@ -84,21 +87,50 @@ impl Rustoku {
             row_masks: [0; 9],
             col_masks: [0; 9],
             box_masks: [0; 9],
+            candidates_cache: [[0; 9]; 9], // Initialize with zeros
         };
 
         // Initialize the masks based on the given initial board
-        for (i, &num) in initial_board.iter().flatten().enumerate() {
-            if num != 0 {
-                let (r, c) = (i / 9, i % 9);
-                if !rustoku.is_safe(r, c, num) {
-                    return Err(RustokuError::DuplicateValues);
+        for r in 0..9 {
+            for c in 0..9 {
+                let num = initial_board[r][c];
+                if num != 0 {
+                    if !rustoku.is_safe(r, c, num) {
+                        return Err(RustokuError::DuplicateValues);
+                    }
+                    // Important: Use the new `place_number` which updates the cache
+                    rustoku.place_number(r, c, num);
                 }
-                rustoku.place_number(r, c, num);
             }
         }
+        // After initial placement, fill the cache for empty cells
+        for r in 0..9 {
+            for c in 0..9 {
+                if rustoku.board[r][c] == 0 {
+                    rustoku.candidates_cache[r][c] =
+                        rustoku.calculate_candidates_mask_for_cell(r, c);
+                }
+            }
+        }
+
         Ok(rustoku)
     }
 
+    /// Calculate the mask without using the cache.
+    ///
+    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
+    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
+    fn calculate_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
+        let row_mask = self.row_masks[r];
+        let col_mask = self.col_masks[c];
+        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
+        let used = row_mask | col_mask | box_mask;
+        !used & 0x1FF
+    }
+}
+
+/// Validation methods for Sudoku puzzles.
+impl Rustoku {
     /// Checks if the Sudoku puzzle is solved correctly.
     ///
     /// A puzzle is considered solved if all cells are filled and the board does not
@@ -137,6 +169,36 @@ impl Rustoku {
         self.row_masks[r] |= bit_to_set;
         self.col_masks[c] |= bit_to_set;
         self.box_masks[box_idx] |= bit_to_set;
+
+        // Invalidate/update cache for the placed cell
+        self.candidates_cache[r][c] = 0; // No candidates for a filled cell
+
+        // Update cache for affected row, column, and box
+        for i in 0..9 {
+            if self.board[r][i] == 0 {
+                // Only update if cell is empty
+                self.candidates_cache[r][i] = self.calculate_candidates_mask_for_cell(r, i);
+            }
+            if self.board[i][c] == 0 {
+                // Only update if cell is empty
+                self.candidates_cache[i][c] = self.calculate_candidates_mask_for_cell(i, c);
+            }
+        }
+
+        // Update box cells
+        let start_row = (box_idx / 3) * 3;
+        let start_col = (box_idx % 3) * 3;
+        for r_offset in 0..3 {
+            for c_offset in 0..3 {
+                let cur_r = start_row + r_offset;
+                let cur_c = start_col + c_offset;
+                if self.board[cur_r][cur_c] == 0 {
+                    // Only update if cell is empty
+                    self.candidates_cache[cur_r][cur_c] =
+                        self.calculate_candidates_mask_for_cell(cur_r, cur_c);
+                }
+            }
+        }
     }
 
     /// Removes a number from the Sudoku board and updates the masks accordingly.
@@ -148,20 +210,40 @@ impl Rustoku {
         self.row_masks[r] &= !bit_to_unset;
         self.col_masks[c] &= !bit_to_unset;
         self.box_masks[box_idx] &= !bit_to_unset;
+
+        // Re-calculate cache for the removed cell (it's now empty)
+        self.candidates_cache[r][c] = self.calculate_candidates_mask_for_cell(r, c);
+
+        // Update cache for affected row, column, and box
+        for i in 0..9 {
+            if self.board[r][i] == 0 {
+                self.candidates_cache[r][i] = self.calculate_candidates_mask_for_cell(r, i);
+            }
+            if self.board[i][c] == 0 {
+                self.candidates_cache[i][c] = self.calculate_candidates_mask_for_cell(i, c);
+            }
+        }
+
+        // Update box cells
+        let start_row = (box_idx / 3) * 3;
+        let start_col = (box_idx % 3) * 3;
+        for r_offset in 0..3 {
+            for c_offset in 0..3 {
+                let cur_r = start_row + r_offset;
+                let cur_c = start_col + c_offset;
+                if self.board[cur_r][cur_c] == 0 {
+                    self.candidates_cache[cur_r][cur_c] =
+                        self.calculate_candidates_mask_for_cell(cur_r, cur_c);
+                }
+            }
+        }
     }
 
     /// Returns a bitmask of possible candidates for a given empty cell.
     ///
-    /// Computes the bitmask of legal candidates for a cell by combining the row, column,
-    /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
+    /// Now retrieves from the pre-computed cache.
     pub(super) fn get_possible_candidates_mask(&self, r: usize, c: usize) -> u16 {
-        let row_mask = self.row_masks[r];
-        let col_mask = self.col_masks[c];
-        let box_mask = self.box_masks[Self::get_box_idx(r, c)];
-        let used = row_mask | col_mask | box_mask;
-        // 0x1FF is 111111111 in binary (all 9 bits set)
-        // Inverting used and ANDing with 0x1FF gives us the available candidates.
-        !used & 0x1FF
+        self.candidates_cache[r][c]
     }
 
     /// Finds the next empty cell in the Sudoku board using MRV (Minimum Remaining Values).
