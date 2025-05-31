@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, generate_puzzle};
+use rustoku::core::{Rustoku, SolverTechniques, generate_puzzle};
 use rustoku::error::RustokuError;
 use rustoku::format::print_board;
 
@@ -47,7 +47,8 @@ fn main() -> Result<(), RustokuError> {
             print_board(&puzzle);
         }
         Commands::Solve { puzzle, all } => {
-            let mut rustoku = Rustoku::try_from(puzzle.as_str())?;
+            let mut rustoku =
+                Rustoku::try_from(puzzle.as_str())?.with_techniques(SolverTechniques::ALL);
             if all {
                 let solutions = rustoku.solve_all();
                 solutions.iter().enumerate().for_each(|(i, solution)| {

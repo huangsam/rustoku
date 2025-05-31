@@ -7,16 +7,26 @@ bitflags! {
     /// - `NONE`: No specific techniques are applied (only basic constraint checking)
     /// - `NAKED_SINGLES`: Apply the naked singles technique
     /// - `HIDDEN_SINGLES`: Apply the hidden singles technique
+    /// - `NAKED_PAIRS`: Apply the naked pairs technique
+    /// - `HIDDEN_PAIRS`: Apply the hidden pairs technique
     /// - `SIMPLE`: Apply both naked and hidden singles techniques
+    /// - `COMPLEX`: Apply naked and hidden pairs techniques
     /// - `ALL`: Apply all available human-like techniques
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct SolverTechniques: u16 {
         const NONE = 0b0000_0000;
+
         const NAKED_SINGLES = 0b0000_0001;
         const HIDDEN_SINGLES = 0b0000_0010;
+
+        const NAKED_PAIRS = 0b0000_0100;
+        const HIDDEN_PAIRS = 0b0000_1000;
+
         const SIMPLE = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
-        const ALL = Self::SIMPLE.bits();
+        const COMPLEX = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
+
+        const ALL = Self::SIMPLE.bits() | Self::COMPLEX.bits();
     }
 }
 
@@ -394,6 +404,240 @@ impl Rustoku {
         overall_placements_made
     }
 
+    /// Applies the naked pairs technique.
+    fn naked_pairs(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut overall_placements_made = false;
+
+        // Process rows
+        for i in 0..9 {
+            let row_cells: Vec<(usize, usize)> = (0..9).map(|col| (i, col)).collect();
+            if self.process_unit_for_naked_pairs(&row_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+
+        // Process columns
+        for i in 0..9 {
+            let col_cells: Vec<(usize, usize)> = (0..9).map(|row| (row, i)).collect();
+            if self.process_unit_for_naked_pairs(&col_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+
+        // Process 3x3 boxes
+        for i in 0..9 {
+            let mut box_cells: Vec<(usize, usize)> = Vec::with_capacity(9);
+            let start_row = (i / 3) * 3;
+            let start_col = (i % 3) * 3;
+            for r_offset in 0..3 {
+                for c_offset in 0..3 {
+                    box_cells.push((start_row + r_offset, start_col + c_offset));
+                }
+            }
+            if self.process_unit_for_naked_pairs(&box_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+        overall_placements_made
+    }
+
+    /// Helper function to process a single unit (row, column, or box) for naked pairs.
+    fn process_unit_for_naked_pairs(
+        &mut self,
+        unit_cells: &[(usize, usize)], // Cells in the current row, column, or box
+        path: &mut Vec<(usize, usize, u8)>,
+    ) -> bool {
+        let mut unit_placements_made = false;
+        // Stores (row, col, candidate_mask) for cells in this unit that are empty
+        // and have exactly two possible candidates
+        let mut two_cand_cells: Vec<(usize, usize, u16)> = Vec::new();
+
+        // Step 1: Identify empty cells with two candidates
+        for &(r, c) in unit_cells {
+            if self.board[r][c] == 0 {
+                let cand_mask = self.get_possible_candidates_mask(r, c);
+                if cand_mask.count_ones() == 2 {
+                    two_cand_cells.push((r, c, cand_mask));
+                }
+            }
+        }
+
+        if two_cand_cells.len() < 2 {
+            return false;
+        }
+
+        // Step 2: Find naked pairs
+        for i in 0..two_cand_cells.len() {
+            for j in (i + 1)..two_cand_cells.len() {
+                let (r1, c1, mask1) = two_cand_cells[i];
+                let (r2, c2, mask2) = two_cand_cells[j];
+
+                if mask1 == mask2 {
+                    // Found a naked pair
+                    let pair_cand_mask = mask1;
+
+                    // Step 3: Remove pair candidates from other cells in the unit
+                    for &(other_r, other_c) in unit_cells {
+                        if (other_r == r1 && other_c == c1) || (other_r == r2 && other_c == c2) {
+                            continue;
+                        }
+
+                        if self.board[other_r][other_c] == 0 {
+                            let initial_mask = self.get_possible_candidates_mask(other_r, other_c);
+
+                            if (initial_mask & pair_cand_mask) != 0 {
+                                let refined_mask = initial_mask & !pair_cand_mask;
+
+                                // Update the candidates cache for this cell
+                                self.candidates_cache[other_r][other_c] = refined_mask;
+                                unit_placements_made = true;
+
+                                // Step 4: Place number if refined mask has one candidate
+                                if refined_mask.count_ones() == 1 {
+                                    let num = refined_mask.trailing_zeros() as u8 + 1;
+
+                                    if self.is_safe(other_r, other_c, num) {
+                                        self.place_number(other_r, other_c, num);
+                                        path.push((other_r, other_c, num));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        unit_placements_made
+    }
+
+    /// Applies the hidden pairs technique.
+    ///
+    /// A hidden pair occurs when two specific numbers can only be placed in two specific cells
+    /// within a unit (row, column, or 3x3 box), even if those cells themselves have other candidates.
+    /// The technique then removes all other candidates from those two cells.
+    fn hidden_pairs(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut overall_placements_made = false;
+
+        // Process rows
+        for i in 0..9 {
+            let row_cells: Vec<(usize, usize)> = (0..9).map(|col| (i, col)).collect();
+            if self.process_unit_for_hidden_pairs(&row_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+
+        // Process columns
+        for i in 0..9 {
+            let col_cells: Vec<(usize, usize)> = (0..9).map(|row| (row, i)).collect();
+            if self.process_unit_for_hidden_pairs(&col_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+
+        // Process 3x3 boxes
+        for i in 0..9 {
+            let mut box_cells: Vec<(usize, usize)> = Vec::with_capacity(9);
+            let start_row = (i / 3) * 3;
+            let start_col = (i % 3) * 3;
+            for r_offset in 0..3 {
+                for c_offset in 0..3 {
+                    box_cells.push((start_row + r_offset, start_col + c_offset));
+                }
+            }
+            if self.process_unit_for_hidden_pairs(&box_cells, path) {
+                overall_placements_made = true;
+            }
+        }
+        overall_placements_made
+    }
+
+    /// Helper function to process a single unit (row, column, or box) for hidden pairs.
+    fn process_unit_for_hidden_pairs(
+        &mut self,
+        unit_cells: &[(usize, usize)], // Cells in the current row, column, or box
+        path: &mut Vec<(usize, usize, u8)>,
+    ) -> bool {
+        let mut unit_placements_made = false;
+
+        // Iterate through all possible pairs of numbers (1-9)
+        for n1_val in 1..=9 {
+            for n2_val in (n1_val + 1)..=9 {
+                // Ensure n2_val > n1_val to avoid duplicates
+                let n1_bit = 1 << (n1_val - 1);
+                let n2_bit = 1 << (n2_val - 1);
+                let pair_mask = n1_bit | n2_bit;
+
+                let mut cells_containing_n1: Vec<(usize, usize)> = Vec::new();
+                let mut cells_containing_n2: Vec<(usize, usize)> = Vec::new();
+
+                // Collect cells that contain n1 and n2 as candidates
+                for &(r, c) in unit_cells {
+                    if self.board[r][c] == 0 {
+                        // Only consider empty cells
+                        let cell_cand_mask = self.get_possible_candidates_mask(r, c);
+                        if (cell_cand_mask & n1_bit) != 0 {
+                            cells_containing_n1.push((r, c));
+                        }
+                        if (cell_cand_mask & n2_bit) != 0 {
+                            cells_containing_n2.push((r, c));
+                        }
+                    }
+                }
+
+                // Check if both n1 and n2 are candidates in exactly two cells,
+                // AND those two cells are the same for both.
+                // This indicates a hidden pair.
+                if cells_containing_n1.len() == 2
+                    && cells_containing_n2.len() == 2
+                    && cells_containing_n1[0] == cells_containing_n2[0]
+                    && cells_containing_n1[1] == cells_containing_n2[1]
+                {
+                    // Found a hidden pair (n1_val, n2_val) in cells cells_containing_n1[0] and cells_containing_n1[1]
+                    let (r1, c1) = cells_containing_n1[0];
+                    let (r2, c2) = cells_containing_n1[1];
+
+                    // For cell 1, remove all candidates EXCEPT n1_val and n2_val
+                    let current_mask1 = self.get_possible_candidates_mask(r1, c1);
+                    // The new mask should only contain the bits for n1_val and n2_val
+                    let new_mask1 = pair_mask;
+
+                    if new_mask1 != current_mask1 {
+                        // Only update if a change is needed
+                        self.candidates_cache[r1][c1] = new_mask1;
+                        unit_placements_made = true;
+                        // If this reduction makes it a single, place it.
+                        if new_mask1.count_ones() == 1 {
+                            let num = new_mask1.trailing_zeros() as u8 + 1;
+                            if self.is_safe(r1, c1, num) {
+                                self.place_number(r1, c1, num);
+                                path.push((r1, c1, num));
+                            }
+                        }
+                    }
+
+                    // For cell 2, remove all candidates EXCEPT n1_val and n2_val
+                    let current_mask2 = self.get_possible_candidates_mask(r2, c2);
+                    let new_mask2 = pair_mask;
+
+                    if new_mask2 != current_mask2 {
+                        // Only update if a change is needed
+                        self.candidates_cache[r2][c2] = new_mask2;
+                        unit_placements_made = true;
+                        // If this reduction makes it a single, place it.
+                        if new_mask2.count_ones() == 1 {
+                            let num = new_mask2.trailing_zeros() as u8 + 1;
+                            if self.is_safe(r2, c2, num) {
+                                self.place_number(r2, c2, num);
+                                path.push((r2, c2, num));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        unit_placements_made
+    }
+
     /// Applies deterministic constraint propagation techniques iteratively.
     pub(super) fn propagate_constraints(
         &mut self,
@@ -408,6 +652,12 @@ impl Rustoku {
             }
             if self.techniques.contains(SolverTechniques::HIDDEN_SINGLES) {
                 changed_this_iter |= self.hidden_singles(path);
+            }
+            if self.techniques.contains(SolverTechniques::NAKED_PAIRS) {
+                changed_this_iter |= self.naked_pairs(path);
+            }
+            if self.techniques.contains(SolverTechniques::HIDDEN_PAIRS) {
+                changed_this_iter |= self.hidden_pairs(path);
             }
 
             // Contradiction check

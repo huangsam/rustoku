@@ -10,7 +10,7 @@
 mod board;
 mod client;
 
-pub use self::board::Rustoku;
+pub use self::board::{Rustoku, SolverTechniques};
 use crate::error::RustokuError;
 use rand::rng;
 use rand::seq::SliceRandom;
