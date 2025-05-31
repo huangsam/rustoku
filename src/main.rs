@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::Rustoku;
+use rustoku::core::{Rustoku, generate_puzzle};
 use rustoku::error::RustokuError;
 use rustoku::format::print_board;
 
@@ -43,7 +43,7 @@ fn main() -> Result<(), RustokuError> {
 
     match cli.command {
         Commands::Generate { clues } => {
-            let puzzle = Rustoku::generate(clues)?;
+            let puzzle = generate_puzzle(clues)?;
             print_board(&puzzle);
         }
         Commands::Solve { puzzle, all } => {

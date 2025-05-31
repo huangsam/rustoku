@@ -19,4 +19,6 @@ pub enum RustokuError {
     InvalidInputCharacter,
     #[error("Initial board contains duplicates")]
     DuplicateValues,
+    #[error("Cannot find a unique solution")]
+    MissingUniqueSolution,
 }

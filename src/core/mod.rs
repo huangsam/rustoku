@@ -10,6 +10,7 @@ mod solver;
 mod validator;
 
 pub use self::board::Rustoku;
+pub use self::generator::generate_puzzle;
 
 #[cfg(test)]
 mod tests {
@@ -144,8 +145,8 @@ mod tests {
 
     #[test]
     fn test_generate_with_enough_clues() {
-        for &num_clues in &[30, 40, 50, 60, 70] {
-            let puzzle = Rustoku::generate(num_clues).unwrap();
+        (20..=80).step_by(20).for_each(|num_clues| {
+            let puzzle = generate_puzzle(num_clues).unwrap();
             let mut rustoku = Rustoku::new(puzzle).unwrap();
 
             // Ensure the puzzle has at least the specified number of clues
@@ -165,20 +166,20 @@ mod tests {
                 "Generated puzzle with {} clues should have a unique solution",
                 num_clues
             );
-        }
+        })
     }
 
     #[test]
     fn test_generate_with_too_few_clues() {
         let num_clues = 16; // Below the minimum valid clue count
-        let result = Rustoku::generate(num_clues);
+        let result = generate_puzzle(num_clues);
         assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
     }
 
     #[test]
     fn test_generate_with_too_many_clues() {
         let num_clues = 82; // Above the maximum valid clue count
-        let result = Rustoku::generate(num_clues);
+        let result = generate_puzzle(num_clues);
         assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
     }
 
