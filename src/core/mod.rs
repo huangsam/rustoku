@@ -3,9 +3,6 @@
 //! This module includes the `Rustoku` struct for representing and solving Sudoku puzzles using
 //! backtracking and Minimum Remaining Values (MRV). It provides functionality for solving
 //! puzzles, checking solutions, and generating puzzles with unique solutions.
-//!
-//! This module also defines `RustokuSolution` for representing solved boards, along with their
-//! solve paths, and `RustokuError` for handling errors like invalid inputs.
 
 mod board;
 mod generator;
