@@ -196,6 +196,34 @@ mod tests {
     }
 
     #[test]
+    fn test_solve_any_with_all_techniques() {
+        let s = UNIQUE_PUZZLE;
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        rustoku.with_techniques(SolverTechniques::ALL);
+        let solution = rustoku.solve_any().unwrap();
+
+        assert_eq!(
+            UNIQUE_SOLUTION,
+            format_line(&solution.board),
+            "Solution does not match the expected result with all techniques"
+        );
+    }
+
+    #[test]
+    fn test_solve_all_with_all_techniques() {
+        let s = TWO_PUZZLE;
+        let mut rustoku = Rustoku::try_from(s).unwrap();
+        rustoku.with_techniques(SolverTechniques::ALL);
+        let solutions = rustoku.solve_all();
+
+        assert_eq!(
+            2,
+            solutions.len(),
+            "Expected two solutions for the given board with all techniques"
+        );
+    }
+
+    #[test]
     fn test_generate_with_enough_clues() {
         (20..=80).step_by(20).for_each(|num_clues| {
             let puzzle = generate_puzzle(num_clues).unwrap();
