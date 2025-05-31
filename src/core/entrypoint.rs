@@ -87,6 +87,7 @@ impl Rustoku {
         })
     }
 
+    /// Returns the existing Rustoku instance, with modified techniques.
     pub fn with_techniques(mut self, techniques: RustokuTechniques) -> Self {
         self.techniques = techniques;
         self
@@ -182,6 +183,7 @@ impl Rustoku {
         result
     }
 
+    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
     pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
         let mut solutions = Vec::new();
         let mut path = Vec::new();
@@ -189,14 +191,17 @@ impl Rustoku {
         solutions
     }
 
+    /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
     pub fn solve_any(&mut self) -> Option<RustokuSolution> {
         self.solve_until(1).into_iter().next()
     }
 
+    /// Finds all possible solutions for the Sudoku puzzle.
     pub fn solve_all(&mut self) -> Vec<RustokuSolution> {
         self.solve_until(0)
     }
 
+    /// Checks if the Sudoku puzzle is solved correctly.
     pub fn is_solved(&self) -> bool {
         self.board.cells.iter().flatten().all(|&val| val != 0) && Rustoku::new(self.board).is_ok()
     }
