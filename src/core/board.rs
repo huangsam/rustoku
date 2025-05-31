@@ -1,4 +1,24 @@
 use crate::error::RustokuError;
+use bitflags::bitflags; // You'll need to add `bitflags = "1.3"` to your Cargo.toml
+
+bitflags! {
+    /// A bitmask to control which human-like solving techniques are applied during propagation.
+    ///
+    /// - `NONE`: No specific techniques are applied (only basic constraint checking)
+    /// - `NAKED_SINGLES`: Apply the naked singles technique
+    /// - `HIDDEN_SINGLES`: Apply the hidden singles technique
+    /// - `SIMPLE`: Apply both naked and hidden singles techniques
+    /// - `ALL`: Apply all available human-like techniques
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct SolverTechniques: u16 {
+        const NONE = 0b0000_0000;
+        const NAKED_SINGLES = 0b0000_0001;
+        const HIDDEN_SINGLES = 0b0000_0010;
+        const SIMPLE = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
+        const ALL = Self::SIMPLE.bits();
+    }
+}
 
 /// A core Sudoku primitive that uses backtracking and bitmasking for constraints.
 ///
@@ -46,6 +66,8 @@ pub struct Rustoku {
     /// Cache of possible candidates for each cell (0 if cell is filled).
     /// Indexed by [row][col].
     candidates_cache: [[u16; 9]; 9],
+    /// Bitmask indicating which human-like solving techniques to apply during propagation.
+    techniques: SolverTechniques,
 }
 
 impl TryFrom<[u8; 81]> for Rustoku {
@@ -81,6 +103,7 @@ impl TryFrom<&str> for Rustoku {
 
 /// Initialization methods for Sudoku puzzles.
 impl Rustoku {
+    /// Constructs a new `Rustoku` instance from an initial board.
     pub fn new(initial_board: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
         let mut rustoku = Self {
             board: initial_board,
@@ -88,6 +111,7 @@ impl Rustoku {
             col_masks: [0; 9],
             box_masks: [0; 9],
             candidates_cache: [[0; 9]; 9], // Initialize with zeros
+            techniques: SolverTechniques::SIMPLE, // Default to using all techniques
         };
 
         // Initialize the masks based on the given initial board
@@ -112,6 +136,12 @@ impl Rustoku {
         }
 
         Ok(rustoku)
+    }
+
+    /// Sets the human-like solving techniques to be used during propagation.
+    pub fn with_techniques(mut self, techniques: SolverTechniques) -> Self {
+        self.techniques = techniques;
+        self
     }
 
     /// Calculate the mask without using the cache.
@@ -248,7 +278,7 @@ impl Rustoku {
     }
 }
 
-/// Propagation methods for Sudoku puzzles.
+/// Technique methods for Sudoku puzzles.
 impl Rustoku {
     /// Applies the naked singles technique.
     ///
@@ -372,8 +402,13 @@ impl Rustoku {
     ) -> bool {
         loop {
             let mut changed_this_iter = false;
-            changed_this_iter |= self.naked_singles(path);
-            changed_this_iter |= self.hidden_singles(path);
+
+            if self.techniques.contains(SolverTechniques::NAKED_SINGLES) {
+                changed_this_iter |= self.naked_singles(path);
+            }
+            if self.techniques.contains(SolverTechniques::HIDDEN_SINGLES) {
+                changed_this_iter |= self.hidden_singles(path);
+            }
 
             // Contradiction check
             for r in 0..9 {

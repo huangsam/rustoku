@@ -9,6 +9,7 @@ use thiserror::Error;
 /// - The input string does not contain exactly 81 characters
 /// - The input string contains characters other than digits `0-9` or `.` or `_`
 /// - The initial board contains duplicate values in rows, columns, or 3x3 boxes
+/// - The generate algorithm cannot find a unique solution for the given puzzle
 #[derive(Debug, Error)]
 pub enum RustokuError {
     #[error("Clues must be between 17 and 81 for a valid Sudoku puzzle")]
