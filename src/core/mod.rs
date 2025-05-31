@@ -199,7 +199,7 @@ mod tests {
     fn test_solve_any_with_all_techniques() {
         let s = UNIQUE_PUZZLE;
         let mut rustoku = Rustoku::try_from(s).unwrap();
-        rustoku.with_techniques(SolverTechniques::ALL);
+        rustoku = rustoku.with_techniques(SolverTechniques::ALL);
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
@@ -213,7 +213,7 @@ mod tests {
     fn test_solve_all_with_all_techniques() {
         let s = TWO_PUZZLE;
         let mut rustoku = Rustoku::try_from(s).unwrap();
-        rustoku.with_techniques(SolverTechniques::ALL);
+        rustoku = rustoku.with_techniques(SolverTechniques::ALL);
         let solutions = rustoku.solve_all();
 
         assert_eq!(
