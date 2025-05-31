@@ -20,8 +20,8 @@ use crate::error::RustokuError;
 ///
 /// Generate a Sudoku puzzle:
 /// ```
-/// use rustoku::core::Rustoku;
-/// let puzzle = Rustoku::generate(30).unwrap();
+/// use rustoku::core::{Rustoku, generate_puzzle};
+/// let puzzle = generate_puzzle(30).unwrap();
 /// let solution = Rustoku::new(puzzle).unwrap().solve_all();
 /// assert_eq!(solution.len(), 1);
 /// ```
@@ -106,8 +106,7 @@ impl Rustoku {
         for r in 0..9 {
             for c in 0..9 {
                 if rustoku.board[r][c] == 0 {
-                    rustoku.candidates_cache[r][c] =
-                        rustoku.calculate_candidates_mask_for_cell(r, c);
+                    rustoku.candidates_cache[r][c] = rustoku.compute_candidates_mask_for_cell(r, c);
                 }
             }
         }
@@ -119,7 +118,7 @@ impl Rustoku {
     ///
     /// Computes the bitmask of legal candidates for a cell by combining the row, column,
     /// and box masks, inverting, and masking with `0x1FF` to keep only the lower 9 bits.
-    fn calculate_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
+    fn compute_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
         let box_mask = self.box_masks[Self::get_box_idx(r, c)];
@@ -167,11 +166,11 @@ impl Rustoku {
         for i in 0..9 {
             if self.board[r][i] == 0 {
                 // Only update if cell is empty
-                self.candidates_cache[r][i] = self.calculate_candidates_mask_for_cell(r, i);
+                self.candidates_cache[r][i] = self.compute_candidates_mask_for_cell(r, i);
             }
             if self.board[i][c] == 0 {
                 // Only update if cell is empty
-                self.candidates_cache[i][c] = self.calculate_candidates_mask_for_cell(i, c);
+                self.candidates_cache[i][c] = self.compute_candidates_mask_for_cell(i, c);
             }
         }
 
@@ -185,7 +184,7 @@ impl Rustoku {
                 if self.board[cur_r][cur_c] == 0 {
                     // Only update if cell is empty
                     self.candidates_cache[cur_r][cur_c] =
-                        self.calculate_candidates_mask_for_cell(cur_r, cur_c);
+                        self.compute_candidates_mask_for_cell(cur_r, cur_c);
                 }
             }
         }
@@ -202,15 +201,15 @@ impl Rustoku {
         self.box_masks[box_idx] &= !bit_to_unset;
 
         // Re-calculate cache for the removed cell (it's now empty)
-        self.candidates_cache[r][c] = self.calculate_candidates_mask_for_cell(r, c);
+        self.candidates_cache[r][c] = self.compute_candidates_mask_for_cell(r, c);
 
         // Update cache for affected row, column, and box
         for i in 0..9 {
             if self.board[r][i] == 0 {
-                self.candidates_cache[r][i] = self.calculate_candidates_mask_for_cell(r, i);
+                self.candidates_cache[r][i] = self.compute_candidates_mask_for_cell(r, i);
             }
             if self.board[i][c] == 0 {
-                self.candidates_cache[i][c] = self.calculate_candidates_mask_for_cell(i, c);
+                self.candidates_cache[i][c] = self.compute_candidates_mask_for_cell(i, c);
             }
         }
 
@@ -223,7 +222,7 @@ impl Rustoku {
                 let cur_c = start_col + c_offset;
                 if self.board[cur_r][cur_c] == 0 {
                     self.candidates_cache[cur_r][cur_c] =
-                        self.calculate_candidates_mask_for_cell(cur_r, cur_c);
+                        self.compute_candidates_mask_for_cell(cur_r, cur_c);
                 }
             }
         }
@@ -376,7 +375,7 @@ impl Rustoku {
             changed_this_iter |= self.naked_singles(path);
             changed_this_iter |= self.hidden_singles(path);
 
-            // Contradiction Check
+            // Contradiction check
             for r in 0..9 {
                 for c in 0..9 {
                     if self.board[r][c] == 0 && self.get_possible_candidates_mask(r, c) == 0 {
