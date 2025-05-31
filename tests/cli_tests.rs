@@ -1,7 +1,5 @@
-// tests/cli_tests.rs
-
 use assert_cmd::prelude::*;
-use std::process::Command; // For running external commands // For handy assertions on Command
+use std::process::Command;
 
 // Helper function to get the path to your compiled binary
 fn get_rustoku_bin() -> Command {
