@@ -7,6 +7,41 @@ use crate::error::RustokuError;
 use rand::prelude::SliceRandom;
 use rand::rng;
 
+/// A Sudoku primitive that uses backtracking and bitmasking for constraints.
+///
+/// This struct supports the ability to:
+/// - Initialize from a 2D array, a flat byte array, or a string representation
+/// - Solve a Sudoku puzzle using backtracking with Minimum Remaining Values (MRV)
+/// - Generate a Sudoku puzzle with a unique solution based on the number of clues specified
+/// - Check if a Sudoku puzzle is solved correctly
+///
+/// # Examples
+///
+/// Solve a Sudoku puzzle:
+/// ```
+/// use rustoku::core::{Rustoku, RustokuBoard};
+/// let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+/// let board = RustokuBoard::try_from(s).unwrap();
+/// let mut rustoku = Rustoku::new(board).unwrap();
+/// assert!(rustoku.solve_any().is_some());
+/// ```
+///
+/// Generate a Sudoku puzzle:
+/// ```
+/// use rustoku::core::{Rustoku, generate_board};
+/// let board = generate_board(30).unwrap();
+/// let solution = Rustoku::new(board).unwrap().solve_all();
+/// assert_eq!(solution.len(), 1);
+/// ```
+///
+/// Check if a Sudoku puzzle is solved:
+/// ```
+/// use rustoku::core::{Rustoku, RustokuBoard};
+/// let s = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+/// let board = RustokuBoard::try_from(s).unwrap();
+/// let rustoku = Rustoku::new(board).unwrap();
+/// assert!(rustoku.is_solved());
+/// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Rustoku {
     pub board: RustokuBoard,
@@ -15,44 +50,14 @@ pub struct Rustoku {
     techniques: RustokuTechniques,
 }
 
-impl TryFrom<[u8; 81]> for Rustoku {
-    type Error = RustokuError;
-
-    fn try_from(bytes: [u8; 81]) -> Result<Self, Self::Error> {
-        let mut board_array = [[0u8; 9]; 9];
-        for i in 0..81 {
-            board_array[i / 9][i % 9] = bytes[i];
-        }
-        Self::new(board_array)
-    }
-}
-
-impl TryFrom<&str> for Rustoku {
-    type Error = RustokuError;
-
-    fn try_from(s: &str) -> Result<Self, Self::Error> {
-        if s.len() != 81 {
-            return Err(RustokuError::InvalidInputLength);
-        }
-        let mut bytes = [0u8; 81];
-        for (i, ch) in s.bytes().enumerate() {
-            match ch {
-                b'0'..=b'9' => bytes[i] = ch - b'0',
-                b'.' | b'_' => bytes[i] = 0, // Treat '.' and '_' as empty cells
-                _ => return Err(RustokuError::InvalidInputCharacter),
-            }
-        }
-        bytes.try_into()
-    }
-}
-
 impl Rustoku {
-    pub fn new(initial_board_array: [[u8; 9]; 9]) -> Result<Self, RustokuError> {
-        let board = RustokuBoard::new(initial_board_array);
+    /// Constructs a new `Rustoku` instance from an initial `Board`.
+    pub fn new(initial_board: RustokuBoard) -> Result<Self, RustokuError> {
+        let board = initial_board; // Now takes a Board directly
         let mut masks = RustokuMasks::new();
         let mut candidates_cache = RustokuCandidates::new();
 
-        // Initialize masks and check for duplicates
+        // Initialize masks and check for duplicates based on the provided board
         for r in 0..9 {
             for c in 0..9 {
                 let num = board.get(r, c);
@@ -65,7 +70,7 @@ impl Rustoku {
             }
         }
 
-        // Initialize the candidates cache for empty cells based on initial masks
+        // Initialize the candidates cache for empty cells based on initial masks and board
         for r in 0..9 {
             for c in 0..9 {
                 if board.is_empty(r, c) {
@@ -193,7 +198,6 @@ impl Rustoku {
     }
 
     pub fn is_solved(&self) -> bool {
-        self.board.cells.iter().flatten().all(|&val| val != 0)
-            && Rustoku::new(self.board.cells).is_ok()
+        self.board.cells.iter().flatten().all(|&val| val != 0) && Rustoku::new(self.board).is_ok()
     }
 }

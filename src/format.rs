@@ -7,10 +7,7 @@
 use crate::core::{RustokuBoard, RustokuSolution};
 use std::fmt;
 
-/// Formats the board and solve path into a human-readable string representation.
-///
-/// First we format the board into a grid representation and line format.
-/// Then we format the solve path into a string representation of moves.
+/// Formats the solution into a human-readable string representation.
 impl fmt::Display for RustokuSolution {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", self.board)?;
@@ -23,7 +20,7 @@ impl fmt::Display for RustokuSolution {
     }
 }
 
-/// Formats the Sudoku board into a human-readable string representation.
+/// Formats the board into a human-readable string representation.
 impl fmt::Display for RustokuBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;

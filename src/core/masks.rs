@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RustokuMasks {
     pub row_masks: [u16; 9],
     pub col_masks: [u16; 9],

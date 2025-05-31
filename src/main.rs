@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, RustokuBoard, RustokuTechniques, generate_puzzle};
+use rustoku::core::{Rustoku, RustokuBoard, RustokuTechniques, generate_board};
 use rustoku::error::RustokuError;
 
 #[derive(Parser, Debug)]
@@ -42,11 +42,12 @@ fn main() -> Result<(), RustokuError> {
 
     match cli.command {
         Commands::Generate { clues } => {
-            let puzzle = generate_puzzle(clues)?;
-            println!("{}", RustokuBoard::new(puzzle));
+            let board = generate_board(clues)?;
+            println!("{}", board);
         }
         Commands::Solve { puzzle, all } => {
-            let mut rustoku = Rustoku::try_from(puzzle.as_str())?;
+            let board = RustokuBoard::try_from(puzzle.as_str())?;
+            let mut rustoku = Rustoku::new(board)?;
             rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
             if all {
                 let solutions = rustoku.solve_all();
@@ -62,15 +63,17 @@ fn main() -> Result<(), RustokuError> {
             }
         }
         Commands::Check { puzzle } => {
-            let rustoku = Rustoku::try_from(puzzle.as_str())?;
+            let board = RustokuBoard::try_from(puzzle.as_str())?;
+            let rustoku = Rustoku::new(board)?;
             println!(
                 "The puzzle is {}solved correctly.",
                 if rustoku.is_solved() { "" } else { "NOT " }
             );
         }
         Commands::Show { puzzle } => {
-            let rustoku = Rustoku::try_from(puzzle.as_str())?;
-            println!("{}", rustoku.board);
+            let board = RustokuBoard::try_from(puzzle.as_str())?;
+            let rustoku = Rustoku::new(board)?;
+            print!("{}", rustoku.board);
         }
     }
 

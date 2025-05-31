@@ -4,7 +4,16 @@ use super::masks::RustokuMasks;
 use bitflags::bitflags;
 
 bitflags! {
-    /// A bitmask to control which human-like solving techniques are applied during propagation.
+    /// A bitmask to control which human techniques are applied.
+    ///
+    /// - `NONE`: No specific techniques are applied (only basic constraint checking)
+    /// - `NAKED_SINGLES`: Apply the naked singles technique
+    /// - `HIDDEN_SINGLES`: Apply the hidden singles technique
+    /// - `NAKED_PAIRS`: Apply the naked pairs technique
+    /// - `HIDDEN_PAIRS`: Apply the hidden pairs technique
+    /// - `SIMPLE`: Apply both naked and hidden singles techniques
+    /// - `COMPLEX`: Apply naked and hidden pairs techniques
+    /// - `ALL`: Apply all available human-like techniques
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct RustokuTechniques: u16 {

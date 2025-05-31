@@ -1,7 +1,7 @@
 use super::board::RustokuBoard;
 use super::masks::RustokuMasks;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct RustokuCandidates {
     cache: [[u16; 9]; 9],
 }

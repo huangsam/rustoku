@@ -7,9 +7,6 @@
 //! This module also includes a function to generate new Sudoku puzzles with a specified
 //! number of clues, ensuring that the generated puzzle has a unique solution.
 
-// mod monolith;
-// pub use self::monolith::{Rustoku, RustokuTechniques};
-
 mod board;
 mod candidates;
 mod entrypoint;
@@ -38,18 +35,18 @@ use rand::seq::SliceRandom;
 ///
 /// Generate a puzzle with 30 clues:
 /// ```
-/// use rustoku::core::generate_puzzle;
-/// let puzzle = generate_puzzle(30).unwrap();
-/// assert_eq!(puzzle.len(), 9);
-/// assert_eq!(puzzle[0].len(), 9);
+/// use rustoku::core::generate_board;
+/// let puzzle = generate_board(30).unwrap();
+/// assert_eq!(puzzle.cells.len(), 9);
+/// assert_eq!(puzzle.cells[0].len(), 9);
 /// ```
-pub fn generate_puzzle(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
+pub fn generate_board(num_clues: usize) -> Result<RustokuBoard, RustokuError> {
     if !(17..=81).contains(&num_clues) {
         return Err(RustokuError::InvalidClueCount);
     }
 
     // Start with a fully solved board
-    let mut board = Rustoku::new([[0; 9]; 9])?
+    let mut board = Rustoku::new(RustokuBoard::new([[0; 9]; 9]))?
         .solve_any()
         .ok_or(RustokuError::DuplicateValues)?
         .board;
@@ -69,7 +66,7 @@ pub fn generate_puzzle(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
         let original = board.cells[r][c];
         board.cells[r][c] = 0;
 
-        if Rustoku::new(board.cells)?.solve_until(2).len() != 1 {
+        if Rustoku::new(board)?.solve_until(2).len() != 1 {
             board.cells[r][c] = original; // Restore if not unique
         } else {
             clues -= 1;
@@ -77,17 +74,18 @@ pub fn generate_puzzle(num_clues: usize) -> Result<[[u8; 9]; 9], RustokuError> {
     }
 
     // Check if the generated puzzle has a unique solution
-    if Rustoku::new(board.cells)?.solve_until(2).len() != 1 {
+    if Rustoku::new(board)?.solve_until(2).len() != 1 {
         // If not unique, return an error
         return Err(RustokuError::MissingUniqueSolution);
     }
 
-    Ok(board.cells)
+    Ok(board)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::board::RustokuBoard;
     use crate::error::RustokuError;
     use crate::format::format_line;
 
@@ -115,46 +113,47 @@ mod tests {
         let flat_bytes: [u8; 81] = board.concat().try_into().unwrap();
         let board_str: String = flat_bytes.iter().map(|&b| (b + b'0') as char).collect();
 
-        let solver_from_new = Rustoku::new(board).unwrap();
-        let solver_from_bytes = Rustoku::try_from(flat_bytes).unwrap();
-        let solver_from_str = Rustoku::try_from(board_str.as_str()).unwrap();
+        let solver_from_new = RustokuBoard::new(board);
+        let solver_from_bytes = RustokuBoard::try_from(flat_bytes).unwrap();
+        let solver_from_str = RustokuBoard::try_from(board_str.as_str()).unwrap();
 
-        assert_eq!(solver_from_new.board.cells, solver_from_bytes.board.cells);
-        assert_eq!(solver_from_new.board.cells, solver_from_str.board.cells);
-        assert_eq!(solver_from_bytes.board.cells, solver_from_str.board.cells);
+        assert_eq!(solver_from_new, solver_from_bytes);
+        assert_eq!(solver_from_new, solver_from_str);
+        assert_eq!(solver_from_bytes, solver_from_str);
     }
 
     #[test]
     fn test_try_from_with_valid_input() {
-        let rustoku = Rustoku::try_from(UNIQUE_PUZZLE);
+        let rustoku = RustokuBoard::try_from(UNIQUE_PUZZLE);
         assert!(rustoku.is_ok());
     }
 
     #[test]
     fn test_try_from_with_invalid_length() {
         let s = "53..7...."; // Too short
-        let rustoku = Rustoku::try_from(s);
+        let rustoku = RustokuBoard::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..7X"; // 'X'
-        let rustoku = Rustoku::try_from(s);
+        let rustoku = RustokuBoard::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
     }
 
     #[test]
     fn test_try_from_with_duplicate_initial_values() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..55...8..79";
-        let rustoku = Rustoku::try_from(s);
+        let board = RustokuBoard::try_from(s);
+        let rustoku = Rustoku::new(board.unwrap());
         assert!(matches!(rustoku, Err(RustokuError::DuplicateValues)));
     }
 
     #[test]
     fn test_solve_any_with_solvable_sudoku() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
@@ -167,7 +166,7 @@ mod tests {
     #[test]
     fn test_solve_until_with_bound() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
 
         // Test with bound = 1 (find only one solution)
         let solutions = rustoku.solve_until(1);
@@ -187,7 +186,7 @@ mod tests {
 
         // Ensure the solution found with bound = 1 matches the solution found with bound = 0
         assert_eq!(
-            solutions[0].board.cells, all_solutions[0].board.cells,
+            solutions[0].board, all_solutions[0].board,
             "Solution with bound = 1 does not match the solution with bound = 0"
         );
     }
@@ -195,7 +194,7 @@ mod tests {
     #[test]
     fn test_solve_all_with_unique_solution() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
             1,
@@ -207,7 +206,7 @@ mod tests {
     #[test]
     fn test_solve_all_with_multiple_solutions() {
         let s = TWO_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
             2,
@@ -219,7 +218,7 @@ mod tests {
     #[test]
     fn test_solve_any_with_all_techniques() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
         rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
         let solution = rustoku.solve_any().unwrap();
 
@@ -233,7 +232,7 @@ mod tests {
     #[test]
     fn test_solve_all_with_all_techniques() {
         let s = TWO_PUZZLE;
-        let mut rustoku = Rustoku::try_from(s).unwrap();
+        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
         rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
         let solutions = rustoku.solve_all();
 
@@ -247,11 +246,15 @@ mod tests {
     #[test]
     fn test_generate_with_enough_clues() {
         (20..=80).step_by(20).for_each(|num_clues| {
-            let puzzle = generate_puzzle(num_clues).unwrap();
-            let mut rustoku = Rustoku::new(puzzle).unwrap();
-
+            let board = generate_board(num_clues).unwrap();
+            let mut rustoku = Rustoku::new(board).unwrap();
             // Ensure the puzzle has at least the specified number of clues
-            let clues_count = puzzle.iter().flatten().filter(|&&cell| cell != 0).count();
+            let clues_count = board
+                .cells
+                .iter()
+                .flatten()
+                .filter(|&&cell| cell != 0)
+                .count();
             assert!(
                 clues_count >= num_clues,
                 "Expected at least {} clues, but found {} clues",
@@ -273,28 +276,30 @@ mod tests {
     #[test]
     fn test_generate_with_too_few_clues() {
         let num_clues = 16; // Below the minimum valid clue count
-        let result = generate_puzzle(num_clues);
+        let result = generate_board(num_clues);
         assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
     }
 
     #[test]
     fn test_generate_with_too_many_clues() {
         let num_clues = 82; // Above the maximum valid clue count
-        let result = generate_puzzle(num_clues);
+        let result = generate_board(num_clues);
         assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
     }
 
     #[test]
     fn test_is_solved_with_valid_solution() {
         let s = UNIQUE_SOLUTION;
-        let rustoku = Rustoku::try_from(s).unwrap();
+        let board = RustokuBoard::try_from(s).unwrap();
+        let rustoku = Rustoku::new(board).unwrap();
         assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
     }
 
     #[test]
     fn test_is_solved_with_unsolved_board() {
         let s = UNIQUE_PUZZLE;
-        let rustoku = Rustoku::try_from(s).unwrap();
+        let board = RustokuBoard::try_from(s).unwrap();
+        let rustoku = Rustoku::new(board).unwrap();
         assert!(!rustoku.is_solved(), "The board should not be valid");
     }
 }
