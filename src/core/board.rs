@@ -14,7 +14,7 @@ bitflags! {
     /// - `ALL`: Apply all available human-like techniques
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct SolverTechniques: u16 {
+    pub struct RustokuTechniques: u16 {
         const NONE = 0b0000_0000;
 
         const NAKED_SINGLES = 0b0000_0001;
@@ -77,7 +77,7 @@ pub struct Rustoku {
     /// Indexed by [row][col].
     candidates_cache: [[u16; 9]; 9],
     /// Bitmask indicating which human-like solving techniques to apply during propagation.
-    techniques: SolverTechniques,
+    techniques: RustokuTechniques,
 }
 
 impl TryFrom<[u8; 81]> for Rustoku {
@@ -121,7 +121,7 @@ impl Rustoku {
             col_masks: [0; 9],
             box_masks: [0; 9],
             candidates_cache: [[0; 9]; 9], // Initialize with zeros
-            techniques: SolverTechniques::SIMPLE, // Default to using all techniques
+            techniques: RustokuTechniques::SIMPLE, // Default to using all techniques
         };
 
         // Initialize the masks based on the given initial board
@@ -149,7 +149,7 @@ impl Rustoku {
     }
 
     /// Sets the human-like solving techniques to be used during propagation.
-    pub fn with_techniques(mut self, techniques: SolverTechniques) -> Self {
+    pub fn with_techniques(mut self, techniques: RustokuTechniques) -> Self {
         self.techniques = techniques;
         self
     }
@@ -651,16 +651,16 @@ impl Rustoku {
         loop {
             let mut changed_this_iter = false;
 
-            if self.techniques.contains(SolverTechniques::NAKED_SINGLES) {
+            if self.techniques.contains(RustokuTechniques::NAKED_SINGLES) {
                 changed_this_iter |= self.naked_singles(path);
             }
-            if self.techniques.contains(SolverTechniques::HIDDEN_SINGLES) {
+            if self.techniques.contains(RustokuTechniques::HIDDEN_SINGLES) {
                 changed_this_iter |= self.hidden_singles(path);
             }
-            if self.techniques.contains(SolverTechniques::NAKED_PAIRS) {
+            if self.techniques.contains(RustokuTechniques::NAKED_PAIRS) {
                 changed_this_iter |= self.naked_pairs(path);
             }
-            if self.techniques.contains(SolverTechniques::HIDDEN_PAIRS) {
+            if self.techniques.contains(RustokuTechniques::HIDDEN_PAIRS) {
                 changed_this_iter |= self.hidden_pairs(path);
             }
 

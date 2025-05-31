@@ -10,7 +10,7 @@
 mod board;
 mod client;
 
-pub use self::board::{Rustoku, SolverTechniques};
+pub use self::board::{Rustoku, RustokuTechniques};
 use crate::error::RustokuError;
 use rand::rng;
 use rand::seq::SliceRandom;
@@ -209,7 +209,7 @@ mod tests {
     fn test_solve_any_with_all_techniques() {
         let s = UNIQUE_PUZZLE;
         let mut rustoku = Rustoku::try_from(s).unwrap();
-        rustoku = rustoku.with_techniques(SolverTechniques::ALL);
+        rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
@@ -223,7 +223,7 @@ mod tests {
     fn test_solve_all_with_all_techniques() {
         let s = TWO_PUZZLE;
         let mut rustoku = Rustoku::try_from(s).unwrap();
-        rustoku = rustoku.with_techniques(SolverTechniques::ALL);
+        rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
         let solutions = rustoku.solve_all();
 
         assert_eq!(
