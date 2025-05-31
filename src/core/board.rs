@@ -515,6 +515,10 @@ impl Rustoku {
     /// A hidden pair occurs when two specific numbers can only be placed in two specific cells
     /// within a unit (row, column, or 3x3 box), even if those cells themselves have other candidates.
     /// The technique then removes all other candidates from those two cells.
+    ///
+    /// Note that this code works just fine for solving puzzles, but has a probability of
+    /// not generating unique puzzles. Please use this, and other complex techniques, with
+    /// a healthy dose of caution for generation use cases.
     fn hidden_pairs(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
         let mut overall_placements_made = false;
 
