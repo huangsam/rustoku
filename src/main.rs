@@ -2,7 +2,12 @@ use clap::{Parser, Subcommand};
 use rustoku::core::{Rustoku, RustokuBoard, RustokuTechniques, generate_board};
 
 #[derive(Parser, Debug)]
-#[command(author, version, about = "A Sudoku puzzle solver and generator", long_about = None)]
+#[command(
+    author,
+    version,
+    about = "Rustoku: Lightning-fast Sudoku",
+    long_about = "Solves, checks and generates Sudoku puzzles with lightning speed."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
