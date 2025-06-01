@@ -87,6 +87,12 @@ impl Rustoku {
         })
     }
 
+    /// Constructs a new `Rustoku` instance from a string representation of the board.
+    pub fn new_from_str(s: &str) -> Result<Self, RustokuError> {
+        let board = RustokuBoard::try_from(s)?;
+        Self::new(board)
+    }
+
     /// Returns the existing Rustoku instance, with modified techniques.
     pub fn with_techniques(mut self, techniques: RustokuTechniques) -> Self {
         self.techniques = techniques;

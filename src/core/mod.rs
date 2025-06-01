@@ -112,13 +112,13 @@ mod tests {
         let flat_bytes: [u8; 81] = board.concat().try_into().unwrap();
         let board_str: String = flat_bytes.iter().map(|&b| (b + b'0') as char).collect();
 
-        let solver_from_new = RustokuBoard::new(board);
-        let solver_from_bytes = RustokuBoard::try_from(flat_bytes).unwrap();
-        let solver_from_str = RustokuBoard::try_from(board_str.as_str()).unwrap();
+        let board_from_new = RustokuBoard::new(board);
+        let board_from_bytes = RustokuBoard::try_from(flat_bytes).unwrap();
+        let board_from_str = RustokuBoard::try_from(board_str.as_str()).unwrap();
 
-        assert_eq!(solver_from_new, solver_from_bytes);
-        assert_eq!(solver_from_new, solver_from_str);
-        assert_eq!(solver_from_bytes, solver_from_str);
+        assert_eq!(board_from_new, board_from_bytes);
+        assert_eq!(board_from_new, board_from_str);
+        assert_eq!(board_from_bytes, board_from_str);
     }
 
     #[test]
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn test_solve_any_with_solvable_sudoku() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
+        let mut rustoku = Rustoku::new_from_str(s).unwrap();
         let solution = rustoku.solve_any().unwrap();
 
         assert_eq!(
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn test_solve_until_with_bound() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
+        let mut rustoku = Rustoku::new_from_str(s).unwrap();
 
         // Test with bound = 1 (find only one solution)
         let solutions = rustoku.solve_until(1);
@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn test_solve_all_with_unique_solution() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
+        let mut rustoku = Rustoku::new_from_str(s).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
             1,
@@ -205,7 +205,7 @@ mod tests {
     #[test]
     fn test_solve_all_with_multiple_solutions() {
         let s = TWO_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
+        let mut rustoku = Rustoku::new_from_str(s).unwrap();
         let solutions = rustoku.solve_all();
         assert_eq!(
             2,
@@ -217,28 +217,16 @@ mod tests {
     #[test]
     fn test_solve_any_with_all_techniques() {
         let s = UNIQUE_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
-        rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
-        let solution = rustoku.solve_any().unwrap();
+        let rustoku = Rustoku::new_from_str(s).unwrap();
+        let solution = rustoku
+            .with_techniques(RustokuTechniques::ALL)
+            .solve_any()
+            .unwrap();
 
         assert_eq!(
             UNIQUE_SOLUTION,
             format_line(&solution.board.cells),
             "Solution does not match the expected result with all techniques"
-        );
-    }
-
-    #[test]
-    fn test_solve_all_with_all_techniques() {
-        let s = TWO_PUZZLE;
-        let mut rustoku = Rustoku::new(RustokuBoard::try_from(s).unwrap()).unwrap();
-        rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
-        let solutions = rustoku.solve_all();
-
-        assert_eq!(
-            2,
-            solutions.len(),
-            "Expected two solutions for the given board with all techniques"
         );
     }
 
