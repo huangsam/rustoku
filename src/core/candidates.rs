@@ -1,5 +1,5 @@
-use super::board::RustokuBoard;
-use super::masks::RustokuMasks;
+use super::board::Board;
+use super::masks::Masks;
 
 /// Represents the candidates cache for a Rustoku puzzle.
 ///
@@ -9,13 +9,13 @@ use super::masks::RustokuMasks;
 /// The `RustokuCandidates` struct provides methods to get and set candidate masks for specific cells,
 /// as well as to update the candidates based on the current state of the board and masks.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(super) struct RustokuCandidates {
+pub(super) struct Candidates {
     cache: [[u16; 9]; 9],
 }
 
-impl RustokuCandidates {
+impl Candidates {
     pub(super) fn new() -> Self {
-        RustokuCandidates { cache: [[0; 9]; 9] }
+        Candidates { cache: [[0; 9]; 9] }
     }
 
     /// Returns the candidate mask for a specific cell in the cache.
@@ -33,8 +33,8 @@ impl RustokuCandidates {
         &mut self,
         r: usize,
         c: usize,
-        masks: &RustokuMasks,
-        board: &RustokuBoard,
+        masks: &Masks,
+        board: &Board,
     ) {
         // Invalidate/update cache for the placed cell
         self.cache[r][c] = 0; // No candidates for a filled cell
@@ -50,7 +50,7 @@ impl RustokuCandidates {
         }
 
         // Update box cells
-        let box_idx = RustokuMasks::get_box_idx(r, c);
+        let box_idx = Masks::get_box_idx(r, c);
         let start_row = (box_idx / 3) * 3;
         let start_col = (box_idx % 3) * 3;
         for r_offset in 0..3 {

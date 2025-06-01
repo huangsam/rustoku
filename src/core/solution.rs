@@ -1,4 +1,4 @@
-use super::board::RustokuBoard;
+use super::board::Board;
 
 /// Represents a solved Sudoku board and the solution path.
 ///
@@ -6,9 +6,9 @@ use super::board::RustokuBoard;
 /// provides the sequence of moves that led to the solution, which can be useful for debugging
 /// or understanding the solving process.
 #[derive(Debug, Clone)]
-pub struct RustokuSolution {
+pub struct Solution {
     /// The solved Sudoku board, represented as a 2D array
-    pub board: RustokuBoard,
+    pub board: Board,
     /// The sequence of moves (row, col, value) made to reach the solution
     pub solve_path: Vec<(usize, usize, u8)>,
 }

@@ -9,20 +9,20 @@ use crate::error::RustokuError;
 /// - Using a 1D array of `u8` with length 81
 /// - Using a string representation with length 81
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RustokuBoard {
+pub struct Board {
     pub cells: [[u8; 9]; 9],
 }
 
-impl RustokuBoard {
+impl Board {
     pub fn new(initial_board: [[u8; 9]; 9]) -> Self {
-        RustokuBoard {
+        Board {
             cells: initial_board,
         }
     }
 
     /// Creates an empty Rustoku board, where all cells are initialized to 0.
     pub fn empty() -> Self {
-        RustokuBoard {
+        Board {
             cells: [[0u8; 9]; 9],
         }
     }
@@ -61,7 +61,7 @@ impl RustokuBoard {
     }
 }
 
-impl TryFrom<[u8; 81]> for RustokuBoard {
+impl TryFrom<[u8; 81]> for Board {
     type Error = RustokuError;
 
     fn try_from(bytes: [u8; 81]) -> Result<Self, Self::Error> {
@@ -74,11 +74,11 @@ impl TryFrom<[u8; 81]> for RustokuBoard {
             }
             board[i / 9][i % 9] = bytes[i];
         }
-        Ok(RustokuBoard::new(board)) // Construct the RustokuBoard
+        Ok(Board::new(board)) // Construct the RustokuBoard
     }
 }
 
-impl TryFrom<&str> for RustokuBoard {
+impl TryFrom<&str> for Board {
     type Error = RustokuError;
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {

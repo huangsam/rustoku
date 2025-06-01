@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use rustoku::core::Board;
 use rustoku::core::Rustoku;
-use rustoku::core::RustokuBoard;
 use rustoku::core::generate_board;
 use std::hint::black_box;
 
@@ -15,7 +15,7 @@ fn benchmark_solve_any(c: &mut Criterion) {
 
     // Benchmark `solve_any` for a unique puzzle
     group.bench_function("solve_any_unique", |b| {
-        let board = RustokuBoard::try_from(UNIQUE_PUZZLE).unwrap();
+        let board = Board::try_from(UNIQUE_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
         b.iter(|| {
             // Use black_box to prevent the compiler from optimizing away the computation
@@ -25,7 +25,7 @@ fn benchmark_solve_any(c: &mut Criterion) {
 
     // Benchmark `solve_any` for a puzzle with two solutions (might be slightly different behavior)
     group.bench_function("solve_any_two_solutions", |b| {
-        let board = RustokuBoard::try_from(TWO_PUZZLE).unwrap();
+        let board = Board::try_from(TWO_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
         b.iter(|| {
             black_box(rustoku.clone().solve_any());
@@ -40,7 +40,7 @@ fn benchmark_solve_all(c: &mut Criterion) {
 
     // Benchmark `solve_all` for a unique puzzle
     group.bench_function("solve_all_unique", |b| {
-        let board = RustokuBoard::try_from(UNIQUE_PUZZLE).unwrap();
+        let board = Board::try_from(UNIQUE_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
         b.iter(|| {
             black_box(rustoku.clone().solve_all());
@@ -49,7 +49,7 @@ fn benchmark_solve_all(c: &mut Criterion) {
 
     // Benchmark `solve_all` for a puzzle with two solutions
     group.bench_function("solve_all_two_solutions", |b| {
-        let board = RustokuBoard::try_from(TWO_PUZZLE).unwrap();
+        let board = Board::try_from(TWO_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
         b.iter(|| {
             black_box(rustoku.clone().solve_all());

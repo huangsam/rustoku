@@ -4,15 +4,15 @@
 /// Each bit in the masks corresponds to a number from 1 to 9, where a bit set to 1 indicates
 /// that the corresponding number is present in that row, column, or box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct RustokuMasks {
+pub(super) struct Masks {
     pub(super) row_masks: [u16; 9],
     pub(super) col_masks: [u16; 9],
     pub(super) box_masks: [u16; 9],
 }
 
-impl RustokuMasks {
+impl Masks {
     pub(super) fn new() -> Self {
-        RustokuMasks {
+        Masks {
             row_masks: [0; 9],
             col_masks: [0; 9],
             box_masks: [0; 9],

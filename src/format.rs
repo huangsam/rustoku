@@ -4,11 +4,11 @@
 //! in various ways. It also includes a simple utility to print the board to
 //! the console.
 
-use crate::core::{RustokuBoard, RustokuSolution};
+use crate::core::{Board, Solution};
 use std::fmt;
 
 /// Formats the solution into a human-readable string representation.
-impl fmt::Display for RustokuSolution {
+impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", self.board)?;
         writeln!(
@@ -21,7 +21,7 @@ impl fmt::Display for RustokuSolution {
 }
 
 /// Formats the board into a human-readable string representation.
-impl fmt::Display for RustokuBoard {
+impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;
         writeln!(f, "Line format: {}", format_line(&self.cells))?;

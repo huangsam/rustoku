@@ -15,10 +15,10 @@ mod solution;
 mod techniques;
 
 use crate::error::RustokuError;
-pub use board::RustokuBoard;
+pub use board::Board;
 pub use entrypoint::Rustoku;
-pub use solution::RustokuSolution;
-pub use techniques::RustokuTechniques;
+pub use solution::Solution;
+pub use techniques::TechniqueMask;
 
 use rand::rng;
 use rand::seq::SliceRandom;
@@ -40,13 +40,13 @@ use rand::seq::SliceRandom;
 /// assert_eq!(puzzle.cells.len(), 9);
 /// assert_eq!(puzzle.cells[0].len(), 9);
 /// ```
-pub fn generate_board(num_clues: usize) -> Result<RustokuBoard, RustokuError> {
+pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     if !(17..=81).contains(&num_clues) {
         return Err(RustokuError::InvalidClueCount);
     }
 
     // Start with a fully solved board
-    let mut rustoku = Rustoku::new(RustokuBoard::empty())?;
+    let mut rustoku = Rustoku::new(Board::empty())?;
     let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
     let mut board = solution.board;
 
@@ -84,7 +84,7 @@ pub fn generate_board(num_clues: usize) -> Result<RustokuBoard, RustokuError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::board::RustokuBoard;
+    use crate::core::board::Board;
     use crate::error::RustokuError;
     use crate::format::format_line;
 
@@ -117,11 +117,9 @@ mod tests {
             .expect("Concat board to bytes failed");
         let board_str: String = flat_bytes.iter().map(|&b| (b + b'0') as char).collect();
 
-        let board_from_new = RustokuBoard::new(board);
-        let board_from_bytes =
-            RustokuBoard::try_from(flat_bytes).expect("Board from flat bytes failed");
-        let board_from_str =
-            RustokuBoard::try_from(board_str.as_str()).expect("Board from string failed");
+        let board_from_new = Board::new(board);
+        let board_from_bytes = Board::try_from(flat_bytes).expect("Board from flat bytes failed");
+        let board_from_str = Board::try_from(board_str.as_str()).expect("Board from string failed");
 
         assert_eq!(board_from_new, board_from_bytes);
         assert_eq!(board_from_new, board_from_str);
@@ -130,28 +128,28 @@ mod tests {
 
     #[test]
     fn test_try_from_with_valid_input() {
-        let rustoku = RustokuBoard::try_from(UNIQUE_PUZZLE);
+        let rustoku = Board::try_from(UNIQUE_PUZZLE);
         assert!(rustoku.is_ok());
     }
 
     #[test]
     fn test_try_from_with_invalid_length() {
         let s = "53..7...."; // Too short
-        let rustoku = RustokuBoard::try_from(s);
+        let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..7X"; // 'X'
-        let rustoku = RustokuBoard::try_from(s);
+        let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
     }
 
     #[test]
     fn test_try_from_with_duplicate_initial_values() {
         let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..55...8..79";
-        let board = RustokuBoard::try_from(s).expect("Board parsing failed before duplicate check");
+        let board = Board::try_from(s).expect("Board parsing failed before duplicate check");
         let rustoku = Rustoku::new(board);
         assert!(matches!(rustoku, Err(RustokuError::DuplicateValues)));
     }
@@ -251,7 +249,7 @@ mod tests {
         let s = UNIQUE_PUZZLE;
         let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for technique test");
         let solution = rustoku
-            .with_techniques(RustokuTechniques::ALL)
+            .with_techniques(TechniqueMask::ALL)
             .solve_any()
             .expect("Solving with all techniques failed");
 
@@ -267,7 +265,7 @@ mod tests {
         let s = TWO_PUZZLE;
         let rustoku = Rustoku::new_from_str(s)
             .expect("Rustoku creation failed for multi-solution technique test");
-        let solutions = rustoku.with_techniques(RustokuTechniques::ALL).solve_all();
+        let solutions = rustoku.with_techniques(TechniqueMask::ALL).solve_all();
 
         assert_eq!(
             2,
@@ -323,7 +321,7 @@ mod tests {
     #[test]
     fn test_is_solved_with_valid_solution() {
         let s = UNIQUE_SOLUTION;
-        let board = RustokuBoard::try_from(s).expect("Parsing valid solution failed");
+        let board = Board::try_from(s).expect("Parsing valid solution failed");
         let rustoku = Rustoku::new(board).expect("Rustoku creation failed for solved check");
         assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
     }
@@ -331,7 +329,7 @@ mod tests {
     #[test]
     fn test_is_solved_with_unsolved_board() {
         let s = UNIQUE_PUZZLE;
-        let board = RustokuBoard::try_from(s).expect("Parsing unsolved puzzle failed");
+        let board = Board::try_from(s).expect("Parsing unsolved puzzle failed");
         let rustoku = Rustoku::new(board).expect("Rustoku creation failed for unsolved check");
         assert!(!rustoku.is_solved(), "The board should not be valid");
     }

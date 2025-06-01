@@ -1,8 +1,8 @@
-use super::board::RustokuBoard;
-use super::candidates::RustokuCandidates;
-use super::masks::RustokuMasks;
-use super::solution::RustokuSolution;
-use super::techniques::{RustokuTechniques, TechniquePropagator};
+use super::board::Board;
+use super::candidates::Candidates;
+use super::masks::Masks;
+use super::solution::Solution;
+use super::techniques::{TechniqueMask, TechniquePropagator};
 use crate::error::RustokuError;
 use rand::prelude::SliceRandom;
 use rand::rng;
@@ -19,9 +19,9 @@ use rand::rng;
 ///
 /// Solve a Sudoku puzzle:
 /// ```
-/// use rustoku::core::{Rustoku, RustokuBoard};
+/// use rustoku::core::{Rustoku, Board};
 /// let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
-/// let board = RustokuBoard::try_from(s).unwrap();
+/// let board = Board::try_from(s).unwrap();
 /// let mut rustoku = Rustoku::new(board).unwrap();
 /// assert!(rustoku.solve_any().is_some());
 /// ```
@@ -36,26 +36,26 @@ use rand::rng;
 ///
 /// Check if a Sudoku puzzle is solved:
 /// ```
-/// use rustoku::core::{Rustoku, RustokuBoard};
+/// use rustoku::core::{Rustoku, Board};
 /// let s = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
-/// let board = RustokuBoard::try_from(s).unwrap();
+/// let board = Board::try_from(s).unwrap();
 /// let rustoku = Rustoku::new(board).unwrap();
 /// assert!(rustoku.is_solved());
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Rustoku {
-    pub board: RustokuBoard,
-    masks: RustokuMasks,
-    candidates_cache: RustokuCandidates,
-    techniques: RustokuTechniques,
+    pub board: Board,
+    masks: Masks,
+    candidates_cache: Candidates,
+    techniques: TechniqueMask,
 }
 
 impl Rustoku {
     /// Constructs a new `Rustoku` instance from an initial `Board`.
-    pub fn new(initial_board: RustokuBoard) -> Result<Self, RustokuError> {
+    pub fn new(initial_board: Board) -> Result<Self, RustokuError> {
         let board = initial_board; // Now takes a Board directly
-        let mut masks = RustokuMasks::new();
-        let mut candidates_cache = RustokuCandidates::new();
+        let mut masks = Masks::new();
+        let mut candidates_cache = Candidates::new();
 
         // Initialize masks and check for duplicates based on the provided board
         for r in 0..9 {
@@ -83,18 +83,18 @@ impl Rustoku {
             board,
             masks,
             candidates_cache,
-            techniques: RustokuTechniques::EASY, // Default
+            techniques: TechniqueMask::EASY, // Default
         })
     }
 
     /// Constructs a new `Rustoku` instance from a string representation of the board.
     pub fn new_from_str(s: &str) -> Result<Self, RustokuError> {
-        let board = RustokuBoard::try_from(s)?;
+        let board = Board::try_from(s)?;
         Self::new(board)
     }
 
     /// Returns the existing Rustoku instance, with modified techniques.
-    pub fn with_techniques(mut self, techniques: RustokuTechniques) -> Self {
+    pub fn with_techniques(mut self, techniques: TechniqueMask) -> Self {
         self.techniques = techniques;
         self
     }
@@ -134,7 +134,7 @@ impl Rustoku {
     /// Recursive function to solve the Sudoku puzzle with backtracking.
     fn solve_until_recursive(
         &mut self,
-        solutions: &mut Vec<RustokuSolution>,
+        solutions: &mut Vec<Solution>,
         path: &mut Vec<(usize, usize, u8)>,
         bound: usize,
     ) -> usize {
@@ -158,7 +158,7 @@ impl Rustoku {
             }
             count
         } else {
-            solutions.push(RustokuSolution {
+            solutions.push(Solution {
                 board: self.board,
                 solve_path: path.clone(),
             });
@@ -167,7 +167,7 @@ impl Rustoku {
     }
 
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
-    pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
+    pub fn solve_until(&mut self, bound: usize) -> Vec<Solution> {
         let mut solutions = Vec::new();
         let mut path = Vec::new();
 
@@ -187,12 +187,12 @@ impl Rustoku {
     }
 
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
-    pub fn solve_any(&mut self) -> Option<RustokuSolution> {
+    pub fn solve_any(&mut self) -> Option<Solution> {
         self.solve_until(1).into_iter().next()
     }
 
     /// Finds all possible solutions for the Sudoku puzzle.
-    pub fn solve_all(&mut self) -> Vec<RustokuSolution> {
+    pub fn solve_all(&mut self) -> Vec<Solution> {
         self.solve_until(0)
     }
 
