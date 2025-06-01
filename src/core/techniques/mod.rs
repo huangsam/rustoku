@@ -3,12 +3,12 @@ use super::candidates::Candidates;
 use super::masks::Masks;
 use bitflags::bitflags;
 
-pub mod hidden_pairs;
-pub mod hidden_singles;
-pub mod locked_candidates;
-pub mod naked_pairs;
-pub mod naked_singles;
-pub mod x_wing;
+mod hidden_pairs;
+mod hidden_singles;
+mod locked_candidates;
+mod naked_pairs;
+mod naked_singles;
+mod x_wing;
 
 use hidden_pairs::HiddenPairs;
 use hidden_singles::HiddenSingles;
