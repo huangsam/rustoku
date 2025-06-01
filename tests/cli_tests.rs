@@ -30,7 +30,7 @@ fn test_generate_default_clues() {
         .clone();
 
     // You could also parse the output to count clues if needed, but a basic check is fine for smoke test.
-    let output_str = String::from_utf8(output).unwrap();
+    let output_str = String::from_utf8(output).expect("Failed to convert output to string");
     // A simple check to ensure it looks like a Sudoku board (e.g., contains numbers and empty cells)
     assert!(output_str.len() > 100); // Very rough check for a full board
 }
