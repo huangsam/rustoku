@@ -1,5 +1,8 @@
 # Rustoku
 
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/huangsam/rustoku/ci.yml)](https://github.com/huangsam/rustoku/actions)
+[![License](https://img.shields.io/github/license/huangsam/rustoku)](https://github.com/huangsam/rustoku/blob/main/LICENSE)
+
 **Lightning-fast Sudoku solving and generation, crafted in Rust.**
 
 Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and efficiency.
