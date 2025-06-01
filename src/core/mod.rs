@@ -51,7 +51,7 @@ pub fn generate_board(num_clues: usize) -> Result<RustokuBoard, RustokuError> {
     let mut board = solution.board;
 
     // Shuffle all cell coordinates
-    let mut cells: Vec<(usize, usize)> = (0..9).flat_map(|r| (0..9).map(move |c| (r, c))).collect();
+    let mut cells: Vec<(usize, usize)> = board.iter_cells().collect();
     cells.shuffle(&mut rng());
 
     let mut clues = 81;

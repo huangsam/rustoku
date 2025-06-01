@@ -43,6 +43,11 @@ impl RustokuBoard {
     }
 
     /// Iterates over all cells in the board, yielding their row and column indices.
+    pub fn iter_cells(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        (0..9).flat_map(move |r| (0..9).map(move |c| (r, c)))
+    }
+
+    /// Iterates over empty cells in the board, yielding their row and column indices.
     pub fn iter_empty_cells(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         (0..9).flat_map(move |r| {
             (0..9).filter_map(move |c| {
@@ -54,8 +59,6 @@ impl RustokuBoard {
             })
         })
     }
-
-    // You might also add methods to get an iterator over a row, column, or box's cells.
 }
 
 impl TryFrom<[u8; 81]> for RustokuBoard {
