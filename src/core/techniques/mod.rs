@@ -1,0 +1,150 @@
+use super::board::Board;
+use super::candidates::Candidates;
+use super::masks::Masks;
+use bitflags::bitflags;
+
+// Re-export the individual technique implementations
+pub mod hidden_pairs;
+pub mod hidden_singles;
+pub mod locked_candidates;
+pub mod naked_pairs;
+pub mod naked_singles;
+pub mod x_wing;
+
+use hidden_pairs::HiddenPairs;
+use hidden_singles::HiddenSingles;
+use locked_candidates::LockedCandidates;
+use naked_pairs::NakedPairs;
+use naked_singles::NakedSingles;
+use x_wing::XWing;
+
+bitflags! {
+    /// A bitmask to control which human techniques are applied.
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct TechniqueMask: u16 {
+        /// No specific techniques are applied.
+        const NONE = 0;
+        /// Apply the naked singles technique.
+        const NAKED_SINGLES = 1 << 0;
+        /// Apply the hidden singles technique.
+        const HIDDEN_SINGLES = 1 << 1;
+        /// Apply the naked pairs technique.
+        const NAKED_PAIRS = 1 << 2;
+        /// Apply the hidden pairs technique.
+        const HIDDEN_PAIRS = 1 << 3;
+        /// Apply the locked candidates technique.
+        const LOCKED_CANDIDATES = 1 << 4;
+        /// Apply the X-Wing technique.
+        const XWING = 1 << 5;
+
+        /// Apply easy techniques like naked singles and hidden singles.
+        const EASY = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
+        /// Apply medium techniques like naked pairs and hidden pairs.
+        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
+        /// Apply hard techniques like locked candidates and X-Wings.
+        const HARD = Self::LOCKED_CANDIDATES.bits() | Self::XWING.bits();
+        /// Apply all available human-like techniques
+        const ALL = Self::EASY.bits() | Self::MEDIUM.bits() | Self::HARD.bits();
+    }
+}
+
+// Now the actual implementation of the techniques, these would operate on
+// references to Board, Masks, and CandidatesCache.
+pub struct TechniquePropagator<'a> {
+    board: &'a mut Board,
+    masks: &'a mut Masks,
+    candidates_cache: &'a mut Candidates,
+    techniques_enabled: TechniqueMask,
+}
+
+impl<'a> TechniquePropagator<'a> {
+    pub fn new(
+        board: &'a mut Board,
+        masks: &'a mut Masks,
+        candidates_cache: &'a mut Candidates,
+        techniques_enabled: TechniqueMask,
+    ) -> Self {
+        Self {
+            board,
+            masks,
+            candidates_cache,
+            techniques_enabled,
+        }
+    }
+
+    /// Helper to place a number and update caches.
+    pub(super) fn place_and_update(
+        &mut self,
+        r: usize,
+        c: usize,
+        num: u8,
+        path: &mut Vec<(usize, usize, u8)>,
+    ) {
+        self.board.set(r, c, num);
+        self.masks.add_number(r, c, num);
+        self.candidates_cache
+            .update_affected_cells(r, c, self.masks, self.board);
+        path.push((r, c, num));
+    }
+
+    /// Helper to remove a number and update caches.
+    pub(super) fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
+        self.board.set(r, c, 0);
+        self.masks.remove_number(r, c, num);
+        self.candidates_cache
+            .update_affected_cells(r, c, self.masks, self.board);
+        // Note: For propagation, `remove_number` is mostly for backtracking, not direct technique application.
+        // The `update_affected_cells` on removal will recalculate candidates for the now-empty cell.
+    }
+
+    /// Applies deterministic constraint propagation techniques iteratively.
+    pub fn propagate_constraints(
+        &mut self,
+        path: &mut Vec<(usize, usize, u8)>,
+        initial_path_len: usize,
+    ) -> bool {
+        let techniques: Vec<(&dyn TechniqueRule, TechniqueMask)> = vec![
+            (&NakedSingles, TechniqueMask::NAKED_SINGLES),
+            (&HiddenSingles, TechniqueMask::HIDDEN_SINGLES),
+            (&NakedPairs, TechniqueMask::NAKED_PAIRS),
+            (&HiddenPairs, TechniqueMask::HIDDEN_PAIRS),
+            (&LockedCandidates, TechniqueMask::LOCKED_CANDIDATES),
+            (&XWing, TechniqueMask::XWING),
+        ];
+
+        loop {
+            let mut changed_this_iter = false;
+
+            for (technique, flag) in &techniques {
+                if self.techniques_enabled.contains(*flag) {
+                    changed_this_iter |= technique.apply(self, path);
+                    if changed_this_iter {
+                        break;
+                    }
+                }
+            }
+
+            if (0..9).any(|r| {
+                (0..9).any(|c| self.board.is_empty(r, c) && self.candidates_cache.get(r, c) == 0)
+            }) {
+                while path.len() > initial_path_len {
+                    if let Some((r, c, num)) = path.pop() {
+                        self.remove_and_update(r, c, num);
+                    }
+                }
+                return false;
+            }
+
+            if !changed_this_iter {
+                break;
+            }
+        }
+        true
+    }
+}
+
+pub trait TechniqueRule {
+    /// Applies the technique to the given propagator.
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool;
+}
