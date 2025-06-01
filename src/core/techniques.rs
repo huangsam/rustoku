@@ -30,7 +30,7 @@ bitflags! {
 
 // Now the actual implementation of the techniques, these would operate on
 // references to Board, Masks, and CandidatesCache.
-pub struct TechniquePropagator<'a> {
+pub(super) struct TechniquePropagator<'a> {
     board: &'a mut RustokuBoard,
     masks: &'a mut RustokuMasks,
     candidates_cache: &'a mut RustokuCandidates,
@@ -38,7 +38,7 @@ pub struct TechniquePropagator<'a> {
 }
 
 impl<'a> TechniquePropagator<'a> {
-    pub fn new(
+    pub(super) fn new(
         board: &'a mut RustokuBoard,
         masks: &'a mut RustokuMasks,
         candidates_cache: &'a mut RustokuCandidates,
@@ -366,7 +366,7 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Applies deterministic constraint propagation techniques iteratively.
-    pub fn propagate_constraints(
+    pub(super) fn propagate_constraints(
         &mut self,
         path: &mut Vec<(usize, usize, u8)>,
         initial_path_len: usize,

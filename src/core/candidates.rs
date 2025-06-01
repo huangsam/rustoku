@@ -9,26 +9,26 @@ use super::masks::RustokuMasks;
 /// The `RustokuCandidates` struct provides methods to get and set candidate masks for specific cells,
 /// as well as to update the candidates based on the current state of the board and masks.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct RustokuCandidates {
+pub(super) struct RustokuCandidates {
     cache: [[u16; 9]; 9],
 }
 
 impl RustokuCandidates {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         RustokuCandidates { cache: [[0; 9]; 9] }
     }
 
-    pub fn get(&self, r: usize, c: usize) -> u16 {
+    pub(super) fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
     }
 
-    pub fn set(&mut self, r: usize, c: usize, mask: u16) {
+    pub(super) fn set(&mut self, r: usize, c: usize, mask: u16) {
         self.cache[r][c] = mask;
     }
 
     // Invalidation logic would live here, but would need to know about the `Masks` struct
     // or receive the calculated mask.
-    pub fn update_affected_cells(
+    pub(super) fn update_affected_cells(
         &mut self,
         r: usize,
         c: usize,

@@ -4,14 +4,14 @@
 /// Each bit in the masks corresponds to a number from 1 to 9, where a bit set to 1 indicates
 /// that the corresponding number is present in that row, column, or box.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RustokuMasks {
-    pub row_masks: [u16; 9],
-    pub col_masks: [u16; 9],
-    pub box_masks: [u16; 9],
+pub(super) struct RustokuMasks {
+    pub(super) row_masks: [u16; 9],
+    pub(super) col_masks: [u16; 9],
+    pub(super) box_masks: [u16; 9],
 }
 
 impl RustokuMasks {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         RustokuMasks {
             row_masks: [0; 9],
             col_masks: [0; 9],
@@ -23,7 +23,7 @@ impl RustokuMasks {
         (r / 3) * 3 + (c / 3)
     }
 
-    pub fn add_number(&mut self, r: usize, c: usize, num: u8) {
+    pub(super) fn add_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_set = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
         self.row_masks[r] |= bit_to_set;
@@ -31,7 +31,7 @@ impl RustokuMasks {
         self.box_masks[box_idx] |= bit_to_set;
     }
 
-    pub fn remove_number(&mut self, r: usize, c: usize, num: u8) {
+    pub(super) fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_unset = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
         self.row_masks[r] &= !bit_to_unset;
@@ -39,7 +39,7 @@ impl RustokuMasks {
         self.box_masks[box_idx] &= !bit_to_unset;
     }
 
-    pub fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
+    pub(super) fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
 
@@ -48,7 +48,7 @@ impl RustokuMasks {
             && (self.box_masks[box_idx] & bit_to_check == 0)
     }
 
-    pub fn compute_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
+    pub(super) fn compute_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
         let box_mask = self.box_masks[Self::get_box_idx(r, c)];
