@@ -69,10 +69,10 @@ fn benchmark_generate_board(c: &mut Criterion) {
         });
     });
 
-    // Benchmark `generate_board` with fewer clues (often harder to generate)
-    group.bench_function("generate_board_25_clues", |b| {
+    // Benchmark `generate_board` with fewer clues
+    group.bench_function("generate_board_30_clues", |b| {
         b.iter(|| {
-            black_box(generate_board(25).unwrap());
+            black_box(generate_board(30).unwrap());
         });
     });
 

@@ -94,6 +94,8 @@ mod tests {
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
     const TWO_PUZZLE: &str =
         "2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..";
+    const SIX_PUZZLE: &str =
+        "295743..14318659..8761925433874592166123874955492167387635.......................";
 
     #[test]
     fn test_new_with_bytes_and_str() {
@@ -206,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn test_solve_all_with_unique_solution() {
+    fn test_solve_all_with_unique_puzzle() {
         let s = UNIQUE_PUZZLE;
         let mut rustoku =
             Rustoku::new_from_str(s).expect("Rustoku creation failed from unique puzzle string");
@@ -219,15 +221,28 @@ mod tests {
     }
 
     #[test]
-    fn test_solve_all_with_multiple_solutions() {
+    fn test_solve_all_with_two_puzzle() {
         let s = TWO_PUZZLE;
-        let mut rustoku = Rustoku::new_from_str(s)
-            .expect("Rustoku creation failed from multi-solution puzzle string");
+        let mut rustoku =
+            Rustoku::new_from_str(s).expect("Rustoku creation failed from two puzzle string");
         let solutions = rustoku.solve_all();
         assert_eq!(
             2,
             solutions.len(),
             "Expected two solutions for the given board"
+        );
+    }
+
+    #[test]
+    fn test_solve_all_with_six_puzzle() {
+        let s = SIX_PUZZLE;
+        let mut rustoku =
+            Rustoku::new_from_str(s).expect("Rustoku creation failed from six puzzle string");
+        let solutions = rustoku.solve_all();
+        assert_eq!(
+            6,
+            solutions.len(),
+            "Expected one solution for the six puzzle"
         );
     }
 
