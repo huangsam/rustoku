@@ -3,7 +3,6 @@ use super::candidates::Candidates;
 use super::masks::Masks;
 use bitflags::bitflags;
 
-// Re-export the individual technique implementations
 pub mod hidden_pairs;
 pub mod hidden_singles;
 pub mod locked_candidates;
