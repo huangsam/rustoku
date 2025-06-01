@@ -6,7 +6,7 @@ Rustoku is a highly optimized Sudoku puzzle solver and generator built with a fo
 It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for
 puzzle navigation.
 
-- **Blazing-fast solving:** Find solutions in milliseconds, even for complex puzzles
+- **Blazing-fast solving:** Find solutions in microseconds, even for complex puzzles
 - **Unique puzzle generation:** Create new, solvable Sudoku puzzles guaranteed to have only one solution
 - **Configurable difficulty:** Generate puzzles with a specified number of initial clues
 - **Intuitive command-line interface (CLI):** Generate and solve puzzles directly from your terminal
