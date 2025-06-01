@@ -231,6 +231,19 @@ mod tests {
     }
 
     #[test]
+    fn test_solve_all_with_all_techniques() {
+        let s = TWO_PUZZLE;
+        let rustoku = Rustoku::new_from_str(s).unwrap();
+        let solutions = rustoku.with_techniques(RustokuTechniques::ALL).solve_all();
+
+        assert_eq!(
+            2,
+            solutions.len(),
+            "Expected two solutions for the given board with all techniques"
+        );
+    }
+
+    #[test]
     fn test_generate_with_enough_clues() {
         (20..=80).step_by(20).for_each(|num_clues| {
             let board = generate_board(num_clues).unwrap();
