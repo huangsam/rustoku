@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, RustokuTechniques, generate_board};
+use rustoku::core::{Rustoku, generate_board};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -59,7 +59,7 @@ fn main() {
                     println!("\nFound {} solution(s).", solutions.len());
                 }
             } else {
-                match rustoku.with_techniques(RustokuTechniques::ALL).solve_any() {
+                match rustoku.solve_any() {
                     None => println!("No solution found."),
                     Some(solution) => print!("{}", solution),
                 }
