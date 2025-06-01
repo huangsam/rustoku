@@ -10,9 +10,9 @@ It leverages [bitmasking] for constraint tracking and a backtracking algorithm w
 puzzle navigation.
 
 - **Blazing-fast solving:** Find solutions in microseconds, even for complex puzzles
-- **Unique puzzle generation:** Create new, solvable Sudoku puzzles guaranteed to have only one solution
-- **Configurable difficulty:** Generate puzzles with a specified number of initial clues
-- **Intuitive command-line interface (CLI):** Generate and solve puzzles directly from your terminal
+- **Unique puzzle generation:** Create Sudoku puzzles guaranteed to have only one solution
+- **Configurable difficulty:** Generate puzzles with a specific number of clues
+- **Intuitive CLI:** Generate and solve puzzles directly from your terminal
 
 ## Getting Started
 
@@ -22,6 +22,7 @@ cargo install --path .
 
 # Generate puzzles
 rustoku generate
+rustoku generate --clues 45
 
 # Solve puzzles
 rustoku solve '53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79'
