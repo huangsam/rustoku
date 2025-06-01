@@ -131,7 +131,38 @@ impl Rustoku {
         path: &mut Vec<(usize, usize, u8)>,
         bound: usize,
     ) -> usize {
-        let path_len_before = path.len();
+        if let Some((r, c)) = self.find_next_empty_cell() {
+            let mut count = 0;
+            let mut nums: Vec<u8> = (1..=9).collect();
+            nums.shuffle(&mut rng());
+
+            for &num in &nums {
+                if self.masks.is_safe(r, c, num) {
+                    self.place_number(r, c, num);
+                    path.push((r, c, num));
+                    count += self.solve_until_recursive(solutions, path, bound);
+                    path.pop();
+                    self.remove_number(r, c, num);
+
+                    if bound > 0 && solutions.len() >= bound {
+                        return count;
+                    }
+                }
+            }
+            count
+        } else {
+            solutions.push(RustokuSolution {
+                board: self.board,
+                solve_path: path.clone(),
+            });
+            1
+        }
+    }
+
+    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
+    pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
+        let mut solutions = Vec::new();
+        let mut path = Vec::new();
 
         let mut propagator = TechniquePropagator::new(
             &mut self.board,
@@ -140,53 +171,10 @@ impl Rustoku {
             self.techniques,
         );
 
-        if !propagator.propagate_constraints(path, path_len_before) {
-            // Contradiction detected during propagation, no solution down this path
-            return 0;
+        if !propagator.propagate_constraints(&mut path, 0) {
+            return solutions; // Early exit if initial constraints are inconsistent
         }
 
-        let result = if let Some((r, c)) = self.find_next_empty_cell() {
-            let mut count = 0;
-            let mut nums: Vec<u8> = (1..=9).collect();
-            // Use rand::thread_rng() for shuffling
-            nums.shuffle(&mut rng());
-
-            for &num in &nums {
-                if self.masks.is_safe(r, c, num) {
-                    self.place_number(r, c, num);
-                    path.push((r, c, num)); // Add to path for this branch
-                    count += self.solve_until_recursive(solutions, path, bound);
-                    path.pop(); // Remove from path on backtrack
-                    self.remove_number(r, c, num);
-
-                    if bound > 0 && solutions.len() >= bound {
-                        break;
-                    }
-                }
-            }
-            count
-        } else {
-            // Board is filled and consistent (due to propagation and `is_safe` checks)
-            solutions.push(RustokuSolution {
-                board: self.board, // Access the internal array
-                solve_path: path.clone(),
-            });
-            1
-        };
-
-        // Backtrack placements made by propagation in this call frame
-        while path.len() > path_len_before {
-            let (r, c, num) = path.pop().unwrap();
-            self.remove_number(r, c, num);
-        }
-
-        result
-    }
-
-    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
-    pub fn solve_until(&mut self, bound: usize) -> Vec<RustokuSolution> {
-        let mut solutions = Vec::new();
-        let mut path = Vec::new();
         self.solve_until_recursive(&mut solutions, &mut path, bound);
         solutions
     }
