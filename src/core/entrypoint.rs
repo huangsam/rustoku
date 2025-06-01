@@ -83,7 +83,7 @@ impl Rustoku {
             board,
             masks,
             candidates_cache,
-            techniques: RustokuTechniques::SIMPLE, // Default
+            techniques: RustokuTechniques::SINGLES, // Default
         })
     }
 

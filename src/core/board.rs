@@ -20,18 +20,29 @@ impl RustokuBoard {
         }
     }
 
+    /// Creates an empty Rustoku board, where all cells are initialized to 0.
+    pub fn empty() -> Self {
+        RustokuBoard {
+            cells: [[0u8; 9]; 9],
+        }
+    }
+
+    /// Gets a value from the board at the specified row and column.
     pub fn get(&self, r: usize, c: usize) -> u8 {
         self.cells[r][c]
     }
 
+    /// Sets a value in the board at the specified row and column.
     pub fn set(&mut self, r: usize, c: usize, value: u8) {
         self.cells[r][c] = value;
     }
 
+    /// Checks if a cell at the specified row and column is empty (contains 0).
     pub fn is_empty(&self, r: usize, c: usize) -> bool {
         self.cells[r][c] == 0
     }
 
+    /// Iterates over all cells in the board, yielding their row and column indices.
     pub fn iter_empty_cells(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         (0..9).flat_map(move |r| {
             (0..9).filter_map(move |c| {

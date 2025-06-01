@@ -46,10 +46,10 @@ pub fn generate_board(num_clues: usize) -> Result<RustokuBoard, RustokuError> {
     }
 
     // Start with a fully solved board
-    let mut board = Rustoku::new(RustokuBoard::new([[0; 9]; 9]))?
-        .solve_any()
-        .ok_or(RustokuError::DuplicateValues)?
-        .board;
+    let mut rustoku = Rustoku::new(RustokuBoard::empty())?;
+    rustoku = rustoku.with_techniques(RustokuTechniques::NONE);
+    let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
+    let mut board = solution.board;
 
     // Shuffle all cell coordinates
     let mut cells: Vec<(usize, usize)> = (0..9).flat_map(|r| (0..9).map(move |c| (r, c))).collect();

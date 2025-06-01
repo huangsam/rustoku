@@ -18,12 +18,13 @@ bitflags! {
         const NAKED_PAIRS = 0b0000_0100;
         /// Apply the hidden pairs technique.
         const HIDDEN_PAIRS = 0b0000_1000;
+
         /// Apply only naked and hidden singles techniques.
-        const SIMPLE = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
+        const SINGLES = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
         /// Apply naked and hidden pairs techniques.
-        const COMPLEX = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
+        const PAIRS = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
         /// Apply all available human-like techniques
-        const ALL = Self::SIMPLE.bits() | Self::COMPLEX.bits();
+        const ALL = Self::SINGLES.bits() | Self::PAIRS.bits();
     }
 }
 
