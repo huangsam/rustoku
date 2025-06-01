@@ -2,11 +2,10 @@ use assert_cmd::prelude::*;
 use rustoku::error::RustokuError;
 use std::process::Command;
 
-// Helper function to get the path to your compiled binary
+/// Helper function to get the path to our compiled binary
 fn get_rustoku_bin() -> Command {
-    // This assumes your binary is named 'rustoku' and is in target/debug or target/release
-    // For release builds, you'd typically run `cargo test --release`.
-    // We'll use cargo's `env!("CARGO_BIN_EXE_rustoku")` for robustness.
+    // This assumes our binary is named 'rustoku' and is in target/debug or target/release
+    // We'll use cargo's `env!("CARGO_BIN_EXE_rustoku")` for robustness
     Command::new(env!("CARGO_BIN_EXE_rustoku"))
 }
 
@@ -29,10 +28,13 @@ fn test_generate_default_clues() {
         .stdout
         .clone();
 
-    // You could also parse the output to count clues if needed, but a basic check is fine for smoke test.
-    let output_str = String::from_utf8(output).expect("Failed to convert output to string");
-    // A simple check to ensure it looks like a Sudoku board (e.g., contains numbers and empty cells)
-    assert!(output_str.len() > 100); // Very rough check for a full board
+    let output_str = String::from_utf8(output).unwrap();
+    let puzzle = output_str
+        .lines()
+        .find(|line| line.starts_with("Line format:"))
+        .expect("Line representation is missing")
+        .trim_start_matches("Line format: ");
+    assert_eq!(puzzle.len(), 81);
 }
 
 #[test]
@@ -42,7 +44,7 @@ fn test_generate_custom_clues() {
         .arg("--clues")
         .arg("25")
         .assert()
-        .success();
+        .success(); // This should have the same output as the default
 }
 
 #[test]
@@ -87,7 +89,7 @@ fn test_solve_all_solutions() {
         .arg("--all")
         .assert()
         .success()
-        .stdout(predicates::str::contains("Found 2 solution(s).")); // Based on your example, this puzzle has 2 solutions
+        .stdout(predicates::str::contains("Found 2 solution(s).")); // Based on our example, this puzzle has 2 solutions
 }
 
 #[test]
