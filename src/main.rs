@@ -45,7 +45,7 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Commands::Generate { clues } => generate_board(clues).map(|board| println!("{}", board)),
+        Commands::Generate { clues } => generate_board(clues).map(|board| print!("{}", board)),
         Commands::Solve { puzzle, all } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
             if all {
                 let solutions = rustoku.solve_all();
