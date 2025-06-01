@@ -380,19 +380,19 @@ impl<'a> TechniquePropagator<'a> {
             {
                 changed_this_iter |= self.naked_singles(path);
             }
-            if self
+            if !changed_this_iter && self
                 .techniques_enabled
                 .contains(RustokuTechniques::HIDDEN_SINGLES)
             {
                 changed_this_iter |= self.hidden_singles(path);
             }
-            if self
+            if !changed_this_iter && self
                 .techniques_enabled
                 .contains(RustokuTechniques::NAKED_PAIRS)
             {
                 changed_this_iter |= self.naked_pairs(path);
             }
-            if self
+            if !changed_this_iter && self
                 .techniques_enabled
                 .contains(RustokuTechniques::HIDDEN_PAIRS)
             {
