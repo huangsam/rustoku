@@ -3,23 +3,21 @@
 use thiserror::Error;
 
 /// Represents the types of errors that can occur while working with Sudoku puzzles.
-///
-/// This enum defines various error cases that can occur while working with Sudoku puzzles:
-/// - The number of clues provided for puzzle generation is not between 17 and 81
-/// - The input string does not contain exactly 81 characters
-/// - The input string contains characters other than digits `0-9` or `.` or `_`
-/// - The initial board contains duplicate values in rows, columns, or 3x3 boxes
-/// - The generate algorithm cannot find a unique solution for the given puzzle
 #[derive(Debug, Error)]
 pub enum RustokuError {
+    /// The number of clues provided for puzzle generation is not between 17 and 81.
     #[error("Clues must be between 17 and 81 for a valid Sudoku puzzle")]
     InvalidClueCount,
+    /// The input string does not contain exactly 81 characters.
     #[error("Input string must be exactly 81 characters long")]
     InvalidInputLength,
+    /// The input string contains characters other than digits `0-9` or `.` or `_`.
     #[error("Input string must contain only digits '0'-'9'")]
     InvalidInputCharacter,
+    /// The initial board contains duplicate values in rows, columns, or 3x3 boxes.
     #[error("Initial board contains duplicates")]
     DuplicateValues,
-    #[error("Cannot find a unique solution")]
-    MissingUniqueSolution,
+    /// The puzzle generation algorithm failed to find a unique solution.
+    #[error("Puzzle generation failed to find a unique solution")]
+    PuzzleGenerationFailed,
 }

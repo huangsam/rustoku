@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
 use rustoku::core::{Rustoku, RustokuBoard, RustokuTechniques, generate_board};
-use rustoku::error::RustokuError;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A Sudoku puzzle solver and generator", long_about = None)]
@@ -37,45 +36,50 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), RustokuError> {
+fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
-        Commands::Generate { clues } => {
-            let board = generate_board(clues)?;
-            println!("{}", board);
-        }
+    let result = match cli.command {
+        Commands::Generate { clues } => generate_board(clues).map(|board| println!("{}", board)),
         Commands::Solve { puzzle, all } => {
-            let board = RustokuBoard::try_from(puzzle.as_str())?;
-            let mut rustoku = Rustoku::new(board)?;
-            rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
-            if all {
-                let solutions = rustoku.solve_all();
-                solutions.iter().enumerate().for_each(|(i, solution)| {
-                    println!("\n--- Solution {} ---", i + 1);
-                    print!("{}", solution);
-                });
-                println!("\nFound {} solution(s).", solutions.len());
-            } else if let Some(solution) = rustoku.solve_any() {
-                print!("{}", solution);
-            } else {
-                println!("No solution found.");
-            }
+            RustokuBoard::try_from(puzzle.as_str()).and_then(|board| {
+                let mut rustoku = Rustoku::new(board)?.with_techniques(RustokuTechniques::ALL);
+                if all {
+                    let solutions = rustoku.solve_all();
+                    if solutions.is_empty() {
+                        println!("No solutions found.");
+                    } else {
+                        solutions.iter().enumerate().for_each(|(i, solution)| {
+                            println!("\n--- Solution {} ---", i + 1);
+                            print!("{}", solution);
+                        });
+                        println!("\nFound {} solution(s).", solutions.len());
+                    }
+                    Ok(())
+                } else {
+                    match rustoku.solve_any() {
+                        None => println!("No solution found."),
+                        Some(solution) => print!("{}", solution),
+                    }
+                    Ok(())
+                }
+            })
         }
-        Commands::Check { puzzle } => {
-            let board = RustokuBoard::try_from(puzzle.as_str())?;
+        Commands::Check { puzzle } => RustokuBoard::try_from(puzzle.as_str()).and_then(|board| {
             let rustoku = Rustoku::new(board)?;
             println!(
                 "The puzzle is {}solved correctly.",
                 if rustoku.is_solved() { "" } else { "NOT " }
             );
-        }
-        Commands::Show { puzzle } => {
-            let board = RustokuBoard::try_from(puzzle.as_str())?;
-            let rustoku = Rustoku::new(board)?;
-            print!("{}", rustoku.board);
-        }
-    }
+            Ok(())
+        }),
+        Commands::Show { puzzle } => RustokuBoard::try_from(puzzle.as_str()).map(|board| {
+            print!("{}", board);
+        }),
+    };
 
-    Ok(())
+    if let Err(e) = result {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    }
 }

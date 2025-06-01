@@ -1,4 +1,5 @@
 use assert_cmd::prelude::*;
+use rustoku::error::RustokuError;
 use std::process::Command;
 
 // Helper function to get the path to your compiled binary
@@ -63,7 +64,9 @@ fn test_solve_invalid_puzzle_length() {
         .arg("short") // Invalid length
         .assert()
         .failure() // Expect the command to fail
-        .stderr(predicates::str::contains("InvalidInputLength"));
+        .stderr(predicates::str::contains(
+            RustokuError::InvalidInputLength.to_string(),
+        ));
 }
 
 #[test]
