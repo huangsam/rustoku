@@ -32,9 +32,6 @@ rustoku check '29574386143186592787619254338745921661238749554921673876352418915
 
 # Display puzzle
 rustoku show '9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3'
-
-# Version
-rustoku -V
 ```
 
 That's it! Dive into the world of high-performance Sudoku.
