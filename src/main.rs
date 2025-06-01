@@ -43,7 +43,8 @@ fn main() {
         Commands::Generate { clues } => generate_board(clues).map(|board| println!("{}", board)),
         Commands::Solve { puzzle, all } => {
             RustokuBoard::try_from(puzzle.as_str()).and_then(|board| {
-                let mut rustoku = Rustoku::new(board)?.with_techniques(RustokuTechniques::ALL);
+                let mut rustoku = Rustoku::new(board)?;
+                rustoku = rustoku.with_techniques(RustokuTechniques::ALL);
                 if all {
                     let solutions = rustoku.solve_all();
                     if solutions.is_empty() {
