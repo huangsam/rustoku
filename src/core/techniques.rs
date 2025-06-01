@@ -410,8 +410,6 @@ impl<'a> TechniquePropagator<'a> {
                 while path.len() > initial_path_len {
                     if let Some((r, c, num)) = path.pop() {
                         self.remove_and_update(r, c, num);
-                    } else {
-                        break;
                     }
                 }
                 return false; // Propagation failed
