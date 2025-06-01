@@ -5,29 +5,24 @@ use bitflags::bitflags;
 
 bitflags! {
     /// A bitmask to control which human techniques are applied.
-    ///
-    /// - `NONE`: No specific techniques are applied (only basic constraint checking)
-    /// - `NAKED_SINGLES`: Apply the naked singles technique
-    /// - `HIDDEN_SINGLES`: Apply the hidden singles technique
-    /// - `NAKED_PAIRS`: Apply the naked pairs technique
-    /// - `HIDDEN_PAIRS`: Apply the hidden pairs technique
-    /// - `SIMPLE`: Apply both naked and hidden singles techniques
-    /// - `COMPLEX`: Apply naked and hidden pairs techniques
-    /// - `ALL`: Apply all available human-like techniques
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct RustokuTechniques: u16 {
+        /// No specific techniques are applied.
         const NONE = 0b0000_0000;
-
+        /// Apply the naked singles technique.
         const NAKED_SINGLES = 0b0000_0001;
+        /// Apply the hidden singles technique.
         const HIDDEN_SINGLES = 0b0000_0010;
-
+        /// Apply the naked pairs technique.
         const NAKED_PAIRS = 0b0000_0100;
+        /// Apply the hidden pairs technique.
         const HIDDEN_PAIRS = 0b0000_1000;
-
+        /// Apply only naked and hidden singles techniques.
         const SIMPLE = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
+        /// Apply naked and hidden pairs techniques.
         const COMPLEX = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
-
+        /// Apply all available human-like techniques
         const ALL = Self::SIMPLE.bits() | Self::COMPLEX.bits();
     }
 }
