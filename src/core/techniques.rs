@@ -52,7 +52,7 @@ impl<'a> TechniquePropagator<'a> {
         }
     }
 
-    // Helper to place a number and update caches
+    /// Helper to place a number and update caches.
     fn place_and_update(
         &mut self,
         r: usize,
@@ -67,7 +67,7 @@ impl<'a> TechniquePropagator<'a> {
         path.push((r, c, num));
     }
 
-    // Helper to remove a number and update caches
+    /// Helper to remove a number and update caches.
     fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0);
         self.masks.remove_number(r, c, num);

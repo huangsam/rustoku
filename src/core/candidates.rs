@@ -18,16 +18,17 @@ impl RustokuCandidates {
         RustokuCandidates { cache: [[0; 9]; 9] }
     }
 
+    /// Returns the candidate mask for a specific cell in the cache.
     pub(super) fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
     }
 
+    /// Sets the candidate mask for a specific cell in the cache.
     pub(super) fn set(&mut self, r: usize, c: usize, mask: u16) {
         self.cache[r][c] = mask;
     }
 
-    // Invalidation logic would live here, but would need to know about the `Masks` struct
-    // or receive the calculated mask.
+    /// Update affected cells in the cache based on the current state of the board and masks.
     pub(super) fn update_affected_cells(
         &mut self,
         r: usize,
