@@ -403,18 +403,18 @@ impl<'a> TechniquePropagator<'a> {
             }
 
             // Contradiction check
-            for r in 0..9 {
-                for c in 0..9 {
-                    if self.board.is_empty(r, c) && self.candidates_cache.get(r, c) == 0 {
-                        // Contradiction: Roll back placements from this propagation call
-                        while path.len() > initial_path_len {
-                            let (r, c, num) = path.pop().unwrap();
-                            // Need to remove from masks and recalculate candidates on removal
-                            self.remove_and_update(r, c, num);
-                        }
-                        return false; // Propagation failed
+            if (0..9).any(|r| {
+                (0..9).any(|c| self.board.is_empty(r, c) && self.candidates_cache.get(r, c) == 0)
+            }) {
+                // Contradiction: Roll back placements from this propagation call
+                while path.len() > initial_path_len {
+                    if let Some((r, c, num)) = path.pop() {
+                        self.remove_and_update(r, c, num);
+                    } else {
+                        break;
                     }
                 }
+                return false; // Propagation failed
             }
 
             if !changed_this_iter {
