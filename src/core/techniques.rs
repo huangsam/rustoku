@@ -18,13 +18,15 @@ bitflags! {
         const NAKED_PAIRS = 0b0000_0100;
         /// Apply the hidden pairs technique.
         const HIDDEN_PAIRS = 0b0000_1000;
+        /// Apply the locked candidates technique.
+        const LOCKED_CANDIDATES = 0b0001_0000;
 
         /// Apply only naked and hidden singles techniques.
         const SINGLES = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
         /// Apply naked and hidden pairs techniques.
         const PAIRS = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
         /// Apply all available human-like techniques
-        const ALL = Self::SINGLES.bits() | Self::PAIRS.bits();
+        const ALL = Self::SINGLES.bits() | Self::PAIRS.bits() | Self::LOCKED_CANDIDATES.bits();
     }
 }
 
@@ -365,6 +367,223 @@ impl<'a> TechniquePropagator<'a> {
         unit_placements_made
     }
 
+    /// Applies the locked candidates technique.
+    fn locked_candidates(&mut self, path: &mut Vec<(usize, usize, u8)>) -> bool {
+        let mut overall_placements_made = false;
+
+        // Check rows for pointing pairs/triples
+        for row in 0..9 {
+            overall_placements_made |= self.process_row_for_locked_candidates(row, path);
+        }
+
+        // Check columns for pointing pairs/triples
+        for col in 0..9 {
+            overall_placements_made |= self.process_col_for_locked_candidates(col, path);
+        }
+
+        // Check boxes for box/line reduction
+        for box_idx in 0..9 {
+            overall_placements_made |= self.process_box_for_locked_candidates(box_idx, path);
+        }
+
+        overall_placements_made
+    }
+
+    /// Helper function to process a row for locked candidates (pointing pairs/triples).
+    fn process_row_for_locked_candidates(
+        &mut self,
+        row: usize,
+        path: &mut Vec<(usize, usize, u8)>,
+    ) -> bool {
+        let mut placements_made = false;
+
+        for candidate in 1..=9 {
+            let candidate_bit = 1 << (candidate - 1);
+
+            // Find cells in the row that contain the candidate
+            let candidate_cells: Vec<usize> = (0..9)
+                .filter(|&col| {
+                    self.board.is_empty(row, col)
+                        && (self.candidates_cache.get(row, col) & candidate_bit) != 0
+                })
+                .collect();
+
+            // If the candidate only appears in one box, it's a pointing pair/triple
+            let boxes: std::collections::HashSet<usize> = candidate_cells
+                .iter()
+                .map(|&col| (row / 3) * 3 + (col / 3))
+                .collect();
+
+            if boxes.len() == 1 {
+                let box_idx = *boxes.iter().next().unwrap();
+                let start_row = (box_idx / 3) * 3;
+                let start_col = (box_idx % 3) * 3;
+
+                // Remove the candidate from other cells in the box, but not in the row
+                for r in start_row..(start_row + 3) {
+                    for c in start_col..(start_col + 3) {
+                        if r != row && self.board.is_empty(r, c) {
+                            let initial_mask = self.candidates_cache.get(r, c);
+                            if (initial_mask & candidate_bit) != 0 {
+                                let refined_mask = initial_mask & !candidate_bit;
+                                self.candidates_cache.set(r, c, refined_mask);
+                                placements_made = true;
+
+                                if refined_mask.count_ones() == 1 {
+                                    let num = refined_mask.trailing_zeros() as u8 + 1;
+                                    if self.masks.is_safe(r, c, num) {
+                                        self.place_and_update(r, c, num, path);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        placements_made
+    }
+
+    /// Helper function to process a column for locked candidates (pointing pairs/triples).
+    fn process_col_for_locked_candidates(
+        &mut self,
+        col: usize,
+        path: &mut Vec<(usize, usize, u8)>,
+    ) -> bool {
+        let mut placements_made = false;
+
+        for candidate in 1..=9 {
+            let candidate_bit = 1 << (candidate - 1);
+
+            // Find cells in the column that contain the candidate
+            let candidate_cells: Vec<usize> = (0..9)
+                .filter(|&row| {
+                    self.board.is_empty(row, col)
+                        && (self.candidates_cache.get(row, col) & candidate_bit) != 0
+                })
+                .collect();
+
+            // If the candidate only appears in one box, it's a pointing pair/triple
+            let boxes: std::collections::HashSet<usize> = candidate_cells
+                .iter()
+                .map(|&row| (row / 3) * 3 + (col / 3))
+                .collect();
+
+            if boxes.len() == 1 {
+                let box_idx = *boxes.iter().next().unwrap();
+                let start_row = (box_idx / 3) * 3;
+                let start_col = (box_idx % 3) * 3;
+
+                // Remove the candidate from other cells in the box, but not in the column
+                for r in start_row..(start_row + 3) {
+                    for c in start_col..(start_col + 3) {
+                        if c != col && self.board.is_empty(r, c) {
+                            let initial_mask = self.candidates_cache.get(r, c);
+                            if (initial_mask & candidate_bit) != 0 {
+                                let refined_mask = initial_mask & !candidate_bit;
+                                self.candidates_cache.set(r, c, refined_mask);
+                                placements_made = true;
+
+                                if refined_mask.count_ones() == 1 {
+                                    let num = refined_mask.trailing_zeros() as u8 + 1;
+                                    if self.masks.is_safe(r, c, num) {
+                                        self.place_and_update(r, c, num, path);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        placements_made
+    }
+
+    /// Helper function to process a box for locked candidates (box/line reduction).
+    fn process_box_for_locked_candidates(
+        &mut self,
+        box_idx: usize,
+        path: &mut Vec<(usize, usize, u8)>,
+    ) -> bool {
+        let mut placements_made = false;
+        let start_row = (box_idx / 3) * 3;
+        let start_col = (box_idx % 3) * 3;
+
+        for candidate in 1..=9 {
+            let candidate_bit = 1 << (candidate - 1);
+
+            // Find cells in the box that contain the candidate
+            let mut candidate_cells: Vec<(usize, usize)> = Vec::new();
+            for r_offset in 0..3 {
+                for c_offset in 0..3 {
+                    let r = start_row + r_offset;
+                    let c = start_col + c_offset;
+                    if self.board.is_empty(r, c)
+                        && (self.candidates_cache.get(r, c) & candidate_bit) != 0
+                    {
+                        candidate_cells.push((r, c));
+                    }
+                }
+            }
+
+            // Check if all candidates are in the same row
+            let rows: std::collections::HashSet<usize> =
+                candidate_cells.iter().map(|&(r, _)| r).collect();
+            if rows.len() == 1 {
+                let row = *rows.iter().next().unwrap();
+
+                // Remove candidate from other cells in the row, but not in the box
+                for c in 0..9 {
+                    if (c < start_col || c >= start_col + 3) && self.board.is_empty(row, c) {
+                        let initial_mask = self.candidates_cache.get(row, c);
+                        if (initial_mask & candidate_bit) != 0 {
+                            let refined_mask = initial_mask & !candidate_bit;
+                            self.candidates_cache.set(row, c, refined_mask);
+                            placements_made = true;
+
+                            if refined_mask.count_ones() == 1 {
+                                let num = refined_mask.trailing_zeros() as u8 + 1;
+                                if self.masks.is_safe(row, c, num) {
+                                    self.place_and_update(row, c, num, path);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Check if all candidates are in the same column
+            let cols: std::collections::HashSet<usize> =
+                candidate_cells.iter().map(|&(_, c)| c).collect();
+            if cols.len() == 1 {
+                let col = *cols.iter().next().unwrap();
+
+                // Remove candidate from other cells in the column, but not in the box
+                for r in 0..9 {
+                    if (r < start_row || r >= start_row + 3) && self.board.is_empty(r, col) {
+                        let initial_mask = self.candidates_cache.get(r, col);
+                        if (initial_mask & candidate_bit) != 0 {
+                            let refined_mask = initial_mask & !candidate_bit;
+                            self.candidates_cache.set(r, col, refined_mask);
+                            placements_made = true;
+
+                            if refined_mask.count_ones() == 1 {
+                                let num = refined_mask.trailing_zeros() as u8 + 1;
+                                if self.masks.is_safe(r, col, num) {
+                                    self.place_and_update(r, col, num, path);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        placements_made
+    }
+
     /// Applies deterministic constraint propagation techniques iteratively.
     pub(super) fn propagate_constraints(
         &mut self,
@@ -400,6 +619,13 @@ impl<'a> TechniquePropagator<'a> {
                     .contains(RustokuTechniques::HIDDEN_PAIRS)
             {
                 changed_this_iter |= self.hidden_pairs(path);
+            }
+            if !changed_this_iter
+                && self
+                    .techniques_enabled
+                    .contains(RustokuTechniques::LOCKED_CANDIDATES)
+            {
+                changed_this_iter |= self.locked_candidates(path);
             }
 
             // Contradiction check
