@@ -169,6 +169,17 @@ mod tests {
     }
 
     #[test]
+    fn test_solve_any_with_unsolvable_sudoku() {
+        let s = ".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7";
+        let mut rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed");
+        let solution = rustoku.solve_any();
+        assert!(
+            solution.is_none(),
+            "Expected no solution for this unsolvable puzzle"
+        );
+    }
+
+    #[test]
     fn test_solve_until_with_bound() {
         let s = UNIQUE_PUZZLE;
         let mut rustoku =

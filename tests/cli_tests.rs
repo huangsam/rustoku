@@ -70,6 +70,16 @@ fn test_solve_invalid_puzzle_length() {
 }
 
 #[test]
+fn test_solve_no_solution() {
+    get_rustoku_bin()
+        .arg("solve")
+        .arg(".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("No solution found."));
+}
+
+#[test]
 fn test_solve_all_solutions() {
     get_rustoku_bin()
         .arg("solve")
