@@ -121,6 +121,6 @@ fn test_show_puzzle() {
         .arg("9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3")
         .assert()
         .success()
-        .stdout(predicates::str::contains("9..5")) // Beginning of the board
-        .stdout(predicates::str::contains(".8.3")); // End of the board
+        .stdout(predicates::str::contains("9..5")) // Board start
+        .stdout(predicates::str::contains(".8.3")); // Board end
 }
