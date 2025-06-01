@@ -46,29 +46,25 @@ fn main() {
 
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| println!("{}", board)),
-        Commands::Solve { puzzle, all } => {
-            Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                if all {
-                    let solutions = rustoku.solve_all();
-                    if solutions.is_empty() {
-                        println!("No solutions found.");
-                    } else {
-                        solutions.iter().enumerate().for_each(|(i, solution)| {
-                            println!("\n--- Solution {} ---", i + 1);
-                            print!("{}", solution);
-                        });
-                        println!("\nFound {} solution(s).", solutions.len());
-                    }
-
+        Commands::Solve { puzzle, all } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
+            if all {
+                let solutions = rustoku.solve_all();
+                if solutions.is_empty() {
+                    println!("No solutions found.");
                 } else {
-                    match rustoku.with_techniques(RustokuTechniques::ALL).solve_any() {
-                        None => println!("No solution found."),
-                        Some(solution) => print!("{}", solution),
-                    }
-
+                    solutions.iter().enumerate().for_each(|(i, solution)| {
+                        println!("\n--- Solution {} ---", i + 1);
+                        print!("{}", solution);
+                    });
+                    println!("\nFound {} solution(s).", solutions.len());
                 }
-            })
-        }
+            } else {
+                match rustoku.with_techniques(RustokuTechniques::ALL).solve_any() {
+                    None => println!("No solution found."),
+                    Some(solution) => print!("{}", solution),
+                }
+            }
+        }),
         Commands::Check { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
             println!(
                 "The puzzle is {}solved correctly.",
