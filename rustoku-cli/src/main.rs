@@ -1,7 +1,8 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::TechniqueMask;
-use rustoku::{Rustoku, generate_board};
+use rustoku_lib::core::TechniqueMask;
+use rustoku_lib::{Rustoku, generate_board};
 
+/// Root of the Rustoku CLI.
 #[derive(Parser, Debug)]
 #[command(
     author,
@@ -9,13 +10,14 @@ use rustoku::{Rustoku, generate_board};
     about = "Rustoku: Lightning-fast Sudoku",
     long_about = "Solves, checks and generates Sudoku puzzles with lightning speed."
 )]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
 
+/// Commands for the Rustoku CLI.
 #[derive(Subcommand, Debug)]
-enum Commands {
+pub enum Commands {
     /// Generates a new Sudoku puzzle with a unique solution
     Generate {
         /// The desired number of initially filled cells (clues) for the puzzle
@@ -29,31 +31,32 @@ enum Commands {
     },
     /// Checks if a given Sudoku puzzle is solved correctly
     Check {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
+        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
     /// Shows the Sudoku puzzle in a grid-like format
     Show {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
+        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
 }
 
+/// Subcommands for solving Sudoku puzzles.
 #[derive(Subcommand, Debug)]
-enum SolveCommands {
+pub enum SolveCommands {
     /// Attempts to find any puzzle solution with only basic techniques
     Any {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
+        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
     /// Attempts to find all puzzle solutions with only basic techniques
     All {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
+        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
     /// Attempts to find any puzzle solution with all techniques
     Human {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
+        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
 }

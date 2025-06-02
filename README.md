@@ -5,7 +5,7 @@
 
 **Lightning-fast Sudoku solving and generation, crafted in Rust.**
 
-Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and efficiency.
+rustoku-cli is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and efficiency.
 It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for
 puzzle navigation.
 
@@ -18,22 +18,22 @@ puzzle navigation.
 
 ```bash
 # This compiles the binary and places it at $HOME/.cargo/bin
-cargo install --path .
+cargo install --path rustoku-cli
 
 # Generate puzzles
-rustoku generate
-rustoku generate --clues 45
+rustoku-cli generate
+rustoku-cli generate --clues 45
 
 # Solve puzzles
-rustoku solve any '53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79'
-rustoku solve all '295743..14318659..8761925433874592166123874955492167387635.......................'
-rustoku solve human '8..41.....1....35...47.3......3.7..24...9.6....9..4....6.941.2.1.287...695......8'
+rustoku-cli solve any '53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79'
+rustoku-cli solve all '295743..14318659..8761925433874592166123874955492167387635.......................'
+rustoku-cli solve human '8..41.....1....35...47.3......3.7..24...9.6....9..4....6.941.2.1.287...695......8'
 
 # Check solutions
-rustoku check '295743861431865927876192543387459216612387495549216738763524189154938672928671354'
+rustoku-cli check '295743861431865927876192543387459216612387495549216738763524189154938672928671354'
 
 # Display puzzle
-rustoku show '9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3'
+rustoku-cli show '9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3'
 ```
 
 That's it! Dive into the world of high-performance Sudoku.

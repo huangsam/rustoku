@@ -1,12 +1,12 @@
 use assert_cmd::prelude::*;
-use rustoku::error::RustokuError;
+use rustoku_lib::error::RustokuError;
 use std::process::Command;
 
 /// Helper function to get the path to our compiled binary
 fn get_rustoku_bin() -> Command {
     // This assumes our binary is named 'rustoku' and is in target/debug or target/release
-    // We'll use cargo's `env!("CARGO_BIN_EXE_rustoku")` for robustness
-    Command::new(env!("CARGO_BIN_EXE_rustoku"))
+    // We'll use cargo's `env!("CARGO_BIN_EXE_rustoku-cli")` for robustness
+    Command::new(env!("CARGO_BIN_EXE_rustoku-cli"))
 }
 
 #[test]
@@ -15,7 +15,7 @@ fn test_version_command() {
         .arg("-V")
         .assert()
         .success() // Assert that the command exited successfully
-        .stdout(predicates::str::starts_with("rustoku ")); // Assert stdout starts with "rustoku "
+        .stdout(predicates::str::starts_with("rustoku-cli ")); // Assert stdout starts with "rustoku "
 }
 
 #[test]

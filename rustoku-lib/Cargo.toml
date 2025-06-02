@@ -1,0 +1,24 @@
+[package]
+name = "rustoku-lib"
+description = "Lightning-fast Sudoku solving and generation"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+license-file.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+bitflags = "2.9.1"
+rand = "0.9.1"
+thiserror = "2.0.12"
+
+[dev-dependencies]
+criterion = { version = "0.6.0", features = ["html_reports"] }
+
+[[bench]]
+name = "rustoku_benchmark"
+harness = false

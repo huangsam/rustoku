@@ -1,0 +1,20 @@
+[package]
+name = "rustoku-cli"
+description = "Command-line interface for the Rustoku library"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+readme.workspace = true
+repository.workspace = true
+license-file.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+rustoku-lib = { path = "../rustoku-lib" }
+clap = { version = "4.5.38", features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.0.17"
+predicates = "3.1.3"
