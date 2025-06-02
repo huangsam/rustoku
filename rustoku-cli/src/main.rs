@@ -7,7 +7,7 @@ use rustoku_lib::{Rustoku, generate_board};
 #[command(
     author,
     version,
-    about = "Rustoku: Lightning-fast Sudoku",
+    about = ">>> Rustoku: Lightning-fast Sudoku <<<",
     long_about = "Solves, checks and generates Sudoku puzzles with lightning speed."
 )]
 pub struct Cli {
