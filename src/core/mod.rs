@@ -229,7 +229,7 @@ impl Rustoku {
 ///
 /// Generate a puzzle with 30 clues:
 /// ```
-/// use rustoku::core::generate_board;
+/// use rustoku::generate_board;
 /// let puzzle = generate_board(30).unwrap();
 /// assert_eq!(puzzle.cells.len(), 9);
 /// assert_eq!(puzzle.cells[0].len(), 9);
