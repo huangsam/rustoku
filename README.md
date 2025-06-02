@@ -1,6 +1,7 @@
 # Rustoku
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/huangsam/rustoku/ci.yml)](https://github.com/huangsam/rustoku/actions)
+[![docs.rs](https://img.shields.io/docsrs/rustoku-lib)](https://docs.rs/rustoku-lib/latest/rustoku_lib/index.html)
 [![License](https://img.shields.io/github/license/huangsam/rustoku)](https://github.com/huangsam/rustoku/blob/main/LICENSE)
 
 **Lightning-fast Sudoku solving and generation, crafted in Rust.**
