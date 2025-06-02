@@ -5,7 +5,7 @@
 
 **Lightning-fast Sudoku solving and generation, crafted in Rust.**
 
-rustoku-cli is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and efficiency.
+Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and efficiency.
 It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for
 puzzle navigation.
 
