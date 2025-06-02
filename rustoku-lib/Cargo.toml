@@ -4,7 +4,6 @@ description = "Lightning-fast Sudoku solving and generation"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
-homepage.workspace = true
 readme.workspace = true
 repository.workspace = true
 license-file.workspace = true
