@@ -40,19 +40,19 @@ enum Commands {
 
 #[derive(Subcommand, Debug)]
 enum SolveCommands {
-    /// Attempts to find any puzzle solution with easy techniques
+    /// Attempts to find any puzzle solution with only basic techniques
     Any {
-        /// The Sudoku puzzle string.
+        /// The Sudoku puzzle string
         puzzle: String,
     },
-    /// Attempts to find all puzzle solutions with easy techniques
+    /// Attempts to find all puzzle solutions with only basic techniques
     All {
-        /// The Sudoku puzzle string.
+        /// The Sudoku puzzle string
         puzzle: String,
     },
     /// Attempts to find any puzzle solution with all techniques
     Human {
-        /// The Sudoku puzzle string.
+        /// The Sudoku puzzle string
         puzzle: String,
     },
 }
