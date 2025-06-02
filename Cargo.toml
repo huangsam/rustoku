@@ -1,8 +1,13 @@
 [package]
 name = "rustoku"
-description = "A Sudoku solver written in Rust"
+description = "Lightning-fast Sudoku solving and generation"
 version = "0.8.0"
 edition = "2024"
+repository = "https://github.com/huangsam/rustoku"
+keywords = ["sudoku", "solver", "generator", "puzzle", "game"]
+license = "MIT"
+readme = "README.md"
+exclude = ["tests/*", "benches/*"]
 
 [dependencies]
 bitflags = "2.9.1"
