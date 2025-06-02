@@ -12,3 +12,6 @@
 pub mod core;
 pub mod error;
 pub mod format;
+
+pub use core::{Rustoku, generate_board};
+pub use error::RustokuError;

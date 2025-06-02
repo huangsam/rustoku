@@ -36,16 +36,15 @@ use techniques::TechniquePropagator;
 ///
 /// Solve a Sudoku puzzle:
 /// ```
-/// use rustoku::core::{Rustoku, Board};
-/// let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
-/// let board = Board::try_from(s).unwrap();
-/// let mut rustoku = Rustoku::new(board).unwrap();
+/// use rustoku::Rustoku;
+/// let puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+/// let mut rustoku = Rustoku::new_from_str(puzzle).unwrap();
 /// assert!(rustoku.solve_any().is_some());
 /// ```
 ///
 /// Generate a Sudoku puzzle:
 /// ```
-/// use rustoku::core::{Rustoku, generate_board};
+/// use rustoku::{Rustoku, generate_board};
 /// let board = generate_board(30).unwrap();
 /// let solution = Rustoku::new(board).unwrap().solve_all();
 /// assert_eq!(solution.len(), 1);
@@ -53,10 +52,9 @@ use techniques::TechniquePropagator;
 ///
 /// Check if a Sudoku puzzle is solved:
 /// ```
-/// use rustoku::core::{Rustoku, Board};
-/// let s = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
-/// let board = Board::try_from(s).unwrap();
-/// let rustoku = Rustoku::new(board).unwrap();
+/// use rustoku::Rustoku;
+/// let puzzle = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+/// let rustoku = Rustoku::new_from_str(puzzle).unwrap();
 /// assert!(rustoku.is_solved());
 /// ```
 #[derive(Debug, Copy, Clone)]

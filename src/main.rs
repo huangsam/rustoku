@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, TechniqueMask, generate_board};
+use rustoku::core::TechniqueMask;
+use rustoku::{Rustoku, generate_board};
 
 #[derive(Parser, Debug)]
 #[command(

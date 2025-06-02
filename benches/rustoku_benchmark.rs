@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use rustoku::Rustoku;
 use rustoku::core::Board;
-use rustoku::core::Rustoku;
-use rustoku::core::generate_board;
+use rustoku::generate_board;
 use std::hint::black_box;
 
 // Constants for puzzles (can be defined directly or loaded from files)
