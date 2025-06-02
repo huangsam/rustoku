@@ -42,17 +42,17 @@ enum Commands {
 enum SolveCommands {
     /// Attempts to find any puzzle solution with only basic techniques
     Any {
-        /// The Sudoku puzzle string
+        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
         puzzle: String,
     },
     /// Attempts to find all puzzle solutions with only basic techniques
     All {
-        /// The Sudoku puzzle string
+        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
         puzzle: String,
     },
     /// Attempts to find any puzzle solution with all techniques
     Human {
-        /// The Sudoku puzzle string
+        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
         puzzle: String,
     },
 }
