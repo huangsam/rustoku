@@ -1,6 +1,6 @@
 use super::board::Board;
 
-/// Represents a solved Sudoku board and the solution path.
+/// Solved board and its solution path.
 ///
 /// Most of the time, users just want to see the solved board, but this struct also
 /// provides the sequence of moves that led to the solution, which can be useful for debugging

@@ -1,10 +1,10 @@
 use crate::error::RustokuError;
 
-/// Represents a Rustoku board, which is a 9x9 grid of cells.
+/// Raw board, which is a 9x9 grid of cells.
 ///
 /// Each cell can contain a number from 1 to 9, or be empty (is 0).
 ///
-/// There are multiple ways to create a `RustokuBoard`:
+/// There are multiple ways to create a `Board`:
 /// - Using a 2D array of `u8` with dimensions 9x9
 /// - Using a 1D array of `u8` with length 81
 /// - Using a string representation with length 81
@@ -74,7 +74,7 @@ impl TryFrom<[u8; 81]> for Board {
             }
             board[i / 9][i % 9] = bytes[i];
         }
-        Ok(Board::new(board)) // Construct the RustokuBoard
+        Ok(Board::new(board)) // Construct the board
     }
 }
 
@@ -93,7 +93,7 @@ impl TryFrom<&str> for Board {
                 _ => return Err(RustokuError::InvalidInputCharacter),
             }
         }
-        // Now use the TryFrom<[u8; 81]> for RustokuBoard to construct it
+        // Now use the TryFrom<[u8; 81]> for board
         bytes.try_into()
     }
 }
