@@ -18,7 +18,7 @@ use naked_singles::NakedSingles;
 use x_wing::XWing;
 
 bitflags! {
-    /// A bitmask to control which human techniques are applied.
+    /// Bitmask to control which human techniques are applied.
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct TechniqueMask: u16 {
