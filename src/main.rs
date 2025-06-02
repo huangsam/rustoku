@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku::core::{Rustoku, generate_board};
+use rustoku::core::{Rustoku, TechniqueMask, generate_board};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -23,11 +23,8 @@ enum Commands {
     },
     /// Solves a given Sudoku puzzle
     Solve {
-        /// The Sudoku puzzle string (81 characters: 0-9 or . or _)
-        puzzle: String,
-        /// Find all solutions instead of just the first one
-        #[arg(short, long)]
-        all: bool,
+        #[command(subcommand)]
+        solve_command: SolveCommands,
     },
     /// Checks if a given Sudoku puzzle is solved correctly
     Check {
@@ -41,13 +38,38 @@ enum Commands {
     },
 }
 
+#[derive(Subcommand, Debug)]
+enum SolveCommands {
+    /// Attempts to find any puzzle solution with easy techniques
+    Any {
+        /// The Sudoku puzzle string.
+        puzzle: String,
+    },
+    /// Attempts to find all puzzle solutions with easy techniques
+    All {
+        /// The Sudoku puzzle string.
+        puzzle: String,
+    },
+    /// Attempts to find any puzzle solution with all techniques
+    Human {
+        /// The Sudoku puzzle string.
+        puzzle: String,
+    },
+}
+
 fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| print!("{}", board)),
-        Commands::Solve { puzzle, all } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-            if all {
+        Commands::Solve { solve_command } => match solve_command {
+            SolveCommands::Any { puzzle } => {
+                Rustoku::new_from_str(&puzzle).map(|mut rustoku| match rustoku.solve_any() {
+                    None => println!("No solution found."),
+                    Some(solution) => print!("{}", solution),
+                })
+            }
+            SolveCommands::All { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
                 let solutions = rustoku.solve_all();
                 if solutions.is_empty() {
                     println!("No solutions found.");
@@ -58,13 +80,14 @@ fn main() {
                     });
                     println!("\nFound {} solution(s).", solutions.len());
                 }
-            } else {
-                match rustoku.solve_any() {
+            }),
+            SolveCommands::Human { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
+                match rustoku.with_techniques(TechniqueMask::all()).solve_any() {
                     None => println!("No solution found."),
                     Some(solution) => print!("{}", solution),
                 }
-            }
-        }),
+            }),
+        },
         Commands::Check { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
             println!(
                 "The puzzle is {}solved correctly.",

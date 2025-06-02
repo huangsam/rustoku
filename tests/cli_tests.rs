@@ -48,21 +48,34 @@ fn test_generate_custom_clues() {
 }
 
 #[test]
-fn test_solve_valid_puzzle() {
+fn test_solve_any_some_solution() {
     get_rustoku_bin()
         .arg("solve")
+        .arg("any")
         .arg("53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79")
         .assert()
         .success()
         .stdout(predicates::str::contains(
             "534678912672195348198342567859761423426853791713924856961537284287419635345286179",
-        )); // Exact solved board
+        ));
 }
 
 #[test]
-fn test_solve_invalid_puzzle_length() {
+fn test_solve_any_no_solution() {
     get_rustoku_bin()
         .arg("solve")
+        .arg("any")
+        .arg(".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("No solution found."));
+}
+
+#[test]
+fn test_solve_any_invalid_puzzle() {
+    get_rustoku_bin()
+        .arg("solve")
+        .arg("any")
         .arg("short") // Invalid length
         .assert()
         .failure() // Expect the command to fail
@@ -72,24 +85,27 @@ fn test_solve_invalid_puzzle_length() {
 }
 
 #[test]
-fn test_solve_no_solution() {
+fn test_solve_all_two_solutions() {
     get_rustoku_bin()
         .arg("solve")
-        .arg(".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7")
+        .arg("all")
+        .arg("2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..")
         .assert()
         .success()
-        .stdout(predicates::str::contains("No solution found."));
+        .stdout(predicates::str::contains("Found 2 solution(s)."));
 }
 
 #[test]
-fn test_solve_all_solutions() {
+fn test_solve_human_some_solution() {
     get_rustoku_bin()
         .arg("solve")
-        .arg("2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..")
-        .arg("--all")
+        .arg("human")
+        .arg("53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79")
         .assert()
         .success()
-        .stdout(predicates::str::contains("Found 2 solution(s).")); // Based on our example, this puzzle has 2 solutions
+        .stdout(predicates::str::contains(
+            "534678912672195348198342567859761423426853791713924856961537284287419635345286179",
+        ));
 }
 
 #[test]

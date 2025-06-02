@@ -249,7 +249,7 @@ mod tests {
         let s = UNIQUE_PUZZLE;
         let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for technique test");
         let solution = rustoku
-            .with_techniques(TechniqueMask::ALL)
+            .with_techniques(TechniqueMask::all())
             .solve_any()
             .expect("Solving with all techniques failed");
 
@@ -265,7 +265,7 @@ mod tests {
         let s = TWO_PUZZLE;
         let rustoku = Rustoku::new_from_str(s)
             .expect("Rustoku creation failed for multi-solution technique test");
-        let solutions = rustoku.with_techniques(TechniqueMask::ALL).solve_all();
+        let solutions = rustoku.with_techniques(TechniqueMask::all()).solve_all();
 
         assert_eq!(
             2,

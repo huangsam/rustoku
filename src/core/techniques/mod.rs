@@ -22,8 +22,6 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct TechniqueMask: u16 {
-        /// No specific techniques are applied.
-        const NONE = 0;
         /// Apply the naked singles technique.
         const NAKED_SINGLES = 1 << 0;
         /// Apply the hidden singles technique.
@@ -43,8 +41,6 @@ bitflags! {
         const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
         /// Apply hard techniques like locked candidates and X-Wings.
         const HARD = Self::LOCKED_CANDIDATES.bits() | Self::XWING.bits();
-        /// Apply all available human-like techniques
-        const ALL = Self::EASY.bits() | Self::MEDIUM.bits() | Self::HARD.bits();
     }
 }
 
