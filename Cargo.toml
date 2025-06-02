@@ -6,7 +6,6 @@ resolver = "3"
 authors = ["Samuel Huang <samhuang91@gmail.com>"]
 version = "0.9.0"
 edition = "2024"
-description = "A Sudoku puzzle library and solver."
 readme = "README.md"
 repository = "https://github.com/huangsam/rustoku"
 license-file = "LICENSE"
