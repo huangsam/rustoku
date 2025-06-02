@@ -9,6 +9,5 @@ edition = "2024"
 readme = "README.md"
 repository = "https://github.com/huangsam/rustoku"
 license = "MIT"
-license-file = "LICENSE"
 keywords = ["sudoku", "puzzle"]
 categories = ["games"]
