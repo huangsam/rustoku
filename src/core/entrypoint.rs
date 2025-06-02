@@ -7,7 +7,7 @@ use crate::error::RustokuError;
 use rand::prelude::SliceRandom;
 use rand::rng;
 
-/// A Sudoku primitive that uses backtracking and bitmasking for constraints.
+/// Solver primitive that uses backtracking and bitmasking for constraints.
 ///
 /// This struct supports the ability to:
 /// - Initialize from a 2D array, a flat byte array, or a string representation
