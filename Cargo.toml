@@ -1,13 +1,14 @@
 [package]
 name = "rustoku"
-description = "Lightning-fast Sudoku solving and generation"
 version = "0.8.0"
-edition = "2024"
+description = "Lightning-fast Sudoku solving and generation"
 repository = "https://github.com/huangsam/rustoku"
-keywords = ["sudoku", "solver", "generator", "puzzle", "game"]
-license = "MIT"
 readme = "README.md"
-exclude = ["tests/*", "benches/*"]
+license = "MIT"
+authors = ["Samuel Huang <samhuang91@gmail.com"]
+categories = ["games"]
+keywords = ["sudoku", "puzzle"]
+edition = "2024"
 
 [dependencies]
 bitflags = "2.9.1"
