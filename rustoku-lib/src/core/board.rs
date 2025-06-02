@@ -1,8 +1,6 @@
 use crate::error::RustokuError;
 
-/// Raw board, which is a 9x9 grid of cells.
-///
-/// Each cell can contain a number from 1 to 9, or be empty (is 0).
+/// Raw 9x9 board, with some useful helpers.
 ///
 /// There are multiple ways to create a `Board`:
 /// - Using a 2D array of `u8` with dimensions 9x9
@@ -10,6 +8,7 @@ use crate::error::RustokuError;
 /// - Using a string representation with length 81
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Board {
+    /// Each cell can contain a number from 1 to 9, or be empty (is 0).
     pub cells: [[u8; 9]; 9],
 }
 

@@ -59,6 +59,7 @@ use techniques::TechniquePropagator;
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Rustoku {
+    /// The current state of the Sudoku board.
     pub board: Board,
     masks: Masks,
     candidates_cache: Candidates,
