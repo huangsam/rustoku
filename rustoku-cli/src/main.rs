@@ -44,12 +44,12 @@ pub enum Commands {
 /// Subcommands for solving Sudoku puzzles.
 #[derive(Subcommand, Debug)]
 pub enum SolveCommands {
-    /// Attempts to find any puzzle solution using all available techniques
+    /// Attempts to find any puzzle solution
     Any {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
-    /// Attempts to find all puzzle solutions using all available techniques
+    /// Attempts to find all puzzle solutions
     All {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
