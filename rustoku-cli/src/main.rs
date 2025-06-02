@@ -54,11 +54,6 @@ pub enum SolveCommands {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
-    /// Attempts to find any puzzle solution with all techniques
-    Human {
-        /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
-        puzzle: String,
-    },
 }
 
 fn main() {
@@ -67,13 +62,15 @@ fn main() {
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| print!("{}", board)),
         Commands::Solve { solve_command } => match solve_command {
-            SolveCommands::Any { puzzle } => {
-                Rustoku::new_from_str(&puzzle).map(|mut rustoku| match rustoku.solve_any() {
+            SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
+                rustoku = rustoku.with_techniques(TechniqueMask::all());
+                match rustoku.solve_any() {
                     None => println!("No solution found."),
                     Some(solution) => print!("{}", solution),
-                })
-            }
+                }
+            }),
             SolveCommands::All { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
+                rustoku = rustoku.with_techniques(TechniqueMask::all());
                 let solutions = rustoku.solve_all();
                 if solutions.is_empty() {
                     println!("No solutions found.");
@@ -83,12 +80,6 @@ fn main() {
                         print!("{}", solution);
                     });
                     println!("\nFound {} solution(s).", solutions.len());
-                }
-            }),
-            SolveCommands::Human { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-                match rustoku.with_techniques(TechniqueMask::all()).solve_any() {
-                    None => println!("No solution found."),
-                    Some(solution) => print!("{}", solution),
                 }
             }),
         },
