@@ -19,7 +19,7 @@ puzzle navigation.
 
 ```bash
 # This compiles the binary and places it at $HOME/.cargo/bin
-cargo install --path rustoku-cli
+cargo install rustoku-cli
 
 # Generate puzzles
 rustoku-cli generate
