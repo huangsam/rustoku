@@ -269,7 +269,7 @@ pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     // Check if the generated puzzle has a unique solution
     if Rustoku::new(board)?.solve_until(2).len() != 1 {
         // If not unique, return an error
-        return Err(RustokuError::PuzzleGenerationFailed);
+        return Err(RustokuError::GenerateFailure);
     }
 
     Ok(board)

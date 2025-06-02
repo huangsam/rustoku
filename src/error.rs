@@ -17,7 +17,7 @@ pub enum RustokuError {
     /// The initial board contains duplicate values in rows, columns, or 3x3 boxes.
     #[error("Initial board contains duplicates")]
     DuplicateValues,
-    /// The puzzle generation algorithm failed to find a unique solution.
-    #[error("Puzzle generation failed to find a unique solution")]
-    PuzzleGenerationFailed,
+    /// The puzzle generation process failed.
+    #[error("Puzzle generation failed ")]
+    GenerateFailure,
 }
