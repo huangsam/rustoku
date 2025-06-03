@@ -200,7 +200,11 @@ mod tests {
         let mask = TechniqueMask::EASY;
         assert_eq!(format!("{}", mask), "Naked Singles, Hidden Singles");
 
-        let mask = TechniqueMask::NAKED_SINGLES | TechniqueMask::XWING | TechniqueMask::LOCKED_CANDIDATES;
-        assert_eq!(format!("{}", mask), "Naked Singles, Locked Candidates, X-Wing");
+        let mask =
+            TechniqueMask::NAKED_SINGLES | TechniqueMask::XWING | TechniqueMask::LOCKED_CANDIDATES;
+        assert_eq!(
+            format!("{}", mask),
+            "Naked Singles, Locked Candidates, X-Wing"
+        );
     }
 }
