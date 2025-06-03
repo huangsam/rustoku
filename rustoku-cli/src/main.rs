@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustoku_lib::core::TechniqueMask;
+use rustoku_lib::core::TechniqueFlags;
 use rustoku_lib::{Rustoku, generate_board};
 
 /// Root of the Rustoku CLI.
@@ -63,14 +63,14 @@ fn main() {
         Commands::Generate { clues } => generate_board(clues).map(|board| print!("{}", board)),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                rustoku = rustoku.with_techniques(TechniqueMask::all());
+                rustoku = rustoku.with_techniques(TechniqueFlags::all());
                 match rustoku.solve_any() {
                     None => println!("No solution found."),
                     Some(solution) => print!("{}", solution),
                 }
             }),
             SolveCommands::All { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                rustoku = rustoku.with_techniques(TechniqueMask::all());
+                rustoku = rustoku.with_techniques(TechniqueFlags::all());
                 let solutions = rustoku.solve_all();
                 if solutions.is_empty() {
                     println!("No solutions found.");

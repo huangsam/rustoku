@@ -21,7 +21,7 @@ bitflags! {
     /// Bitmask to control which human techniques are applied.
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct TechniqueMask: u16 {
+    pub struct TechniqueFlags: u16 {
         /// Apply the naked singles technique.
         const NAKED_SINGLES = 1 << 0;
         /// Apply the hidden singles technique.
@@ -50,7 +50,7 @@ pub struct TechniquePropagator<'a> {
     board: &'a mut Board,
     masks: &'a mut Masks,
     candidates_cache: &'a mut Candidates,
-    techniques_enabled: TechniqueMask,
+    techniques_enabled: TechniqueFlags,
 }
 
 impl<'a> TechniquePropagator<'a> {
@@ -58,7 +58,7 @@ impl<'a> TechniquePropagator<'a> {
         board: &'a mut Board,
         masks: &'a mut Masks,
         candidates_cache: &'a mut Candidates,
-        techniques_enabled: TechniqueMask,
+        techniques_enabled: TechniqueFlags,
     ) -> Self {
         Self {
             board,
@@ -99,13 +99,13 @@ impl<'a> TechniquePropagator<'a> {
         path: &mut Vec<(usize, usize, u8)>,
         initial_path_len: usize,
     ) -> bool {
-        let techniques: Vec<(&dyn TechniqueRule, TechniqueMask)> = vec![
-            (&NakedSingles, TechniqueMask::NAKED_SINGLES),
-            (&HiddenSingles, TechniqueMask::HIDDEN_SINGLES),
-            (&NakedPairs, TechniqueMask::NAKED_PAIRS),
-            (&HiddenPairs, TechniqueMask::HIDDEN_PAIRS),
-            (&LockedCandidates, TechniqueMask::LOCKED_CANDIDATES),
-            (&XWing, TechniqueMask::XWING),
+        let techniques: Vec<(&dyn TechniqueRule, TechniqueFlags)> = vec![
+            (&NakedSingles, TechniqueFlags::NAKED_SINGLES),
+            (&HiddenSingles, TechniqueFlags::HIDDEN_SINGLES),
+            (&NakedPairs, TechniqueFlags::NAKED_PAIRS),
+            (&HiddenPairs, TechniqueFlags::HIDDEN_PAIRS),
+            (&LockedCandidates, TechniqueFlags::LOCKED_CANDIDATES),
+            (&XWing, TechniqueFlags::XWING),
         ];
 
         loop {

@@ -15,7 +15,7 @@ mod techniques;
 
 pub use board::Board;
 pub use solution::Solution;
-pub use techniques::TechniqueMask;
+pub use techniques::TechniqueFlags;
 
 use crate::error::RustokuError;
 use candidates::Candidates;
@@ -63,7 +63,7 @@ pub struct Rustoku {
     pub board: Board,
     masks: Masks,
     candidates_cache: Candidates,
-    techniques: TechniqueMask,
+    techniques: TechniqueFlags,
 }
 
 impl Rustoku {
@@ -99,7 +99,7 @@ impl Rustoku {
             board,
             masks,
             candidates_cache,
-            techniques: TechniqueMask::EASY, // Default
+            techniques: TechniqueFlags::EASY, // Default
         })
     }
 
@@ -110,7 +110,7 @@ impl Rustoku {
     }
 
     /// Returns the existing Rustoku instance, with modified techniques.
-    pub fn with_techniques(mut self, techniques: TechniqueMask) -> Self {
+    pub fn with_techniques(mut self, techniques: TechniqueFlags) -> Self {
         self.techniques = techniques;
         self
     }
@@ -444,7 +444,7 @@ mod tests {
         let s = UNIQUE_PUZZLE;
         let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for technique test");
         let solution = rustoku
-            .with_techniques(TechniqueMask::all())
+            .with_techniques(TechniqueFlags::all())
             .solve_any()
             .expect("Solving with all techniques failed");
 
@@ -460,7 +460,7 @@ mod tests {
         let s = TWO_PUZZLE;
         let rustoku = Rustoku::new_from_str(s)
             .expect("Rustoku creation failed for multi-solution technique test");
-        let solutions = rustoku.with_techniques(TechniqueMask::all()).solve_all();
+        let solutions = rustoku.with_techniques(TechniqueFlags::all()).solve_all();
 
         assert_eq!(
             2,
