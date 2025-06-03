@@ -10,5 +10,5 @@ rust-version = "1.85"
 readme = "README.md"
 repository = "https://github.com/huangsam/rustoku"
 license = "MIT"
-keywords = ["sudoku", "puzzle"]
+keywords = ["sudoku", "puzzles", "solver", "generator"]
 categories = ["games"]
