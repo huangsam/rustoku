@@ -1,6 +1,6 @@
 use crate::error::RustokuError;
 
-/// Raw 9x9 board, with some useful helpers.
+/// Raw 9x9 board with some useful helpers.
 ///
 /// There are multiple ways to create a `Board`:
 /// - Using a 2D array of `u8` with dimensions 9x9
