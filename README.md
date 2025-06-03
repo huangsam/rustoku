@@ -41,7 +41,7 @@ rustoku-cli check '2957438614318659278761925433874592166123874955492167387635241
 rustoku-cli show '9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3'
 ```
 
-That's it! Dive into the world of high-performance Sudoku.
+Dive into the world of high-performance Sudoku today!
 
 [bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
 [MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/
