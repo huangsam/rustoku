@@ -3,7 +3,7 @@
 //! This module provides functions to format the Sudoku board and its solve path
 //! in various ways.
 
-use crate::core::{Board, Solution};
+use crate::core::{Board, Solution, TechniqueMask};
 use std::fmt;
 
 /// Formats the solution into a human-readable string representation.
@@ -25,6 +25,38 @@ impl fmt::Display for Board {
         writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;
         writeln!(f, "Line format: {}", format_line(&self.cells))?;
         Ok(())
+    }
+}
+
+/// Formats the technique mask into a human-readable string representation.
+impl fmt::Display for TechniqueMask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            return write!(f, "None");
+        }
+
+        let mut techniques = Vec::new();
+
+        if self.contains(TechniqueMask::NAKED_SINGLES) {
+            techniques.push("Naked Singles");
+        }
+        if self.contains(TechniqueMask::HIDDEN_SINGLES) {
+            techniques.push("Hidden Singles");
+        }
+        if self.contains(TechniqueMask::NAKED_PAIRS) {
+            techniques.push("Naked Pairs");
+        }
+        if self.contains(TechniqueMask::HIDDEN_PAIRS) {
+            techniques.push("Hidden Pairs");
+        }
+        if self.contains(TechniqueMask::LOCKED_CANDIDATES) {
+            techniques.push("Locked Candidates");
+        }
+        if self.contains(TechniqueMask::XWING) {
+            techniques.push("X-Wing");
+        }
+
+        write!(f, "{}", techniques.join(", "))
     }
 }
 
@@ -209,5 +241,33 @@ mod tests {
             "(6, 6, 8)",
         ];
         assert_eq!(expected, format_solve_path(&path));
+    }
+
+    #[test]
+    fn test_display_empty_mask() {
+        let mask = TechniqueMask::empty();
+        assert_eq!(format!("{}", mask), "None");
+    }
+
+    #[test]
+    fn test_display_single_technique() {
+        let mask = TechniqueMask::NAKED_SINGLES;
+        assert_eq!(format!("{}", mask), "Naked Singles");
+
+        let mask = TechniqueMask::XWING;
+        assert_eq!(format!("{}", mask), "X-Wing");
+    }
+
+    #[test]
+    fn test_display_multiple_techniques() {
+        let mask = TechniqueMask::EASY;
+        assert_eq!(format!("{}", mask), "Naked Singles, Hidden Singles");
+
+        let mask =
+            TechniqueMask::NAKED_SINGLES | TechniqueMask::XWING | TechniqueMask::LOCKED_CANDIDATES;
+        assert_eq!(
+            format!("{}", mask),
+            "Naked Singles, Locked Candidates, X-Wing"
+        );
     }
 }

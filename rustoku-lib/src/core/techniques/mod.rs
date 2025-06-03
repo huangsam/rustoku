@@ -2,7 +2,6 @@ use super::board::Board;
 use super::candidates::Candidates;
 use super::masks::Masks;
 use bitflags::bitflags;
-use std::fmt;
 
 mod hidden_pairs;
 mod hidden_singles;
@@ -42,37 +41,6 @@ bitflags! {
         const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
         /// Apply hard techniques like locked candidates and X-Wings.
         const HARD = Self::LOCKED_CANDIDATES.bits() | Self::XWING.bits();
-    }
-}
-
-impl fmt::Display for TechniqueMask {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.is_empty() {
-            return write!(f, "None");
-        }
-
-        let mut techniques = Vec::new();
-
-        if self.contains(TechniqueMask::NAKED_SINGLES) {
-            techniques.push("Naked Singles");
-        }
-        if self.contains(TechniqueMask::HIDDEN_SINGLES) {
-            techniques.push("Hidden Singles");
-        }
-        if self.contains(TechniqueMask::NAKED_PAIRS) {
-            techniques.push("Naked Pairs");
-        }
-        if self.contains(TechniqueMask::HIDDEN_PAIRS) {
-            techniques.push("Hidden Pairs");
-        }
-        if self.contains(TechniqueMask::LOCKED_CANDIDATES) {
-            techniques.push("Locked Candidates");
-        }
-        if self.contains(TechniqueMask::XWING) {
-            techniques.push("X-Wing");
-        }
-
-        write!(f, "{}", techniques.join(", "))
     }
 }
 
@@ -174,37 +142,4 @@ impl<'a> TechniquePropagator<'a> {
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_display_empty_mask() {
-        let mask = TechniqueMask::empty();
-        assert_eq!(format!("{}", mask), "None");
-    }
-
-    #[test]
-    fn test_display_single_technique() {
-        let mask = TechniqueMask::NAKED_SINGLES;
-        assert_eq!(format!("{}", mask), "Naked Singles");
-
-        let mask = TechniqueMask::XWING;
-        assert_eq!(format!("{}", mask), "X-Wing");
-    }
-
-    #[test]
-    fn test_display_multiple_techniques() {
-        let mask = TechniqueMask::EASY;
-        assert_eq!(format!("{}", mask), "Naked Singles, Hidden Singles");
-
-        let mask =
-            TechniqueMask::NAKED_SINGLES | TechniqueMask::XWING | TechniqueMask::LOCKED_CANDIDATES;
-        assert_eq!(
-            format!("{}", mask),
-            "Naked Singles, Locked Candidates, X-Wing"
-        );
-    }
 }
