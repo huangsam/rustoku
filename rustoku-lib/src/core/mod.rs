@@ -15,7 +15,7 @@ mod techniques;
 
 pub use board::Board;
 pub use solution::Solution;
-pub use techniques::TechniqueFlags;
+pub use techniques::flags::TechniqueFlags;
 
 use crate::error::RustokuError;
 use candidates::Candidates;

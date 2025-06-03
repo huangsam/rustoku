@@ -2,7 +2,7 @@ use super::board::Board;
 use super::candidates::Candidates;
 use super::masks::Masks;
 
-mod flags;
+pub mod flags;
 mod hidden_pairs;
 mod hidden_singles;
 mod locked_candidates;
@@ -10,7 +10,7 @@ mod naked_pairs;
 mod naked_singles;
 mod x_wing;
 
-pub use flags::TechniqueFlags;
+use flags::TechniqueFlags;
 use hidden_pairs::HiddenPairs;
 use hidden_singles::HiddenSingles;
 use locked_candidates::LockedCandidates;
