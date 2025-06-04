@@ -120,5 +120,6 @@ pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
 
+    /// Returns the flags associated with this technique.
     fn flags(&self) -> TechniqueFlags;
 }
