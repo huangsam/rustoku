@@ -15,6 +15,7 @@ pub struct Solution {
     pub solve_path: SolvePath,
 }
 
+/// Solve path associated with a solution.
 #[derive(Debug, Clone)]
 pub struct SolvePath {
     /// The sequence of steps taken to solve the Sudoku puzzle
@@ -33,6 +34,7 @@ impl Default for SolvePath {
     }
 }
 
+/// Single step in the solving process.
 #[derive(Debug, Clone)]
 pub struct SolveStep {
     /// The 0-based row index of the cell being modified
