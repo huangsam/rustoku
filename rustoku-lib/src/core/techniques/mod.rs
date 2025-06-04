@@ -57,8 +57,7 @@ impl<'a> TechniquePropagator<'a> {
         self.masks.add_number(r, c, num);
         self.candidates_cache
             .update_affected_cells(r, c, self.masks, self.board);
-        path.steps
-            .push(SolveStep::new(r, c, num).with_flags(flags));
+        path.steps.push(SolveStep::new(r, c, num).with_flags(flags));
     }
 
     /// Helper to remove a number and update caches.
