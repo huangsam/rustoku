@@ -17,6 +17,7 @@ pub struct Solution {
 
 #[derive(Debug, Clone)]
 pub struct SolvePath {
+    /// The sequence of steps taken to solve the Sudoku puzzle
     pub steps: Vec<SolveStep>,
 }
 
@@ -34,9 +35,13 @@ impl Default for SolvePath {
 
 #[derive(Debug, Clone)]
 pub struct SolveStep {
+    /// The 0-based row index of the cell being modified
     pub row: usize,
+    /// The 0-based column index of the cell being modified
     pub col: usize,
+    /// The value being placed in the cell
     pub value: u8,
+    /// Flags indicating the technique used for this step
     pub flags: TechniqueFlags,
 }
 
