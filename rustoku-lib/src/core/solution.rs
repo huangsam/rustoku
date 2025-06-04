@@ -53,10 +53,11 @@ impl SolveStep {
             row,
             col,
             value,
-            flags: TechniqueFlags::empty(),
+            flags: TechniqueFlags::empty(), // Default to no flags
         }
     }
 
+    /// Set the flags for this step.
     pub fn with_flags(mut self, flags: TechniqueFlags) -> Self {
         self.flags = flags;
         self
