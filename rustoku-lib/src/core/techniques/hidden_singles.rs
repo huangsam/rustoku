@@ -1,17 +1,19 @@
+use crate::core::SolvePath;
+
 use super::{TechniquePropagator, TechniqueRule};
 
 /// Hidden singles technique implementation.
 pub struct HiddenSingles;
 
 impl TechniqueRule for HiddenSingles {
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Helper closure (can be moved to a private helper function if desired)
         let check_unit_hidden_singles =
             |unit_cells: &[(usize, usize)],
              prop: &mut TechniquePropagator,
-             path: &mut Vec<(usize, usize, u8)>| {
+             path: &mut SolvePath| {
                 let mut unit_placement_made = false;
                 for cand_val in 1..=9 {
                     let cand_bit = 1 << (cand_val - 1);
@@ -31,7 +33,7 @@ impl TechniqueRule for HiddenSingles {
                     if cand_occurrences == 1 {
                         if let Some((r, c)) = potential_cell {
                             if prop.board.is_empty(r, c) {
-                                prop.place_and_update(r, c, cand_val, path);
+                                prop.place_and_update(r, c, cand_val, self.flags(), path);
                                 unit_placement_made = true;
                             }
                         }
@@ -68,5 +70,9 @@ impl TechniqueRule for HiddenSingles {
             }
         }
         overall_placements_made
+    }
+
+    fn flags(&self) -> crate::core::TechniqueFlags {
+        crate::core::TechniqueFlags::HIDDEN_SINGLES
     }
 }

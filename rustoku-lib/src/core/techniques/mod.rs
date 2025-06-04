@@ -1,3 +1,5 @@
+use crate::core::{SolvePath, SolveStep};
+
 use super::board::Board;
 use super::candidates::Candidates;
 use super::masks::Masks;
@@ -48,13 +50,15 @@ impl<'a> TechniquePropagator<'a> {
         r: usize,
         c: usize,
         num: u8,
-        path: &mut Vec<(usize, usize, u8)>,
+        flag: TechniqueFlags,
+        path: &mut SolvePath,
     ) {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
         self.candidates_cache
             .update_affected_cells(r, c, self.masks, self.board);
-        path.push((r, c, num));
+        path.steps
+            .push(SolveStep::new(r, c, num).with_approach(flag));
     }
 
     /// Helper to remove a number and update caches.
@@ -68,25 +72,24 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Applies deterministic constraint propagation techniques iteratively.
-    pub fn propagate_constraints(
-        &mut self,
-        path: &mut Vec<(usize, usize, u8)>,
-        initial_path_len: usize,
-    ) -> bool {
-        let techniques: Vec<(&dyn TechniqueRule, TechniqueFlags)> = vec![
-            (&NakedSingles, TechniqueFlags::NAKED_SINGLES),
-            (&HiddenSingles, TechniqueFlags::HIDDEN_SINGLES),
-            (&NakedPairs, TechniqueFlags::NAKED_PAIRS),
-            (&HiddenPairs, TechniqueFlags::HIDDEN_PAIRS),
-            (&LockedCandidates, TechniqueFlags::LOCKED_CANDIDATES),
-            (&XWing, TechniqueFlags::XWING),
+    pub fn propagate_constraints(&mut self, path: &mut SolvePath, initial_path_len: usize) -> bool {
+        let techniques: Vec<&dyn TechniqueRule> = vec![
+            &NakedSingles,
+            &HiddenSingles,
+            &NakedPairs,
+            &HiddenPairs,
+            &LockedCandidates,
+            &XWing,
         ];
 
         loop {
             let mut changed_this_iter = false;
 
-            for (technique, flag) in &techniques {
-                if self.techniques_enabled.contains(*flag) {
+            for technique in &techniques {
+                if self.techniques_enabled.contains(technique.flags()) {
+                    // Pass the propagator itself and the current path to the technique. This
+                    // is an example of the Mediator pattern, where the propagator
+                    // mediates the interaction between the techniques and the board
                     changed_this_iter |= technique.apply(self, path);
                     if changed_this_iter {
                         break;
@@ -97,9 +100,9 @@ impl<'a> TechniquePropagator<'a> {
             if (0..9).any(|r| {
                 (0..9).any(|c| self.board.is_empty(r, c) && self.candidates_cache.get(r, c) == 0)
             }) {
-                while path.len() > initial_path_len {
-                    if let Some((r, c, num)) = path.pop() {
-                        self.remove_and_update(r, c, num);
+                while path.steps.len() > initial_path_len {
+                    if let Some(step) = path.steps.pop() {
+                        self.remove_and_update(step.row, step.col, step.value);
                     }
                 }
                 return false;
@@ -115,5 +118,7 @@ impl<'a> TechniquePropagator<'a> {
 
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool;
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
+
+    fn flags(&self) -> TechniqueFlags;
 }

@@ -1,4 +1,6 @@
+use super::TechniqueFlags;
 use super::{TechniquePropagator, TechniqueRule};
+use crate::core::SolvePath;
 
 /// Hidden pairs technique implementation.
 pub struct HiddenPairs;
@@ -8,7 +10,8 @@ impl HiddenPairs {
     fn process_unit_for_hidden_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
+        flags: TechniqueFlags,
     ) -> bool {
         let mut unit_placements_made = false;
 
@@ -50,7 +53,7 @@ impl HiddenPairs {
                         if new_mask1.count_ones() == 1 {
                             let num = new_mask1.trailing_zeros() as u8 + 1;
                             if prop.masks.is_safe(r1, c1, num) {
-                                prop.place_and_update(r1, c1, num, path);
+                                prop.place_and_update(r1, c1, num, flags, path);
                             }
                         }
                     }
@@ -64,7 +67,7 @@ impl HiddenPairs {
                         if new_mask2.count_ones() == 1 {
                             let num = new_mask2.trailing_zeros() as u8 + 1;
                             if prop.masks.is_safe(r2, c2, num) {
-                                prop.place_and_update(r2, c2, num, path);
+                                prop.place_and_update(r2, c2, num, flags, path);
                             }
                         }
                     }
@@ -76,13 +79,13 @@ impl HiddenPairs {
 }
 
 impl TechniqueRule for HiddenPairs {
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Process rows
         for i in 0..9 {
             let row_cells: Vec<(usize, usize)> = (0..9).map(|col| (i, col)).collect();
-            if Self::process_unit_for_hidden_pairs(prop, &row_cells, path) {
+            if Self::process_unit_for_hidden_pairs(prop, &row_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
@@ -90,7 +93,7 @@ impl TechniqueRule for HiddenPairs {
         // Process columns
         for i in 0..9 {
             let col_cells: Vec<(usize, usize)> = (0..9).map(|row| (row, i)).collect();
-            if Self::process_unit_for_hidden_pairs(prop, &col_cells, path) {
+            if Self::process_unit_for_hidden_pairs(prop, &col_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
@@ -105,10 +108,14 @@ impl TechniqueRule for HiddenPairs {
                     box_cells.push((start_row + r_offset, start_col + c_offset));
                 }
             }
-            if Self::process_unit_for_hidden_pairs(prop, &box_cells, path) {
+            if Self::process_unit_for_hidden_pairs(prop, &box_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
         overall_placements_made
+    }
+
+    fn flags(&self) -> crate::core::TechniqueFlags {
+        crate::core::TechniqueFlags::HIDDEN_PAIRS
     }
 }

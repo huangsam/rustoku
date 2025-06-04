@@ -1,3 +1,5 @@
+use crate::core::{SolvePath, TechniqueFlags};
+
 use super::{TechniquePropagator, TechniqueRule};
 
 /// Naked pairs technique implementation.
@@ -8,7 +10,8 @@ impl NakedPairs {
     fn process_unit_for_naked_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
+        flags: TechniqueFlags,
     ) -> bool {
         let mut unit_placements_made = false;
         let mut two_cand_cells: Vec<(usize, usize, u16)> = Vec::new();
@@ -52,7 +55,7 @@ impl NakedPairs {
                                     let num = refined_mask.trailing_zeros() as u8 + 1;
 
                                     if prop.masks.is_safe(other_r, other_c, num) {
-                                        prop.place_and_update(other_r, other_c, num, path);
+                                        prop.place_and_update(other_r, other_c, num, flags, path);
                                     }
                                 }
                             }
@@ -66,13 +69,13 @@ impl NakedPairs {
 }
 
 impl TechniqueRule for NakedPairs {
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Process rows
         for i in 0..9 {
             let row_cells: Vec<(usize, usize)> = (0..9).map(|col| (i, col)).collect();
-            if Self::process_unit_for_naked_pairs(prop, &row_cells, path) {
+            if Self::process_unit_for_naked_pairs(prop, &row_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
@@ -80,7 +83,7 @@ impl TechniqueRule for NakedPairs {
         // Process columns
         for i in 0..9 {
             let col_cells: Vec<(usize, usize)> = (0..9).map(|row| (row, i)).collect();
-            if Self::process_unit_for_naked_pairs(prop, &col_cells, path) {
+            if Self::process_unit_for_naked_pairs(prop, &col_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
@@ -95,10 +98,14 @@ impl TechniqueRule for NakedPairs {
                     box_cells.push((start_row + r_offset, start_col + c_offset));
                 }
             }
-            if Self::process_unit_for_naked_pairs(prop, &box_cells, path) {
+            if Self::process_unit_for_naked_pairs(prop, &box_cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
         overall_placements_made
+    }
+
+    fn flags(&self) -> crate::core::TechniqueFlags {
+        crate::core::TechniqueFlags::NAKED_PAIRS
     }
 }

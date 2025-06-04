@@ -3,18 +3,14 @@
 //! This module provides functions to format the Sudoku board and its solve path
 //! in various ways.
 
-use crate::core::{Board, Solution, TechniqueFlags};
+use crate::core::{Board, Solution, SolvePath, TechniqueFlags};
 use std::fmt;
 
 /// Formats the solution into a human-readable string representation.
 impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", self.board)?;
-        writeln!(
-            f,
-            "Solve path:\n{}",
-            format_solve_path(&self.solve_path).join("\n")
-        )?;
+        writeln!(f, "{}", self.solve_path)?;
         Ok(())
     }
 }
@@ -33,6 +29,9 @@ impl fmt::Display for TechniqueFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
             return write!(f, "None");
+        }
+        if self.is_all() {
+            return write!(f, "All Techniques");
         }
 
         let mut techniques = Vec::new();
@@ -57,6 +56,19 @@ impl fmt::Display for TechniqueFlags {
         }
 
         write!(f, "{}", techniques.join(", "))
+    }
+}
+
+impl fmt::Display for SolvePath {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let path: Vec<(usize, usize, u8, TechniqueFlags)> = self
+            .steps
+            .iter()
+            .map(|step| (step.row, step.col, step.value, step.flags))
+            .collect();
+
+        let formatted_lines = format_solve_path(&path, 10);
+        write!(f, "{}", formatted_lines.join("\n"))
     }
 }
 
@@ -112,17 +124,46 @@ pub fn format_line(board: &[[u8; 9]; 9]) -> String {
 /// This function takes a vector of tuples representing moves in the format `(row, column, value)`
 /// and formats them into a human-readable string. Each move is represented as `(row, column, value)`,
 /// where `row` and `column` are 1-based indices, and `value` is the number placed in that cell.
-pub fn format_solve_path(path: &[(usize, usize, u8)]) -> Vec<String> {
+pub fn format_solve_path(
+    path: &[(usize, usize, u8, TechniqueFlags)],
+    chunk_size: usize,
+) -> Vec<String> {
     if path.is_empty() {
-        vec!["(No moves recorded)".to_string()]
-    } else {
-        path.iter()
-            .map(|(r, c, val)| format!("({}, {}, {})", r + 1, c + 1, val))
-            .collect::<Vec<String>>()
-            .chunks(5) // Break into chunks of 5 moves
-            .map(|chunk| chunk.join(" -> "))
-            .collect::<Vec<String>>()
+        return vec!["(No moves recorded)".to_string()];
     }
+
+    let mut result = Vec::new();
+    let mut current_technique = None;
+    let mut current_moves = Vec::new();
+
+    for (r, c, val, flags) in path {
+        let technique_name = format!("{}", flags);
+
+        if current_technique.as_ref() != Some(&technique_name) {
+            // Flush previous technique's moves
+            if let Some(tech) = current_technique {
+                result.push(format!("{}:", tech));
+                // Break moves into chunks of 5 per line
+                for chunk in current_moves.chunks(chunk_size) {
+                    result.push(format!("  {}", chunk.join(" ")));
+                }
+                current_moves.clear();
+            }
+            current_technique = Some(technique_name);
+        }
+
+        current_moves.push(format!("R{}C{}={}", r + 1, c + 1, val));
+    }
+
+    // Flush final technique
+    if let Some(tech) = current_technique {
+        result.push(format!("{}:", tech));
+        for chunk in current_moves.chunks(chunk_size) {
+            result.push(format!("  {}", chunk.join(" ")));
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
@@ -210,37 +251,6 @@ mod tests {
         let expected =
             ".................................................................................";
         assert_eq!(expected, format_line(&board));
-    }
-
-    #[test]
-    fn test_format_solve_path_one_line() {
-        let path = vec![(0, 0, 5), (1, 1, 3), (2, 2, 4), (3, 3, 6), (4, 4, 7)];
-        let expected = vec!["(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)"];
-        assert_eq!(expected, format_solve_path(&path));
-    }
-
-    #[test]
-    fn test_format_solve_path_no_moves() {
-        let path: Vec<(usize, usize, u8)> = vec![];
-        let expected = vec!["(No moves recorded)".to_string()];
-        assert_eq!(expected, format_solve_path(&path));
-    }
-
-    #[test]
-    fn test_format_solve_path_multiple_lines() {
-        let path = vec![
-            (0, 0, 5),
-            (1, 1, 3),
-            (2, 2, 4),
-            (3, 3, 6),
-            (4, 4, 7),
-            (5, 5, 8),
-        ];
-        let expected = vec![
-            "(1, 1, 5) -> (2, 2, 3) -> (3, 3, 4) -> (4, 4, 6) -> (5, 5, 7)",
-            "(6, 6, 8)",
-        ];
-        assert_eq!(expected, format_solve_path(&path));
     }
 
     #[test]

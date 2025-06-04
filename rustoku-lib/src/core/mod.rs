@@ -14,7 +14,7 @@ mod solution;
 mod techniques;
 
 pub use board::Board;
-pub use solution::Solution;
+pub use solution::{Solution, SolvePath, SolveStep};
 pub use techniques::flags::TechniqueFlags;
 
 use crate::error::RustokuError;
@@ -151,7 +151,7 @@ impl Rustoku {
     fn solve_until_recursive(
         &mut self,
         solutions: &mut Vec<Solution>,
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
         bound: usize,
     ) -> usize {
         if let Some((r, c)) = self.find_next_empty_cell() {
@@ -162,9 +162,9 @@ impl Rustoku {
             for &num in &nums {
                 if self.masks.is_safe(r, c, num) {
                     self.place_number(r, c, num);
-                    path.push((r, c, num));
+                    path.steps.push(SolveStep::new(r, c, num));
                     count += self.solve_until_recursive(solutions, path, bound);
-                    path.pop();
+                    path.steps.pop();
                     self.remove_number(r, c, num);
 
                     if bound > 0 && solutions.len() >= bound {
@@ -185,7 +185,7 @@ impl Rustoku {
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
     pub fn solve_until(&mut self, bound: usize) -> Vec<Solution> {
         let mut solutions = Vec::new();
-        let mut path = Vec::new();
+        let mut path = SolvePath::default();
 
         let mut propagator = TechniquePropagator::new(
             &mut self.board,

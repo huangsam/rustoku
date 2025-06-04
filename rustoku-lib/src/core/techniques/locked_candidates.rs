@@ -1,3 +1,5 @@
+use crate::core::{SolvePath, TechniqueFlags};
+
 use super::{TechniquePropagator, TechniqueRule};
 use std::collections::HashSet;
 
@@ -9,7 +11,8 @@ impl LockedCandidates {
     fn process_row_for_locked_candidates(
         prop: &mut TechniquePropagator,
         row: usize,
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
+        flags: TechniqueFlags,
     ) -> bool {
         let mut placements_made = false;
 
@@ -45,7 +48,7 @@ impl LockedCandidates {
                                 if refined_mask.count_ones() == 1 {
                                     let num = refined_mask.trailing_zeros() as u8 + 1;
                                     if prop.masks.is_safe(r, c, num) {
-                                        prop.place_and_update(r, c, num, path);
+                                        prop.place_and_update(r, c, num, flags, path);
                                     }
                                 }
                             }
@@ -61,7 +64,8 @@ impl LockedCandidates {
     fn process_col_for_locked_candidates(
         prop: &mut TechniquePropagator,
         col: usize,
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
+        flags: TechniqueFlags,
     ) -> bool {
         let mut placements_made = false;
 
@@ -97,7 +101,7 @@ impl LockedCandidates {
                                 if refined_mask.count_ones() == 1 {
                                     let num = refined_mask.trailing_zeros() as u8 + 1;
                                     if prop.masks.is_safe(r, c, num) {
-                                        prop.place_and_update(r, c, num, path);
+                                        prop.place_and_update(r, c, num, flags, path);
                                     }
                                 }
                             }
@@ -113,7 +117,8 @@ impl LockedCandidates {
     fn process_box_for_locked_candidates(
         prop: &mut TechniquePropagator,
         box_idx: usize,
-        path: &mut Vec<(usize, usize, u8)>,
+        path: &mut SolvePath,
+        flags: TechniqueFlags,
     ) -> bool {
         let mut placements_made = false;
         let start_row = (box_idx / 3) * 3;
@@ -151,7 +156,7 @@ impl LockedCandidates {
                             if refined_mask.count_ones() == 1 {
                                 let num = refined_mask.trailing_zeros() as u8 + 1;
                                 if prop.masks.is_safe(row, c, num) {
-                                    prop.place_and_update(row, c, num, path);
+                                    prop.place_and_update(row, c, num, flags, path);
                                 }
                             }
                         }
@@ -175,7 +180,7 @@ impl LockedCandidates {
                             if refined_mask.count_ones() == 1 {
                                 let num = refined_mask.trailing_zeros() as u8 + 1;
                                 if prop.masks.is_safe(r, col, num) {
-                                    prop.place_and_update(r, col, num, path);
+                                    prop.place_and_update(r, col, num, flags, path);
                                 }
                             }
                         }
@@ -188,24 +193,31 @@ impl LockedCandidates {
 }
 
 impl TechniqueRule for LockedCandidates {
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Check rows for pointing pairs/triples
         for row in 0..9 {
-            overall_placements_made |= Self::process_row_for_locked_candidates(prop, row, path);
+            overall_placements_made |=
+                Self::process_row_for_locked_candidates(prop, row, path, self.flags());
         }
 
         // Check columns for pointing pairs/triples
         for col in 0..9 {
-            overall_placements_made |= Self::process_col_for_locked_candidates(prop, col, path);
+            overall_placements_made |=
+                Self::process_col_for_locked_candidates(prop, col, path, self.flags());
         }
 
         // Check boxes for box/line reduction
         for box_idx in 0..9 {
-            overall_placements_made |= Self::process_box_for_locked_candidates(prop, box_idx, path);
+            overall_placements_made |=
+                Self::process_box_for_locked_candidates(prop, box_idx, path, self.flags());
         }
 
         overall_placements_made
+    }
+
+    fn flags(&self) -> crate::core::TechniqueFlags {
+        crate::core::TechniqueFlags::LOCKED_CANDIDATES
     }
 }

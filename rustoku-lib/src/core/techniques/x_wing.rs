@@ -1,10 +1,12 @@
+use crate::core::SolvePath;
+
 use super::{TechniquePropagator, TechniqueRule};
 
 /// X-Wing technique implementation.
 pub struct XWing;
 
 impl TechniqueRule for XWing {
-    fn apply(&self, prop: &mut TechniquePropagator, path: &mut Vec<(usize, usize, u8)>) -> bool {
+    fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut placements_made = false;
 
         for candidate_val in 1..=9 {
@@ -52,7 +54,13 @@ impl TechniqueRule for XWing {
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
                                         if prop.masks.is_safe(r_other, c1, num) {
-                                            prop.place_and_update(r_other, c1, num, path);
+                                            prop.place_and_update(
+                                                r_other,
+                                                c1,
+                                                num,
+                                                self.flags(),
+                                                path,
+                                            );
                                         }
                                     }
                                 }
@@ -70,7 +78,13 @@ impl TechniqueRule for XWing {
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
                                         if prop.masks.is_safe(r_other, c2, num) {
-                                            prop.place_and_update(r_other, c2, num, path);
+                                            prop.place_and_update(
+                                                r_other,
+                                                c2,
+                                                num,
+                                                self.flags(),
+                                                path,
+                                            );
                                         }
                                     }
                                 }
@@ -122,7 +136,13 @@ impl TechniqueRule for XWing {
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
                                         if prop.masks.is_safe(r1, c_other, num) {
-                                            prop.place_and_update(r1, c_other, num, path);
+                                            prop.place_and_update(
+                                                r1,
+                                                c_other,
+                                                num,
+                                                self.flags(),
+                                                path,
+                                            );
                                         }
                                     }
                                 }
@@ -140,7 +160,13 @@ impl TechniqueRule for XWing {
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
                                         if prop.masks.is_safe(r2, c_other, num) {
-                                            prop.place_and_update(r2, c_other, num, path);
+                                            prop.place_and_update(
+                                                r2,
+                                                c_other,
+                                                num,
+                                                self.flags(),
+                                                path,
+                                            );
                                         }
                                     }
                                 }
@@ -151,5 +177,9 @@ impl TechniqueRule for XWing {
             }
         }
         placements_made
+    }
+
+    fn flags(&self) -> crate::core::TechniqueFlags {
+        crate::core::TechniqueFlags::XWING
     }
 }
