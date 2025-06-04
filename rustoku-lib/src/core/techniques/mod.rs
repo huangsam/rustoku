@@ -62,7 +62,7 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Helper to remove a number and update caches.
-    pub(super) fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
+    fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0);
         self.masks.remove_number(r, c, num);
         self.candidates_cache
