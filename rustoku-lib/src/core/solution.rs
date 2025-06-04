@@ -57,8 +57,8 @@ impl SolveStep {
         }
     }
 
-    pub fn with_approach(mut self, approach: TechniqueFlags) -> Self {
-        self.flags = approach;
+    pub fn with_flags(mut self, flags: TechniqueFlags) -> Self {
+        self.flags = flags;
         self
     }
 }

@@ -50,7 +50,7 @@ impl<'a> TechniquePropagator<'a> {
         r: usize,
         c: usize,
         num: u8,
-        flag: TechniqueFlags,
+        flags: TechniqueFlags,
         path: &mut SolvePath,
     ) {
         self.board.set(r, c, num);
@@ -58,7 +58,7 @@ impl<'a> TechniquePropagator<'a> {
         self.candidates_cache
             .update_affected_cells(r, c, self.masks, self.board);
         path.steps
-            .push(SolveStep::new(r, c, num).with_approach(flag));
+            .push(SolveStep::new(r, c, num).with_flags(flags));
     }
 
     /// Helper to remove a number and update caches.
