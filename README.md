@@ -65,6 +65,7 @@ Line format: 9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..
 Try some more examples from these sites:
 
 - [Curated inputs from multiple sources](./data)
+- [HoDoKu](https://hodoku.sourceforge.net/en/index.php)
 - [heetbeet/purge-and-merge](https://github.com/heetbeet/purge-and-merge)
 - [ruohanrao/sudoku](https://www.kaggle.com/datasets/rohanrao/sudoku)
 - [Ritvik19/Sudoku-Dataset](https://huggingface.co/datasets/Ritvik19/Sudoku-Dataset)
