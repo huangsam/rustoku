@@ -62,16 +62,6 @@ impl HiddenPairs {
                         }
                     }
 
-                    // After elimination, if only one candidate remains, it's a placement
-                    let refined_mask1 = prop.candidates.get(r1, c1);
-                    if refined_mask1.count_ones() == 1 {
-                        let num = refined_mask1.trailing_zeros() as u8 + 1;
-                        if prop.masks.is_safe(r1, c1, num) {
-                            prop.place_and_update(r1, c1, num, flags, path);
-                            unit_placements_made = true; // Mark as true if a placement happened
-                        }
-                    }
-
                     // For the second cell in the pair
                     let current_mask2 = prop.candidates.get(r2, c2);
                     let elimination_mask2 = current_mask2 & !pair_mask;
@@ -86,15 +76,6 @@ impl HiddenPairs {
                         )
                     {
                         unit_placements_made = true;
-                    }
-
-                    let refined_mask2 = prop.candidates.get(r2, c2);
-                    if refined_mask2.count_ones() == 1 {
-                        let num = refined_mask2.trailing_zeros() as u8 + 1;
-                        if prop.masks.is_safe(r2, c2, num) {
-                            prop.place_and_update(r2, c2, num, flags, path);
-                            unit_placements_made = true; // Mark as true if a placement happened
-                        }
                     }
                 }
             }
