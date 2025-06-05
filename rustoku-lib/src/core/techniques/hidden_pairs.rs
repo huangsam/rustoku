@@ -19,7 +19,7 @@ impl HiddenPairs {
             for n2_val in (n1_val + 1)..=9 {
                 let n1_bit = 1 << (n1_val - 1);
                 let n2_bit = 1 << (n2_val - 1);
-                let pair_mask = n1_bit | n2_bit;
+                let pair_mask = n1_bit | n2_bit; // The candidates we want to KEEP
 
                 let mut cells_containing_n1: Vec<(usize, usize)> = Vec::new();
                 let mut cells_containing_n2: Vec<(usize, usize)> = Vec::new();
@@ -44,31 +44,56 @@ impl HiddenPairs {
                     let (r1, c1) = cells_containing_n1[0];
                     let (r2, c2) = cells_containing_n1[1];
 
+                    // For the first cell in the pair
                     let current_mask1 = prop.candidates.get(r1, c1);
-                    let new_mask1 = pair_mask;
+                    // The candidates to eliminate are all candidates EXCEPT for the pair_mask
+                    let elimination_mask1 = current_mask1 & !pair_mask;
 
-                    if new_mask1 != current_mask1 {
-                        prop.candidates.set(r1, c1, new_mask1);
-                        unit_placements_made = true;
-                        if new_mask1.count_ones() == 1 {
-                            let num = new_mask1.trailing_zeros() as u8 + 1;
-                            if prop.masks.is_safe(r1, c1, num) {
-                                prop.place_and_update(r1, c1, num, flags, path);
-                            }
+                    if elimination_mask1 != 0 {
+                        // Only eliminate if there's something to remove
+                        if prop.eliminate_multiple_candidates(
+                            r1,
+                            c1,
+                            elimination_mask1,
+                            flags,
+                            path,
+                        ) {
+                            unit_placements_made = true;
                         }
                     }
 
-                    let current_mask2 = prop.candidates.get(r2, c2);
-                    let new_mask2 = pair_mask;
+                    // After elimination, if only one candidate remains, it's a placement
+                    let refined_mask1 = prop.candidates.get(r1, c1);
+                    if refined_mask1.count_ones() == 1 {
+                        let num = refined_mask1.trailing_zeros() as u8 + 1;
+                        if prop.masks.is_safe(r1, c1, num) {
+                            prop.place_and_update(r1, c1, num, flags, path);
+                            unit_placements_made = true; // Mark as true if a placement happened
+                        }
+                    }
 
-                    if new_mask2 != current_mask2 {
-                        prop.candidates.set(r2, c2, new_mask2);
-                        unit_placements_made = true;
-                        if new_mask2.count_ones() == 1 {
-                            let num = new_mask2.trailing_zeros() as u8 + 1;
-                            if prop.masks.is_safe(r2, c2, num) {
-                                prop.place_and_update(r2, c2, num, flags, path);
-                            }
+                    // For the second cell in the pair
+                    let current_mask2 = prop.candidates.get(r2, c2);
+                    let elimination_mask2 = current_mask2 & !pair_mask;
+
+                    if elimination_mask2 != 0 {
+                        if prop.eliminate_multiple_candidates(
+                            r2,
+                            c2,
+                            elimination_mask2,
+                            flags,
+                            path,
+                        ) {
+                            unit_placements_made = true;
+                        }
+                    }
+
+                    let refined_mask2 = prop.candidates.get(r2, c2);
+                    if refined_mask2.count_ones() == 1 {
+                        let num = refined_mask2.trailing_zeros() as u8 + 1;
+                        if prop.masks.is_safe(r2, c2, num) {
+                            prop.place_and_update(r2, c2, num, flags, path);
+                            unit_placements_made = true; // Mark as true if a placement happened
                         }
                     }
                 }
