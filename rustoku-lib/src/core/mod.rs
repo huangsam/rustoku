@@ -162,7 +162,12 @@ impl Rustoku {
             for &num in &nums {
                 if self.masks.is_safe(r, c, num) {
                     self.place_number(r, c, num);
-                    path.steps.push(SolveStep::new(r, c, num));
+                    path.steps.push(SolveStep::Placement {
+                        row: r,
+                        col: c,
+                        value: num,
+                        flags: TechniqueFlags::empty(),
+                    });
                     count += self.solve_until_recursive(solutions, path, bound);
                     path.steps.pop();
                     self.remove_number(r, c, num);

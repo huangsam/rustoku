@@ -64,7 +64,14 @@ impl fmt::Display for SolvePath {
         let path: Vec<(usize, usize, u8, TechniqueFlags)> = self
             .steps
             .iter()
-            .map(|step| (step.row, step.col, step.value, step.flags))
+            .map(|step| match step {
+                crate::core::SolveStep::Placement {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } => (*row, *col, *value, *flags),
+            })
             .collect();
 
         let formatted_lines = format_solve_path(&path, 10);

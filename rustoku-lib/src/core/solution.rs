@@ -36,30 +36,27 @@ impl Default for SolvePath {
 
 /// Single step in the solving process.
 #[derive(Debug, Clone)]
-pub struct SolveStep {
-    /// The 0-based row index of the cell being modified.
-    pub row: usize,
-    /// The 0-based column index of the cell being modified.
-    pub col: usize,
-    /// The value being placed in the cell.
-    pub value: u8,
-    /// Flags indicating the technique used for this step.
-    pub flags: TechniqueFlags,
+pub enum SolveStep {
+    /// A placement of a value in the Sudoku board.
+    Placement {
+        /// The row where the value is placed.
+        row: usize,
+        /// The column where the value is placed.
+        col: usize,
+        /// The value being placed in the Sudoku board.
+        value: u8,
+        /// Flags indicating the technique used for this placement.
+        flags: TechniqueFlags,
+    },
 }
 
 impl SolveStep {
-    pub fn new(row: usize, col: usize, value: u8) -> Self {
-        SolveStep {
+    pub fn new(row: usize, col: usize, value: u8, flags: TechniqueFlags) -> Self {
+        SolveStep::Placement {
             row,
             col,
             value,
-            flags: TechniqueFlags::empty(), // Default to no flags
+            flags: flags,
         }
-    }
-
-    /// Set the flags for this step.
-    pub fn with_flags(mut self, flags: TechniqueFlags) -> Self {
-        self.flags = flags;
-        self
     }
 }
