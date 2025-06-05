@@ -76,16 +76,16 @@ impl HiddenPairs {
                     let current_mask2 = prop.candidates.get(r2, c2);
                     let elimination_mask2 = current_mask2 & !pair_mask;
 
-                    if elimination_mask2 != 0 {
-                        if prop.eliminate_multiple_candidates(
+                    if elimination_mask2 != 0
+                        && prop.eliminate_multiple_candidates(
                             r2,
                             c2,
                             elimination_mask2,
                             flags,
                             path,
-                        ) {
-                            unit_placements_made = true;
-                        }
+                        )
+                    {
+                        unit_placements_made = true;
                     }
 
                     let refined_mask2 = prop.candidates.get(r2, c2);
