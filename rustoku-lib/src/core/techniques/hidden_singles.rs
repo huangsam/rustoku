@@ -22,7 +22,7 @@ impl TechniqueRule for HiddenSingles {
 
                     for &(r, c) in unit_cells.iter() {
                         if prop.board.is_empty(r, c) {
-                            let cell_cand_mask = prop.candidates_cache.get(r, c);
+                            let cell_cand_mask = prop.candidates.get(r, c);
                             if (cell_cand_mask & cand_bit) != 0 {
                                 cand_occurrences += 1;
                                 potential_cell = Some((r, c));

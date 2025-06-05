@@ -26,7 +26,7 @@ impl HiddenPairs {
 
                 for &(r, c) in unit_cells {
                     if prop.board.is_empty(r, c) {
-                        let cell_cand_mask = prop.candidates_cache.get(r, c);
+                        let cell_cand_mask = prop.candidates.get(r, c);
                         if (cell_cand_mask & n1_bit) != 0 {
                             cells_containing_n1.push((r, c));
                         }
@@ -44,11 +44,11 @@ impl HiddenPairs {
                     let (r1, c1) = cells_containing_n1[0];
                     let (r2, c2) = cells_containing_n1[1];
 
-                    let current_mask1 = prop.candidates_cache.get(r1, c1);
+                    let current_mask1 = prop.candidates.get(r1, c1);
                     let new_mask1 = pair_mask;
 
                     if new_mask1 != current_mask1 {
-                        prop.candidates_cache.set(r1, c1, new_mask1);
+                        prop.candidates.set(r1, c1, new_mask1);
                         unit_placements_made = true;
                         if new_mask1.count_ones() == 1 {
                             let num = new_mask1.trailing_zeros() as u8 + 1;
@@ -58,11 +58,11 @@ impl HiddenPairs {
                         }
                     }
 
-                    let current_mask2 = prop.candidates_cache.get(r2, c2);
+                    let current_mask2 = prop.candidates.get(r2, c2);
                     let new_mask2 = pair_mask;
 
                     if new_mask2 != current_mask2 {
-                        prop.candidates_cache.set(r2, c2, new_mask2);
+                        prop.candidates.set(r2, c2, new_mask2);
                         unit_placements_made = true;
                         if new_mask2.count_ones() == 1 {
                             let num = new_mask2.trailing_zeros() as u8 + 1;

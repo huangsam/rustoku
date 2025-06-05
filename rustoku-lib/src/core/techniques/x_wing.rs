@@ -19,8 +19,7 @@ impl TechniqueRule for XWing {
             for r in 0..9 {
                 let mut cols_for_candidate_in_row: Vec<usize> = Vec::new();
                 for c in 0..9 {
-                    if prop.board.is_empty(r, c)
-                        && (prop.candidates_cache.get(r, c) & candidate_bit) != 0
+                    if prop.board.is_empty(r, c) && (prop.candidates.get(r, c) & candidate_bit) != 0
                     {
                         cols_for_candidate_in_row.push(c);
                     }
@@ -46,10 +45,10 @@ impl TechniqueRule for XWing {
                         // Remove candidate from other cells in column c1 (excluding r1, r2)
                         for r_other in 0..9 {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c1) {
-                                let initial_mask = prop.candidates_cache.get(r_other, c1);
+                                let initial_mask = prop.candidates.get(r_other, c1);
                                 if (initial_mask & candidate_bit) != 0 {
                                     let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates_cache.set(r_other, c1, refined_mask);
+                                    prop.candidates.set(r_other, c1, refined_mask);
                                     placements_made = true;
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
@@ -70,10 +69,10 @@ impl TechniqueRule for XWing {
                         // Remove candidate from other cells in column c2 (excluding r1, r2)
                         for r_other in 0..9 {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c2) {
-                                let initial_mask = prop.candidates_cache.get(r_other, c2);
+                                let initial_mask = prop.candidates.get(r_other, c2);
                                 if (initial_mask & candidate_bit) != 0 {
                                     let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates_cache.set(r_other, c2, refined_mask);
+                                    prop.candidates.set(r_other, c2, refined_mask);
                                     placements_made = true;
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
@@ -101,8 +100,7 @@ impl TechniqueRule for XWing {
             for c in 0..9 {
                 let mut rows_for_candidate_in_col: Vec<usize> = Vec::new();
                 for r in 0..9 {
-                    if prop.board.is_empty(r, c)
-                        && (prop.candidates_cache.get(r, c) & candidate_bit) != 0
+                    if prop.board.is_empty(r, c) && (prop.candidates.get(r, c) & candidate_bit) != 0
                     {
                         rows_for_candidate_in_col.push(r);
                     }
@@ -128,10 +126,10 @@ impl TechniqueRule for XWing {
                         // Remove candidate from other cells in row r1 (excluding c1, c2)
                         for c_other in 0..9 {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r1, c_other) {
-                                let initial_mask = prop.candidates_cache.get(r1, c_other);
+                                let initial_mask = prop.candidates.get(r1, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
                                     let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates_cache.set(r1, c_other, refined_mask);
+                                    prop.candidates.set(r1, c_other, refined_mask);
                                     placements_made = true;
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;
@@ -152,10 +150,10 @@ impl TechniqueRule for XWing {
                         // Remove candidate from other cells in row r2 (excluding c1, c2)
                         for c_other in 0..9 {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r2, c_other) {
-                                let initial_mask = prop.candidates_cache.get(r2, c_other);
+                                let initial_mask = prop.candidates.get(r2, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
                                     let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates_cache.set(r2, c_other, refined_mask);
+                                    prop.candidates.set(r2, c_other, refined_mask);
                                     placements_made = true;
                                     if refined_mask.count_ones() == 1 {
                                         let num = refined_mask.trailing_zeros() as u8 + 1;

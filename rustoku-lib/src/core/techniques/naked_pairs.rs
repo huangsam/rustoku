@@ -18,7 +18,7 @@ impl NakedPairs {
 
         for &(r, c) in unit_cells {
             if prop.board.is_empty(r, c) {
-                let cand_mask = prop.candidates_cache.get(r, c);
+                let cand_mask = prop.candidates.get(r, c);
                 if cand_mask.count_ones() == 2 {
                     two_cand_cells.push((r, c, cand_mask));
                 }
@@ -43,12 +43,12 @@ impl NakedPairs {
                         }
 
                         if prop.board.is_empty(other_r, other_c) {
-                            let initial_mask = prop.candidates_cache.get(other_r, other_c);
+                            let initial_mask = prop.candidates.get(other_r, other_c);
 
                             if (initial_mask & pair_cand_mask) != 0 {
                                 let refined_mask = initial_mask & !pair_cand_mask;
 
-                                prop.candidates_cache.set(other_r, other_c, refined_mask);
+                                prop.candidates.set(other_r, other_c, refined_mask);
                                 unit_placements_made = true;
 
                                 if refined_mask.count_ones() == 1 {

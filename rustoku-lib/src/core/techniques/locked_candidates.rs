@@ -22,7 +22,7 @@ impl LockedCandidates {
             let candidate_cells: Vec<usize> = (0..9)
                 .filter(|&col| {
                     prop.board.is_empty(row, col)
-                        && (prop.candidates_cache.get(row, col) & candidate_bit) != 0
+                        && (prop.candidates.get(row, col) & candidate_bit) != 0
                 })
                 .collect();
 
@@ -39,10 +39,10 @@ impl LockedCandidates {
                 for r in start_row..(start_row + 3) {
                     for c in start_col..(start_col + 3) {
                         if r != row && prop.board.is_empty(r, c) {
-                            let initial_mask = prop.candidates_cache.get(r, c);
+                            let initial_mask = prop.candidates.get(r, c);
                             if (initial_mask & candidate_bit) != 0 {
                                 let refined_mask = initial_mask & !candidate_bit;
-                                prop.candidates_cache.set(r, c, refined_mask);
+                                prop.candidates.set(r, c, refined_mask);
                                 placements_made = true;
 
                                 if refined_mask.count_ones() == 1 {
@@ -75,7 +75,7 @@ impl LockedCandidates {
             let candidate_cells: Vec<usize> = (0..9)
                 .filter(|&row| {
                     prop.board.is_empty(row, col)
-                        && (prop.candidates_cache.get(row, col) & candidate_bit) != 0
+                        && (prop.candidates.get(row, col) & candidate_bit) != 0
                 })
                 .collect();
 
@@ -92,10 +92,10 @@ impl LockedCandidates {
                 for r in start_row..(start_row + 3) {
                     for c in start_col..(start_col + 3) {
                         if c != col && prop.board.is_empty(r, c) {
-                            let initial_mask = prop.candidates_cache.get(r, c);
+                            let initial_mask = prop.candidates.get(r, c);
                             if (initial_mask & candidate_bit) != 0 {
                                 let refined_mask = initial_mask & !candidate_bit;
-                                prop.candidates_cache.set(r, c, refined_mask);
+                                prop.candidates.set(r, c, refined_mask);
                                 placements_made = true;
 
                                 if refined_mask.count_ones() == 1 {
@@ -132,8 +132,7 @@ impl LockedCandidates {
                 for c_offset in 0..3 {
                     let r = start_row + r_offset;
                     let c = start_col + c_offset;
-                    if prop.board.is_empty(r, c)
-                        && (prop.candidates_cache.get(r, c) & candidate_bit) != 0
+                    if prop.board.is_empty(r, c) && (prop.candidates.get(r, c) & candidate_bit) != 0
                     {
                         candidate_cells.push((r, c));
                     }
@@ -147,10 +146,10 @@ impl LockedCandidates {
 
                 for c in 0..9 {
                     if (c < start_col || c >= start_col + 3) && prop.board.is_empty(row, c) {
-                        let initial_mask = prop.candidates_cache.get(row, c);
+                        let initial_mask = prop.candidates.get(row, c);
                         if (initial_mask & candidate_bit) != 0 {
                             let refined_mask = initial_mask & !candidate_bit;
-                            prop.candidates_cache.set(row, c, refined_mask);
+                            prop.candidates.set(row, c, refined_mask);
                             placements_made = true;
 
                             if refined_mask.count_ones() == 1 {
@@ -171,10 +170,10 @@ impl LockedCandidates {
 
                 for r in 0..9 {
                     if (r < start_row || r >= start_row + 3) && prop.board.is_empty(r, col) {
-                        let initial_mask = prop.candidates_cache.get(r, col);
+                        let initial_mask = prop.candidates.get(r, col);
                         if (initial_mask & candidate_bit) != 0 {
                             let refined_mask = initial_mask & !candidate_bit;
-                            prop.candidates_cache.set(r, col, refined_mask);
+                            prop.candidates.set(r, col, refined_mask);
                             placements_made = true;
 
                             if refined_mask.count_ones() == 1 {

@@ -12,7 +12,7 @@ impl TechniqueRule for NakedSingles {
         for r in 0..9 {
             for c in 0..9 {
                 if prop.board.is_empty(r, c) {
-                    let cand_mask = prop.candidates_cache.get(r, c);
+                    let cand_mask = prop.candidates.get(r, c);
                     if cand_mask.count_ones() == 1 {
                         let num = cand_mask.trailing_zeros() as u8 + 1;
                         prop.place_and_update(r, c, num, self.flags(), path);

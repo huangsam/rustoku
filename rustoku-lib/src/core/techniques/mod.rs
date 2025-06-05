@@ -25,7 +25,7 @@ use x_wing::XWing;
 pub struct TechniquePropagator<'a> {
     board: &'a mut Board,
     masks: &'a mut Masks,
-    candidates_cache: &'a mut Candidates,
+    candidates: &'a mut Candidates,
     techniques_enabled: TechniqueFlags,
 }
 
@@ -39,7 +39,7 @@ impl<'a> TechniquePropagator<'a> {
         Self {
             board,
             masks,
-            candidates_cache,
+            candidates: candidates_cache,
             techniques_enabled,
         }
     }
@@ -55,7 +55,7 @@ impl<'a> TechniquePropagator<'a> {
     ) {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
-        self.candidates_cache
+        self.candidates
             .update_affected_cells(r, c, self.masks, self.board);
         path.steps.push(SolveStep::Placement {
             row: r,
@@ -69,7 +69,7 @@ impl<'a> TechniquePropagator<'a> {
     fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0);
         self.masks.remove_number(r, c, num);
-        self.candidates_cache
+        self.candidates
             .update_affected_cells(r, c, self.masks, self.board);
         // Note: For propagation, `remove_number` is mostly for backtracking, not direct technique application.
         // The `update_affected_cells` on removal will recalculate candidates for the now-empty cell.
@@ -102,7 +102,7 @@ impl<'a> TechniquePropagator<'a> {
             }
 
             if (0..9).any(|r| {
-                (0..9).any(|c| self.board.is_empty(r, c) && self.candidates_cache.get(r, c) == 0)
+                (0..9).any(|c| self.board.is_empty(r, c) && self.candidates.get(r, c) == 0)
             }) {
                 while path.steps.len() > initial_path_len {
                     if let Some(step) = path.steps.pop() {
@@ -123,9 +123,9 @@ impl<'a> TechniquePropagator<'a> {
                             } => {
                                 // This is a candidate elimination step, we need to restore the candidate
                                 // in the candidates cache.
-                                let initial_mask = self.candidates_cache.get(row, col);
+                                let initial_mask = self.candidates.get(row, col);
                                 let refined_mask = initial_mask | (1 << (value - 1));
-                                self.candidates_cache.set(row, col, refined_mask);
+                                self.candidates.set(row, col, refined_mask);
                             }
                         }
                     }
