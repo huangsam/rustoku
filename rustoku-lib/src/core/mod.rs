@@ -521,16 +521,14 @@ mod tests {
     #[test]
     fn test_is_solved_with_valid_solution() {
         let s = UNIQUE_SOLUTION;
-        let board = Board::try_from(s).expect("Parsing valid solution failed");
-        let rustoku = Rustoku::new(board).expect("Rustoku creation failed for solved check");
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for solved check");
         assert!(rustoku.is_solved(), "The Sudoku puzzle should be solved");
     }
 
     #[test]
     fn test_is_solved_with_unsolved_board() {
         let s = UNIQUE_PUZZLE;
-        let board = Board::try_from(s).expect("Parsing unsolved puzzle failed");
-        let rustoku = Rustoku::new(board).expect("Rustoku creation failed for unsolved check");
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for unsolved check");
         assert!(!rustoku.is_solved(), "The board should not be valid");
     }
 }
