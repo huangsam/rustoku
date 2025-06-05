@@ -36,9 +36,6 @@ rustoku-cli generate --clues 45
 rustoku-cli solve any '53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79'
 rustoku-cli solve all '295743..14318659..8761925433874592166123874955492167387635.......................'
 
-# Solve hard puzzle!
-rustoku-cli solve any '8..........36......7..9.2...5...7.......457.....1...3...1....68..85...1..9....4..'
-
 # Check solutions
 rustoku-cli check '295743861431865927876192543387459216612387495549216738763524189154938672928671354'
 
@@ -64,6 +61,12 @@ Example output from the `show` command:
 +-------+-------+-------+
 Line format: 9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3
 ```
+
+Try some more examples from these sites:
+
+- <https://www.kaggle.com/datasets/rohanrao/sudoku>
+- <https://huggingface.co/datasets/Ritvik19/Sudoku-Dataset>
+- <https://github.com/heetbeet/purge-and-merge>
 
 Dive into the world of high-performance Sudoku today!
 

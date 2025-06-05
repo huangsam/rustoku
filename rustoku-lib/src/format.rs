@@ -80,7 +80,7 @@ impl fmt::Display for SolvePath {
             })
             .collect();
 
-        let formatted_lines = format_solve_path(&path, 10);
+        let formatted_lines = format_solve_path(&path, 5);
         write!(f, "{}", formatted_lines.join("\n"))
     }
 }
@@ -165,7 +165,7 @@ pub fn format_solve_path(
             current_technique = Some(technique_name);
         }
 
-        current_moves.push(format!("R{}C{}={} A={}", r + 1, c + 1, val, action));
+        current_moves.push(format!("R{}C{}={},A={}", r + 1, c + 1, val, action));
     }
 
     // Flush final technique
