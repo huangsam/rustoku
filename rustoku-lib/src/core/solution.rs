@@ -48,6 +48,17 @@ pub enum SolveStep {
         /// Flags indicating the technique used for this placement.
         flags: TechniqueFlags,
     },
+    /// A removal of a value from the Sudoku board (used for backtracking).
+    CandidateElimination {
+        /// The row where the candidate is eliminated.
+        row: usize,
+        /// The column where the candidate is eliminated.
+        col: usize,
+        /// The value being eliminated as a candidate.
+        value: u8,
+        /// Flags indicating the technique used for this elimination.
+        flags: TechniqueFlags,
+    },
 }
 
 impl SolveStep {

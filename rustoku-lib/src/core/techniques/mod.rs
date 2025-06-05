@@ -115,6 +115,18 @@ impl<'a> TechniquePropagator<'a> {
                             } => {
                                 self.remove_and_update(row, col, value);
                             }
+                            SolveStep::CandidateElimination {
+                                row,
+                                col,
+                                value,
+                                flags: _,
+                            } => {
+                                // This is a candidate elimination step, we need to restore the candidate
+                                // in the candidates cache.
+                                let initial_mask = self.candidates_cache.get(row, col);
+                                let refined_mask = initial_mask | (1 << (value - 1));
+                                self.candidates_cache.set(row, col, refined_mask);
+                            }
                         }
                     }
                 }

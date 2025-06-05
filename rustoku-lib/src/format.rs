@@ -71,6 +71,12 @@ impl fmt::Display for SolvePath {
                     value,
                     flags,
                 } => (*row, *col, *value, *flags),
+                crate::core::SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } => (*row, *col, *value, *flags),
             })
             .collect();
 
