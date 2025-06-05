@@ -70,13 +70,13 @@ impl fmt::Display for SolvePath {
                     col,
                     value,
                     flags,
-                } => (*row, *col, *value, *flags, "plac"),
+                } => (*row, *col, *value, *flags, step.code()),
                 crate::core::SolveStep::CandidateElimination {
                     row,
                     col,
                     value,
                     flags,
-                } => (*row, *col, *value, *flags, "elim"),
+                } => (*row, *col, *value, *flags, step.code()),
             })
             .collect();
 
