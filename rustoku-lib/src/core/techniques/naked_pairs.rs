@@ -46,18 +46,13 @@ impl NakedPairs {
                             let initial_mask = prop.candidates.get(other_r, other_c);
 
                             if (initial_mask & pair_cand_mask) != 0 {
-                                let refined_mask = initial_mask & !pair_cand_mask;
-
-                                prop.candidates.set(other_r, other_c, refined_mask);
-                                unit_placements_made = true;
-
-                                if refined_mask.count_ones() == 1 {
-                                    let num = refined_mask.trailing_zeros() as u8 + 1;
-
-                                    if prop.masks.is_safe(other_r, other_c, num) {
-                                        prop.place_and_update(other_r, other_c, num, flags, path);
-                                    }
-                                }
+                                unit_placements_made |= prop.eliminate_multiple_candidates(
+                                    other_r,
+                                    other_c,
+                                    pair_cand_mask,
+                                    flags,
+                                    path,
+                                );
                             }
                         }
                     }

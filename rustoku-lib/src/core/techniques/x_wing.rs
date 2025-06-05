@@ -47,21 +47,13 @@ impl TechniqueRule for XWing {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c1) {
                                 let initial_mask = prop.candidates.get(r_other, c1);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates.set(r_other, c1, refined_mask);
-                                    placements_made = true;
-                                    if refined_mask.count_ones() == 1 {
-                                        let num = refined_mask.trailing_zeros() as u8 + 1;
-                                        if prop.masks.is_safe(r_other, c1, num) {
-                                            prop.place_and_update(
-                                                r_other,
-                                                c1,
-                                                num,
-                                                self.flags(),
-                                                path,
-                                            );
-                                        }
-                                    }
+                                    placements_made |= prop.eliminate_candidate(
+                                        r_other,
+                                        c1,
+                                        candidate_bit,
+                                        self.flags(),
+                                        path,
+                                    );
                                 }
                             }
                         }
@@ -71,21 +63,13 @@ impl TechniqueRule for XWing {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c2) {
                                 let initial_mask = prop.candidates.get(r_other, c2);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates.set(r_other, c2, refined_mask);
-                                    placements_made = true;
-                                    if refined_mask.count_ones() == 1 {
-                                        let num = refined_mask.trailing_zeros() as u8 + 1;
-                                        if prop.masks.is_safe(r_other, c2, num) {
-                                            prop.place_and_update(
-                                                r_other,
-                                                c2,
-                                                num,
-                                                self.flags(),
-                                                path,
-                                            );
-                                        }
-                                    }
+                                    placements_made |= prop.eliminate_candidate(
+                                        r_other,
+                                        c2,
+                                        candidate_bit,
+                                        self.flags(),
+                                        path,
+                                    );
                                 }
                             }
                         }
@@ -128,21 +112,13 @@ impl TechniqueRule for XWing {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r1, c_other) {
                                 let initial_mask = prop.candidates.get(r1, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates.set(r1, c_other, refined_mask);
-                                    placements_made = true;
-                                    if refined_mask.count_ones() == 1 {
-                                        let num = refined_mask.trailing_zeros() as u8 + 1;
-                                        if prop.masks.is_safe(r1, c_other, num) {
-                                            prop.place_and_update(
-                                                r1,
-                                                c_other,
-                                                num,
-                                                self.flags(),
-                                                path,
-                                            );
-                                        }
-                                    }
+                                    placements_made |= prop.eliminate_candidate(
+                                        r1,
+                                        c_other,
+                                        candidate_bit,
+                                        self.flags(),
+                                        path,
+                                    );
                                 }
                             }
                         }
@@ -152,21 +128,13 @@ impl TechniqueRule for XWing {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r2, c_other) {
                                 let initial_mask = prop.candidates.get(r2, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    let refined_mask = initial_mask & !candidate_bit;
-                                    prop.candidates.set(r2, c_other, refined_mask);
-                                    placements_made = true;
-                                    if refined_mask.count_ones() == 1 {
-                                        let num = refined_mask.trailing_zeros() as u8 + 1;
-                                        if prop.masks.is_safe(r2, c_other, num) {
-                                            prop.place_and_update(
-                                                r2,
-                                                c_other,
-                                                num,
-                                                self.flags(),
-                                                path,
-                                            );
-                                        }
-                                    }
+                                    placements_made |= prop.eliminate_candidate(
+                                        r2,
+                                        c_other,
+                                        candidate_bit,
+                                        self.flags(),
+                                        path,
+                                    );
                                 }
                             }
                         }

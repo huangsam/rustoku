@@ -45,7 +45,7 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Helper to place a number and update caches.
-    pub(super) fn place_and_update(
+    fn place_and_update(
         &mut self,
         r: usize,
         c: usize,
@@ -73,6 +73,80 @@ impl<'a> TechniquePropagator<'a> {
             .update_affected_cells(r, c, self.masks, self.board);
         // Note: For propagation, `remove_number` is mostly for backtracking, not direct technique application.
         // The `update_affected_cells` on removal will recalculate candidates for the now-empty cell.
+    }
+
+    fn try_place_if_single_candidate(
+        &mut self,
+        r: usize,
+        c: usize,
+        refined_mask: u16, // or whatever type your mask is
+        flags: TechniqueFlags,
+        path: &mut SolvePath,
+    ) {
+        if refined_mask.count_ones() == 1 {
+            let num = refined_mask.trailing_zeros() as u8 + 1;
+            if self.masks.is_safe(r, c, num) {
+                self.place_and_update(r, c, num, flags, path);
+            }
+        }
+    }
+
+    /// Helper to eliminate a candidate and update caches.
+    fn eliminate_candidate(
+        &mut self,
+        r: usize,
+        c: usize,
+        candidate_bit: u16, // Assume only one candidate is being eliminated
+        flags: TechniqueFlags,
+        path: &mut SolvePath,
+    ) -> bool {
+        let initial_mask = self.candidates.get(r, c);
+        let refined_mask = initial_mask & !candidate_bit;
+        self.candidates.set(r, c, refined_mask);
+
+        let num = candidate_bit.trailing_zeros() as u8 + 1; // Convert bit to number
+        path.steps.push(SolveStep::CandidateElimination {
+            row: r,
+            col: c,
+            value: num,
+            flags,
+        });
+
+        self.try_place_if_single_candidate(r, c, refined_mask, flags, path);
+
+        initial_mask != refined_mask // Return true if a candidate was eliminated
+    }
+
+    /// Helper to eliminate multiple candidates and update caches
+    fn eliminate_multiple_candidates(
+        &mut self,
+        r: usize,
+        c: usize,
+        elimination_mask: u16, // bits to eliminate
+        flags: TechniqueFlags,
+        path: &mut SolvePath,
+    ) -> bool {
+        let initial_mask = self.candidates.get(r, c);
+        let refined_mask = initial_mask & !elimination_mask;
+        self.candidates.set(r, c, refined_mask);
+
+        // Log each eliminated candidate
+        let eliminated_mask = initial_mask & elimination_mask; // what was actually eliminated
+        for candidate in 1..=9 {
+            let candidate_bit = 1 << (candidate - 1);
+            if (eliminated_mask & candidate_bit) != 0 {
+                path.steps.push(SolveStep::CandidateElimination {
+                    row: r,
+                    col: c,
+                    value: candidate,
+                    flags,
+                });
+            }
+        }
+
+        self.try_place_if_single_candidate(r, c, refined_mask, flags, path);
+
+        initial_mask != refined_mask // Return true if a candidate was eliminated
     }
 
     /// Applies deterministic constraint propagation techniques iteratively.
