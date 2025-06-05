@@ -64,9 +64,10 @@ Line format: 9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..
 
 Try some more examples from these sites:
 
-- <https://www.kaggle.com/datasets/rohanrao/sudoku>
-- <https://huggingface.co/datasets/Ritvik19/Sudoku-Dataset>
-- <https://github.com/heetbeet/purge-and-merge>
+- [Curated inputs from multiple sources](./data)
+- [heetbeet/purge-and-merge](https://github.com/heetbeet/purge-and-merge)
+- [ruohanrao/sudoku](https://www.kaggle.com/datasets/rohanrao/sudoku)
+- [Ritvik19/Sudoku-Dataset](https://huggingface.co/datasets/Ritvik19/Sudoku-Dataset)
 
 Dive into the world of high-performance Sudoku today!
 
