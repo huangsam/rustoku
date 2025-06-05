@@ -61,7 +61,7 @@ impl fmt::Display for TechniqueFlags {
 
 impl fmt::Display for SolvePath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let path: Vec<(usize, usize, u8, TechniqueFlags)> = self
+        let path: Vec<(usize, usize, u8, TechniqueFlags, &str)> = self
             .steps
             .iter()
             .map(|step| match step {
@@ -70,13 +70,13 @@ impl fmt::Display for SolvePath {
                     col,
                     value,
                     flags,
-                } => (*row, *col, *value, *flags),
+                } => (*row, *col, *value, *flags, "plac"),
                 crate::core::SolveStep::CandidateElimination {
                     row,
                     col,
                     value,
                     flags,
-                } => (*row, *col, *value, *flags),
+                } => (*row, *col, *value, *flags, "elim"),
             })
             .collect();
 
@@ -138,7 +138,7 @@ pub fn format_line(board: &[[u8; 9]; 9]) -> String {
 /// and formats them into a human-readable string. Each move is represented as `(row, column, value)`,
 /// where `row` and `column` are 1-based indices, and `value` is the number placed in that cell.
 pub fn format_solve_path(
-    path: &[(usize, usize, u8, TechniqueFlags)],
+    path: &[(usize, usize, u8, TechniqueFlags, &str)],
     chunk_size: usize,
 ) -> Vec<String> {
     if path.is_empty() {
@@ -149,7 +149,7 @@ pub fn format_solve_path(
     let mut current_technique = None;
     let mut current_moves = Vec::new();
 
-    for (r, c, val, flags) in path {
+    for (r, c, val, flags, action) in path {
         let technique_name = format!("{}", flags);
 
         if current_technique.as_ref() != Some(&technique_name) {
@@ -165,7 +165,7 @@ pub fn format_solve_path(
             current_technique = Some(technique_name);
         }
 
-        current_moves.push(format!("R{}C{}={}", r + 1, c + 1, val));
+        current_moves.push(format!("R{}C{}={} A={}", r + 1, c + 1, val, action));
     }
 
     // Flush final technique

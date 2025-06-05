@@ -148,16 +148,8 @@ impl LockedCandidates {
                     if (r < start_row || r >= start_row + 3) && prop.board.is_empty(r, col) {
                         let initial_mask = prop.candidates.get(r, col);
                         if (initial_mask & candidate_bit) != 0 {
-                            let refined_mask = initial_mask & !candidate_bit;
-                            prop.candidates.set(r, col, refined_mask);
-                            placements_made = true;
-
-                            if refined_mask.count_ones() == 1 {
-                                let num = refined_mask.trailing_zeros() as u8 + 1;
-                                if prop.masks.is_safe(r, col, num) {
-                                    prop.place_and_update(r, col, num, flags, path);
-                                }
-                            }
+                            placements_made |=
+                                prop.eliminate_candidate(r, col, candidate_bit, flags, path);
                         }
                     }
                 }
