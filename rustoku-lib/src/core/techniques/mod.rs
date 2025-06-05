@@ -176,7 +176,7 @@ impl<'a> TechniquePropagator<'a> {
                                 flags: _,
                             } => {
                                 // This is a candidate elimination step, we need to restore the candidate
-                                // in the candidates cache.
+                                // in the candidates cache
                                 let initial_mask = self.candidates.get(row, col);
                                 let refined_mask = initial_mask | (1 << (value - 1));
                                 self.candidates.set(row, col, refined_mask);

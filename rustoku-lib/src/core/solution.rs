@@ -37,7 +37,7 @@ impl Default for SolvePath {
 /// Single step in the solving process.
 #[derive(Debug, Clone)]
 pub enum SolveStep {
-    /// A placement of a value in the Sudoku board.
+    /// A placement of a single value on the Sudoku board.
     Placement {
         /// The row where the value is placed.
         row: usize,
@@ -48,7 +48,7 @@ pub enum SolveStep {
         /// Flags indicating the technique used for this placement.
         flags: TechniqueFlags,
     },
-    /// A removal of a value from the Sudoku board (used for backtracking).
+    /// A removal of a candidate value from the Sudoku board.
     CandidateElimination {
         /// The row where the candidate is eliminated.
         row: usize,
