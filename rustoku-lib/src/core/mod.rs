@@ -478,7 +478,7 @@ mod tests {
     fn test_generate_with_enough_clues() {
         (20..=80).step_by(20).for_each(|num_clues| {
             let board = generate_board(num_clues)
-                .expect(&format!("Board generation failed for {} clues", num_clues));
+                .unwrap_or_else(|_| panic!("Board generation failed for {} clues", num_clues));
             let mut rustoku =
                 Rustoku::new(board).expect("Rustoku creation failed from generated board");
             let clues_count = board

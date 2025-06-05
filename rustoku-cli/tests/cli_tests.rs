@@ -52,7 +52,7 @@ fn test_solve_any_some_solution() {
     get_rustoku_bin()
         .arg("solve")
         .arg("any")
-        .arg("53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79")
+        .arg("530070000600195000098000060800060003400803001700020006060000280000419005000080079")
         .assert()
         .success()
         .stdout(predicates::str::contains(
@@ -65,7 +65,7 @@ fn test_solve_any_no_solution() {
     get_rustoku_bin()
         .arg("solve")
         .arg("any")
-        .arg(".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7")
+        .arg("078002609030008020002000083000000040043090000007300090200001036001840902050003007")
         .assert()
         .success()
         .stdout(predicates::str::contains("No solution found."));
@@ -89,7 +89,7 @@ fn test_solve_all_two_solutions() {
     get_rustoku_bin()
         .arg("solve")
         .arg("all")
-        .arg("2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..")
+        .arg("295743861431865900876192543387459216612387495549216738763504189928671354154930000")
         .assert()
         .success()
         .stdout(predicates::str::contains("Found 2 solution(s)."));
@@ -121,9 +121,9 @@ fn test_check_incorrect_solution() {
 fn test_show_puzzle() {
     get_rustoku_bin()
         .arg("show")
-        .arg("9..5.74....7.8....83.4.1..64.2...3...9.....65....5..8.2..9.8....8..74...7..21.8.3")
+        .arg("900507400007080000830401006402000300090000065000050080200908000080074000700210803")
         .assert()
         .success()
-        .stdout(predicates::str::contains("9..5")) // Board start
-        .stdout(predicates::str::contains(".8.3")); // Board end
+        .stdout(predicates::str::contains("9005")) // Board start
+        .stdout(predicates::str::contains("0803")); // Board end
 }
