@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 
 bitflags! {
-    /// Bitmask to control which human techniques are applied.
+    /// Bitflags indicating which human techniques are active/enabled.
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct TechniqueFlags: u16 {
