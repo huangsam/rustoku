@@ -50,32 +50,27 @@ impl HiddenPairs {
                     let elimination_mask1 = current_mask1 & !pair_mask;
 
                     if elimination_mask1 != 0 {
-                        // Only eliminate if there's something to remove
-                        if prop.eliminate_multiple_candidates(
+                        unit_placements_made |= prop.eliminate_multiple_candidates(
                             r1,
                             c1,
                             elimination_mask1,
                             flags,
                             path,
-                        ) {
-                            unit_placements_made = true;
-                        }
+                        );
                     }
 
                     // For the second cell in the pair
                     let current_mask2 = prop.candidates.get(r2, c2);
                     let elimination_mask2 = current_mask2 & !pair_mask;
 
-                    if elimination_mask2 != 0
-                        && prop.eliminate_multiple_candidates(
+                    if elimination_mask2 != 0 {
+                        unit_placements_made |= prop.eliminate_multiple_candidates(
                             r2,
                             c2,
                             elimination_mask2,
                             flags,
                             path,
                         )
-                    {
-                        unit_placements_made = true;
                     }
                 }
             }
