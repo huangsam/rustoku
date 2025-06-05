@@ -18,11 +18,11 @@ bitflags! {
         /// Apply the X-Wing technique.
         const XWING = 1 << 5;
 
-        /// Apply easy techniques like naked singles and hidden singles.
+        /// Apply easy techniques like naked singles.
         const EASY = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
-        /// Apply medium techniques like naked pairs and hidden pairs.
-        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits();
-        /// Apply hard techniques like locked candidates and X-Wings.
-        const HARD = Self::LOCKED_CANDIDATES.bits() | Self::XWING.bits();
+        /// Apply medium techniques like naked pairs.
+        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits() | Self::LOCKED_CANDIDATES.bits();
+        /// Apply hard techniques like X-Wings.
+        const HARD = Self::XWING.bits();
     }
 }
