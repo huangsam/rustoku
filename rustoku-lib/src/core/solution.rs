@@ -60,14 +60,3 @@ pub enum SolveStep {
         flags: TechniqueFlags,
     },
 }
-
-impl SolveStep {
-    pub fn new(row: usize, col: usize, value: u8, flags: TechniqueFlags) -> Self {
-        SolveStep::Placement {
-            row,
-            col,
-            value,
-            flags: flags,
-        }
-    }
-}
