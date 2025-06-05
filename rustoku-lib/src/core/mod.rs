@@ -37,7 +37,7 @@ use techniques::TechniquePropagator;
 /// Solve a Sudoku puzzle:
 /// ```
 /// use rustoku_lib::Rustoku;
-/// let puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+/// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
 /// let mut rustoku = Rustoku::new_from_str(puzzle).unwrap();
 /// assert!(rustoku.solve_any().is_some());
 /// ```
@@ -289,13 +289,13 @@ mod tests {
     use crate::format::format_line;
 
     const UNIQUE_PUZZLE: &str =
-        "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+        "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
     const UNIQUE_SOLUTION: &str =
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
     const TWO_PUZZLE: &str =
-        "2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..";
+        "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
     const SIX_PUZZLE: &str =
-        "295743..14318659..8761925433874592166123874955492167387635.......................";
+        "295743001431865900876192543387459216612387495549216738763500000000000000000000000";
 
     #[test]
     fn test_new_with_bytes_and_str() {
@@ -334,21 +334,21 @@ mod tests {
 
     #[test]
     fn test_try_from_with_invalid_length() {
-        let s = "53..7...."; // Too short
+        let s = "530070000"; // Too short
         let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
-        let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..7X"; // 'X'
+        let s = "53007000060019500009800006080006000340080300170002000606000028000041900500008007X"; // 'X'
         let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
     }
 
     #[test]
     fn test_try_from_with_duplicate_initial_values() {
-        let s = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..55...8..79";
+        let s = "530070000600195000098000060800060003400803001700020006060000280000419005500080079";
         let board = Board::try_from(s).expect("Board parsing failed before duplicate check");
         let rustoku = Rustoku::new(board);
         assert!(matches!(rustoku, Err(RustokuError::DuplicateValues)));
@@ -370,7 +370,7 @@ mod tests {
 
     #[test]
     fn test_solve_any_with_unsolvable_sudoku() {
-        let s = ".78..26.9.3...8.2...2....83.......4..43.9......73...9.2....1.36..184.9.2.5...3..7";
+        let s = "078002609030008020002000083000000040043090000007300090200001036001840902050003007";
         let mut rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed");
         let solution = rustoku.solve_any();
         assert!(

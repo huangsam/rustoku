@@ -6,9 +6,9 @@ use std::hint::black_box;
 
 // Constants for puzzles (can be defined directly or loaded from files)
 const UNIQUE_PUZZLE: &str =
-    "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
 const TWO_PUZZLE: &str =
-    "2957438614318659..8761925433874592166123874955492167387635.41899286713541549386..";
+    "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
 
 fn benchmark_solve_any(c: &mut Criterion) {
     let mut group = c.benchmark_group("Solve Sudoku Puzzles");
