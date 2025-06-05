@@ -75,22 +75,6 @@ impl<'a> TechniquePropagator<'a> {
         // The `update_affected_cells` on removal will recalculate candidates for the now-empty cell.
     }
 
-    fn try_place_if_single_candidate(
-        &mut self,
-        r: usize,
-        c: usize,
-        refined_mask: u16, // or whatever type your mask is
-        flags: TechniqueFlags,
-        path: &mut SolvePath,
-    ) {
-        if refined_mask.count_ones() == 1 {
-            let num = refined_mask.trailing_zeros() as u8 + 1;
-            if self.masks.is_safe(r, c, num) {
-                self.place_and_update(r, c, num, flags, path);
-            }
-        }
-    }
-
     /// Helper to eliminate a candidate and update caches.
     fn eliminate_candidate(
         &mut self,
@@ -111,8 +95,6 @@ impl<'a> TechniquePropagator<'a> {
             value: num,
             flags,
         });
-
-        self.try_place_if_single_candidate(r, c, refined_mask, flags, path);
 
         initial_mask != refined_mask // Return true if a candidate was eliminated
     }
@@ -143,8 +125,6 @@ impl<'a> TechniquePropagator<'a> {
                 });
             }
         }
-
-        self.try_place_if_single_candidate(r, c, refined_mask, flags, path);
 
         initial_mask != refined_mask // Return true if a candidate was eliminated
     }
