@@ -62,7 +62,7 @@ pub enum SolveStep {
 }
 
 impl SolveStep {
-    /// 4-letter code for the solve step
+    /// 4-letter code for the solve step.
     pub fn code(&self) -> &str {
         match self {
             Self::CandidateElimination { .. } => "elim",
