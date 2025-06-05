@@ -7,7 +7,7 @@ pub struct XWing;
 
 impl TechniqueRule for XWing {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        let mut placements_made = false;
+        let mut eliminations_made = false;
 
         for candidate_val in 1..=9 {
             let candidate_bit = 1 << (candidate_val - 1);
@@ -47,7 +47,7 @@ impl TechniqueRule for XWing {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c1) {
                                 let initial_mask = prop.candidates.get(r_other, c1);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    placements_made |= prop.eliminate_candidate(
+                                    eliminations_made |= prop.eliminate_candidate(
                                         r_other,
                                         c1,
                                         candidate_bit,
@@ -63,7 +63,7 @@ impl TechniqueRule for XWing {
                             if r_other != r1 && r_other != r2 && prop.board.is_empty(r_other, c2) {
                                 let initial_mask = prop.candidates.get(r_other, c2);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    placements_made |= prop.eliminate_candidate(
+                                    eliminations_made |= prop.eliminate_candidate(
                                         r_other,
                                         c2,
                                         candidate_bit,
@@ -112,7 +112,7 @@ impl TechniqueRule for XWing {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r1, c_other) {
                                 let initial_mask = prop.candidates.get(r1, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    placements_made |= prop.eliminate_candidate(
+                                    eliminations_made |= prop.eliminate_candidate(
                                         r1,
                                         c_other,
                                         candidate_bit,
@@ -128,7 +128,7 @@ impl TechniqueRule for XWing {
                             if c_other != c1 && c_other != c2 && prop.board.is_empty(r2, c_other) {
                                 let initial_mask = prop.candidates.get(r2, c_other);
                                 if (initial_mask & candidate_bit) != 0 {
-                                    placements_made |= prop.eliminate_candidate(
+                                    eliminations_made |= prop.eliminate_candidate(
                                         r2,
                                         c_other,
                                         candidate_bit,
@@ -142,7 +142,7 @@ impl TechniqueRule for XWing {
                 }
             }
         }
-        placements_made
+        eliminations_made
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {

@@ -13,7 +13,7 @@ impl HiddenPairs {
         path: &mut SolvePath,
         flags: TechniqueFlags,
     ) -> bool {
-        let mut unit_placements_made = false;
+        let mut eliminations_made = false;
 
         for n1_val in 1..=9 {
             for n2_val in (n1_val + 1)..=9 {
@@ -50,7 +50,7 @@ impl HiddenPairs {
                     let elimination_mask1 = current_mask1 & !pair_mask;
 
                     if elimination_mask1 != 0 {
-                        unit_placements_made |= prop.eliminate_multiple_candidates(
+                        eliminations_made |= prop.eliminate_multiple_candidates(
                             r1,
                             c1,
                             elimination_mask1,
@@ -64,7 +64,7 @@ impl HiddenPairs {
                     let elimination_mask2 = current_mask2 & !pair_mask;
 
                     if elimination_mask2 != 0 {
-                        unit_placements_made |= prop.eliminate_multiple_candidates(
+                        eliminations_made |= prop.eliminate_multiple_candidates(
                             r2,
                             c2,
                             elimination_mask2,
@@ -75,7 +75,7 @@ impl HiddenPairs {
                 }
             }
         }
-        unit_placements_made
+        eliminations_made
     }
 }
 

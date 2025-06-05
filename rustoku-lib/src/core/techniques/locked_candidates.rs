@@ -14,7 +14,7 @@ impl LockedCandidates {
         path: &mut SolvePath,
         flags: TechniqueFlags,
     ) -> bool {
-        let mut placements_made = false;
+        let mut eliminations_made = false;
 
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
@@ -41,7 +41,7 @@ impl LockedCandidates {
                         if r != row && prop.board.is_empty(r, c) {
                             let initial_mask = prop.candidates.get(r, c);
                             if (initial_mask & candidate_bit) != 0 {
-                                placements_made |=
+                                eliminations_made |=
                                     prop.eliminate_candidate(r, c, candidate_bit, flags, path);
                             }
                         }
@@ -49,7 +49,7 @@ impl LockedCandidates {
                 }
             }
         }
-        placements_made
+        eliminations_made
     }
 
     // Helper function for Locked Candidates (column), private to this impl block
@@ -59,7 +59,7 @@ impl LockedCandidates {
         path: &mut SolvePath,
         flags: TechniqueFlags,
     ) -> bool {
-        let mut placements_made = false;
+        let mut eliminations_made = false;
 
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
@@ -86,7 +86,7 @@ impl LockedCandidates {
                         if c != col && prop.board.is_empty(r, c) {
                             let initial_mask = prop.candidates.get(r, c);
                             if (initial_mask & candidate_bit) != 0 {
-                                placements_made |=
+                                eliminations_made |=
                                     prop.eliminate_candidate(r, c, candidate_bit, flags, path);
                             }
                         }
@@ -94,7 +94,7 @@ impl LockedCandidates {
                 }
             }
         }
-        placements_made
+        eliminations_made
     }
 
     // Helper function for Locked Candidates (box), private to this impl block
@@ -104,7 +104,7 @@ impl LockedCandidates {
         path: &mut SolvePath,
         flags: TechniqueFlags,
     ) -> bool {
-        let mut placements_made = false;
+        let mut eliminations_made = false;
         let start_row = (box_idx / 3) * 3;
         let start_col = (box_idx % 3) * 3;
 
@@ -132,7 +132,7 @@ impl LockedCandidates {
                     if (c < start_col || c >= start_col + 3) && prop.board.is_empty(row, c) {
                         let initial_mask = prop.candidates.get(row, c);
                         if (initial_mask & candidate_bit) != 0 {
-                            placements_made |=
+                            eliminations_made |=
                                 prop.eliminate_candidate(row, c, candidate_bit, flags, path);
                         }
                     }
@@ -148,40 +148,40 @@ impl LockedCandidates {
                     if (r < start_row || r >= start_row + 3) && prop.board.is_empty(r, col) {
                         let initial_mask = prop.candidates.get(r, col);
                         if (initial_mask & candidate_bit) != 0 {
-                            placements_made |=
+                            eliminations_made |=
                                 prop.eliminate_candidate(r, col, candidate_bit, flags, path);
                         }
                     }
                 }
             }
         }
-        placements_made
+        eliminations_made
     }
 }
 
 impl TechniqueRule for LockedCandidates {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        let mut overall_placements_made = false;
+        let mut overall_eliminations_made = false;
 
         // Check rows for pointing pairs/triples
         for row in 0..9 {
-            overall_placements_made |=
+            overall_eliminations_made |=
                 Self::process_row_for_locked_candidates(prop, row, path, self.flags());
         }
 
         // Check columns for pointing pairs/triples
         for col in 0..9 {
-            overall_placements_made |=
+            overall_eliminations_made |=
                 Self::process_col_for_locked_candidates(prop, col, path, self.flags());
         }
 
         // Check boxes for box/line reduction
         for box_idx in 0..9 {
-            overall_placements_made |=
+            overall_eliminations_made |=
                 Self::process_box_for_locked_candidates(prop, box_idx, path, self.flags());
         }
 
-        overall_placements_made
+        overall_eliminations_made
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {
