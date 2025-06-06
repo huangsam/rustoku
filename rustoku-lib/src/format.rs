@@ -86,7 +86,7 @@ impl fmt::Display for SolvePath {
     }
 }
 
-/// Formats the solve step into a human-readable string representation
+/// Formats the solve step into a human-readable string representation.
 impl fmt::Display for SolveStep {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
