@@ -60,13 +60,13 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Commands::Generate { clues } => generate_board(clues).map(|board| print!("{}", board)),
+        Commands::Generate { clues } => generate_board(clues).map(|board| println!("{}", board)),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
                 rustoku = rustoku.with_techniques(TechniqueFlags::all());
                 match rustoku.solve_any() {
                     None => println!("No solution found."),
-                    Some(solution) => print!("{}", solution),
+                    Some(solution) => println!("{}", solution),
                 }
             }),
             SolveCommands::All { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
@@ -77,7 +77,7 @@ fn main() {
                 } else {
                     solutions.iter().enumerate().for_each(|(i, solution)| {
                         println!("\n--- Solution {} ---", i + 1);
-                        print!("{}", solution);
+                        println!("{}", solution);
                     });
                     println!("\nFound {} solution(s).", solutions.len());
                 }
@@ -90,7 +90,7 @@ fn main() {
             );
         }),
         Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-            print!("{}", rustoku.board);
+            println!("{}", rustoku.board);
         }),
     };
 

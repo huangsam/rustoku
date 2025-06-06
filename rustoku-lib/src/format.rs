@@ -3,14 +3,14 @@
 //! This module provides functions to format the Sudoku board and its solve path
 //! in various ways.
 
-use crate::core::{Board, Solution, SolvePath, TechniqueFlags};
+use crate::core::{Board, Solution, SolvePath, SolveStep, TechniqueFlags};
 use std::fmt;
 
 /// Formats the solution into a human-readable string representation.
 impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", self.board)?;
-        writeln!(f, "{}", self.solve_path)?;
+        write!(f, "\n{}", self.solve_path)?;
         Ok(())
     }
 }
@@ -19,7 +19,7 @@ impl fmt::Display for Solution {
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;
-        writeln!(f, "Line format: {}", format_line(&self.cells))?;
+        write!(f, "Line format: {}", format_line(&self.cells))?;
         Ok(())
     }
 }
@@ -59,6 +59,7 @@ impl fmt::Display for TechniqueFlags {
     }
 }
 
+/// Formats the solve path into a human-readable string representation.
 impl fmt::Display for SolvePath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let path: Vec<(usize, usize, u8, TechniqueFlags, &str)> = self
@@ -82,6 +83,38 @@ impl fmt::Display for SolvePath {
 
         let formatted_lines = format_solve_path(&path, 5);
         write!(f, "{}", formatted_lines.join("\n"))
+    }
+}
+
+/// Formats the solve step into a human-readable string representation
+impl fmt::Display for SolveStep {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SolveStep::Placement {
+                row,
+                col,
+                value,
+                flags,
+            } => {
+                write!(
+                    f,
+                    "Value {} is placed on R{}C{} by {}",
+                    value, row, col, flags
+                )
+            }
+            SolveStep::CandidateElimination {
+                row,
+                col,
+                value,
+                flags,
+            } => {
+                write!(
+                    f,
+                    "Value {} is eliminated from R{}C{} by {}",
+                    value, row, col, flags
+                )
+            }
+        }
     }
 }
 
@@ -179,6 +212,7 @@ pub fn format_solve_path(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::TechniqueFlags;
 
     #[test]
     fn test_format_grid() {
@@ -290,5 +324,56 @@ mod tests {
             format!("{}", mask),
             "Naked Singles, Locked Candidates, X-Wing"
         );
+    }
+
+    #[test]
+    fn test_empty_path() {
+        let path: Vec<(usize, usize, u8, TechniqueFlags, &str)> = Vec::new();
+        let expected = vec!["(No moves recorded)".to_string()];
+        assert_eq!(format_solve_path(&path, 5), expected);
+    }
+
+    #[test]
+    fn test_single_technique_multiple_moves_with_chunking() {
+        let path = vec![
+            (0, 0, 1, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 1, 2, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 2, 3, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 3, 4, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 4, 5, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 5, 6, TechniqueFlags::NAKED_SINGLES, "plac"),
+        ];
+        let chunk_size = 2; // Each line will have 2 moves
+
+        let expected = vec![
+            "Naked Singles:".to_string(),
+            "  R1C1=1,A=plac R1C2=2,A=plac".to_string(),
+            "  R1C3=3,A=plac R1C4=4,A=plac".to_string(),
+            "  R1C5=5,A=plac R1C6=6,A=plac".to_string(),
+        ];
+        assert_eq!(format_solve_path(&path, chunk_size), expected);
+    }
+
+    #[test]
+    fn test_multiple_techniques_and_mixed_chunking() {
+        let path = vec![
+            (0, 0, 1, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (0, 1, 2, TechniqueFlags::NAKED_SINGLES, "plac"),
+            (1, 0, 3, TechniqueFlags::HIDDEN_SINGLES, "plac"),
+            (1, 1, 4, TechniqueFlags::HIDDEN_SINGLES, "plac"),
+            (1, 2, 5, TechniqueFlags::HIDDEN_SINGLES, "plac"),
+            (2, 0, 6, TechniqueFlags::HIDDEN_PAIRS, "elim"),
+        ];
+        let chunk_size = 3; // Each line will have 3 moves
+
+        let expected: Vec<String> = vec![
+            "Naked Singles:".to_string(),
+            "  R1C1=1,A=plac R1C2=2,A=plac".to_string(),
+            "Hidden Singles:".to_string(),
+            "  R2C1=3,A=plac R2C2=4,A=plac R2C3=5,A=plac".to_string(),
+            "Hidden Pairs:".to_string(),
+            "  R3C1=6,A=elim".to_string(),
+        ];
+        assert_eq!(format_solve_path(&path, chunk_size), expected);
     }
 }
