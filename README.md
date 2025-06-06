@@ -8,7 +8,7 @@
 
 Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and clarity.
 It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for
-puzzle navigation. Available as a Rust library and command-line tool.
+puzzle navigation. Available as a Rust [library] and [CLI].
 
 - **Fast solving with clear solve paths:** Rustoku can find solutions in microseconds, even
 for the most complex puzzles. Plus, it shows you the step-by-step solve path for understanding
@@ -64,7 +64,6 @@ Line format: 9005074000070800008304010064020003000900000650000500802009080000800
 
 Try some more examples from these sites:
 
-- [Curated inputs for local testing](./.data)
 - [HoDoKu](https://hodoku.sourceforge.net/en/index.php)
 - [heetbeet/purge-and-merge](https://github.com/heetbeet/purge-and-merge)
 - [ruohanrao/sudoku](https://www.kaggle.com/datasets/rohanrao/sudoku)
@@ -74,5 +73,7 @@ Dive into the world of high-performance Sudoku today!
 
 [bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
 [MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/
+[library]: https://crates.io/crates/rustoku-lib
+[CLI]: https://crates.io/crates/rustoku-cli
 [Naked Singles]: https://hodoku.sourceforge.net/en/tech_singles.php#n1
 [X-Wing]: https://hodoku.sourceforge.net/en/tech_fishb.php#bf2
