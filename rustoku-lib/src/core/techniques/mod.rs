@@ -40,13 +40,13 @@ impl<'a> TechniquePropagator<'a> {
     pub fn new(
         board: &'a mut Board,
         masks: &'a mut Masks,
-        candidates_cache: &'a mut Candidates,
+        candidates: &'a mut Candidates,
         techniques_enabled: TechniqueFlags,
     ) -> Self {
         Self {
             board,
             masks,
-            candidates: candidates_cache,
+            candidates: candidates,
             techniques_enabled,
         }
     }

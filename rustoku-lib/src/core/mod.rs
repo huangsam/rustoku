@@ -62,7 +62,7 @@ pub struct Rustoku {
     /// The current state of the Sudoku board.
     pub board: Board,
     masks: Masks,
-    candidates_cache: Candidates,
+    candidates: Candidates,
     techniques: TechniqueFlags,
 }
 
@@ -71,7 +71,7 @@ impl Rustoku {
     pub fn new(initial_board: Board) -> Result<Self, RustokuError> {
         let board = initial_board; // Now takes a Board directly
         let mut masks = Masks::new();
-        let mut candidates_cache = Candidates::new();
+        let mut candidates = Candidates::new();
 
         // Initialize masks and check for duplicates based on the provided board
         for r in 0..9 {
@@ -90,7 +90,7 @@ impl Rustoku {
         for r in 0..9 {
             for c in 0..9 {
                 if board.is_empty(r, c) {
-                    candidates_cache.set(r, c, masks.compute_candidates_mask_for_cell(r, c));
+                    candidates.set(r, c, masks.compute_candidates_mask_for_cell(r, c));
                 }
             }
         }
@@ -98,7 +98,7 @@ impl Rustoku {
         Ok(Self {
             board,
             masks,
-            candidates_cache,
+            candidates: candidates,
             techniques: TechniqueFlags::EASY, // Default
         })
     }
@@ -119,7 +119,7 @@ impl Rustoku {
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         let mut min = (10, None); // Min candidates, (r, c)
         for (r, c) in self.board.iter_empty_cells() {
-            let count = self.candidates_cache.get(r, c).count_ones() as u8;
+            let count = self.candidates.get(r, c).count_ones() as u8;
             if count < min.0 {
                 min = (count, Some((r, c)));
                 if count == 1 {
@@ -134,7 +134,7 @@ impl Rustoku {
     fn place_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
-        self.candidates_cache
+        self.candidates
             .update_affected_cells(r, c, &self.masks, &self.board);
     }
 
@@ -142,7 +142,7 @@ impl Rustoku {
     fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0); // Set back to empty
         self.masks.remove_number(r, c, num);
-        self.candidates_cache
+        self.candidates
             .update_affected_cells(r, c, &self.masks, &self.board);
         // Note: `update_affected_cells` will recalculate candidates for the removed cell.
     }
@@ -195,7 +195,7 @@ impl Rustoku {
         let mut propagator = TechniquePropagator::new(
             &mut self.board,
             &mut self.masks,
-            &mut self.candidates_cache,
+            &mut self.candidates,
             self.techniques,
         );
 
