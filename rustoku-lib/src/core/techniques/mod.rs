@@ -202,6 +202,12 @@ impl<'a> TechniquePropagator<'a> {
     }
 }
 
+/// This is the contract for all human techniques.
+///
+/// All techniques are expected to have a way to apply themselves to a board
+/// and modify the solve path with placements and eliminations. In addition, they
+/// are expected to return one flag that helps with technique attribution when
+/// people want to visualize the solve path.
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
