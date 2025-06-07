@@ -29,6 +29,11 @@ use x_wing::XWing;
 /// Some examples of techniques employed including Naked Singles and X-Wings.
 /// If we want to add more techniques, extend the existing logic and bitflags
 /// in this module.
+///
+/// This class acts as the Mediator object between `Rustoku` and the `TechniqueRule`
+/// implementations out there. To learn about the Mediator design pattern, please
+/// consult [this link](https://refactoring.guru/design-patterns/mediator)
+/// for more details.
 pub struct TechniquePropagator<'a> {
     board: &'a mut Board,
     masks: &'a mut Masks,
