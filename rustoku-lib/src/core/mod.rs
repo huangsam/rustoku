@@ -535,4 +535,106 @@ mod tests {
         let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for unsolved check");
         assert!(!rustoku.is_solved(), "The board should not be valid");
     }
+
+    // Last digit is empty, no other option exists
+    const NAKED_SINGLES_TRIGGER: &str =
+        "385421967194756328627983145571892634839645271246137589462579813918364752753218490";
+
+    #[test]
+    fn test_naked_singles_makes_valid_changes() {
+        let s = NAKED_SINGLES_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for naked single");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::NAKED_SINGLES)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with Naked Singles"
+        )
+    }
+
+    // From manual testing
+    const HIDDEN_SINGLES_TRIGGER: &str =
+        "000400209800069000054080000009000002035000700700000130500004007000800050000306001";
+
+    #[test]
+    fn test_hidden_singles_makes_valid_changes() {
+        let s = HIDDEN_SINGLES_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for naked single");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::HIDDEN_SINGLES)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with Hidden Singles"
+        )
+    }
+
+    // https://hodoku.sourceforge.net/en/show_example.php?file=n201&tech=Naked+Pair
+    const NAKED_PAIRS_TRIGGER: &str =
+        "700009030000105006400260009002083951007000000005600000000000003100000060000004010";
+
+    #[test]
+    fn test_naked_pairs_makes_valid_changes() {
+        let s = NAKED_PAIRS_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for naked pairs");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::NAKED_PAIRS)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with Naked Pairs"
+        )
+    }
+
+    // https://hodoku.sourceforge.net/en/show_example.php?file=h201&tech=Hidden+Pair
+    const HIDDEN_PAIRS_TRIGGER: &str =
+        "000032000000000000007600914096000800005008000030040005050200000700000560904010000";
+
+    #[test]
+    fn test_hidden_pairs_makes_valid_changes() {
+        let s = HIDDEN_PAIRS_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for hidden pairs");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::HIDDEN_SINGLES)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with Hidden Pairs"
+        )
+    }
+
+    // https://hodoku.sourceforge.net/en/show_example.php?file=lc101&tech=Locked+Candidates+Type+1+%28Pointing%29
+    const LOCKED_CANDIDATES_TRIGGER: &str =
+        "984000000000500040000000002006097200003002000000000010005060003407051890030009700";
+
+    #[test]
+    fn test_locked_candidates_makes_valid_changes() {
+        let s = LOCKED_CANDIDATES_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for naked single");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::LOCKED_CANDIDATES)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with Locked Candidates"
+        )
+    }
+
+    // https://hodoku.sourceforge.net/en/show_example.php?file=bf201&tech=X-Wing
+    const XWING_TRIGGER: &str =
+        "000000000760003002002640009403900070000004903005000020010560000370090041000000060";
+
+    #[test]
+    fn test_xwing_makes_valid_changes() {
+        let s = XWING_TRIGGER;
+        let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for naked single");
+        let mut path = SolvePath::default();
+        assert!(
+            rustoku
+                .with_techniques(TechniqueFlags::XWING)
+                .techniques_make_valid_changes(&mut path),
+            "The board should change with X-Wing"
+        )
+    }
 }
