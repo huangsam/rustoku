@@ -187,20 +187,24 @@ impl Rustoku {
         }
     }
 
-    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
-    pub fn solve_until(&mut self, bound: usize) -> Vec<Solution> {
-        let mut solutions = Vec::new();
-        let mut path = SolvePath::default();
-
+    /// Run techniques and check if they make valid changes.
+    fn techniques_make_valid_changes(&mut self, path: &mut SolvePath) -> bool {
         let mut propagator = TechniquePropagator::new(
             &mut self.board,
             &mut self.masks,
             &mut self.candidates,
             self.techniques,
         );
+        propagator.propagate_constraints(path, 0)
+    }
 
-        if !propagator.propagate_constraints(&mut path, 0) {
-            return solutions; // Early exit if initial constraints are inconsistent
+    /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
+    pub fn solve_until(&mut self, bound: usize) -> Vec<Solution> {
+        let mut solutions = Vec::new();
+        let mut path = SolvePath::default();
+
+        if !self.techniques_make_valid_changes(&mut path) {
+            return solutions;
         }
 
         self.solve_until_recursive(&mut solutions, &mut path, bound);
