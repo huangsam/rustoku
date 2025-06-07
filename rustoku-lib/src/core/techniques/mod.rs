@@ -20,8 +20,15 @@ use naked_pairs::NakedPairs;
 use naked_singles::NakedSingles;
 use x_wing::XWing;
 
-// Now the actual implementation of the techniques, these would operate on
-// references to Board, Masks, and CandidatesCache.
+/// Propagates constraints via zero or more techniques.
+///
+/// The techniques are toggled via bitflags. Most of the data in struct comes
+/// from the Rustoku instance, which has a longer lifetime than this struct - since
+/// it is only used at the start, before any backtracking occurs.
+///
+/// Some examples of techniques employed including Naked Singles and X-Wings.
+/// If we want to add more techniques, extend the existing logic and bitflags
+/// in this module.
 pub struct TechniquePropagator<'a> {
     board: &'a mut Board,
     masks: &'a mut Masks,
