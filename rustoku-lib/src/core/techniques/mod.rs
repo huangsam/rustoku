@@ -46,7 +46,7 @@ impl<'a> TechniquePropagator<'a> {
         Self {
             board,
             masks,
-            candidates: candidates,
+            candidates,
             techniques_enabled,
         }
     }

@@ -98,7 +98,7 @@ impl Rustoku {
         Ok(Self {
             board,
             masks,
-            candidates: candidates,
+            candidates,
             techniques: TechniqueFlags::EASY, // Default
         })
     }
