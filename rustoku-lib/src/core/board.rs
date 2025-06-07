@@ -6,7 +6,7 @@ use crate::error::RustokuError;
 /// - Using a 2D array of `u8` with dimensions 9x9
 /// - Using a 1D array of `u8` with length 81
 /// - Using a string representation with length 81
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Board {
     /// Each cell can contain a number from 1 to 9, or be empty (is 0).
     pub cells: [[u8; 9]; 9],
@@ -16,13 +16,6 @@ impl Board {
     pub fn new(initial_board: [[u8; 9]; 9]) -> Self {
         Board {
             cells: initial_board,
-        }
-    }
-
-    /// Creates an empty Rustoku board, where all cells are initialized to 0.
-    pub fn empty() -> Self {
-        Board {
-            cells: [[0u8; 9]; 9],
         }
     }
 

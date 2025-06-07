@@ -246,7 +246,7 @@ pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     }
 
     // Start with a fully solved board
-    let mut rustoku = Rustoku::new(Board::empty())?;
+    let mut rustoku = Rustoku::new(Board::default())?;
     let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
     let mut board = solution.board;
 
