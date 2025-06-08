@@ -367,7 +367,7 @@ mod tests {
 
         assert_eq!(
             UNIQUE_SOLUTION,
-            format_line(&solution.board.cells),
+            format_line(&solution.board),
             "Solution does not match the expected result"
         );
     }
@@ -459,7 +459,7 @@ mod tests {
 
         assert_eq!(
             UNIQUE_SOLUTION,
-            format_line(&solution.board.cells),
+            format_line(&solution.board),
             "Solution does not match the expected result with all techniques"
         );
     }

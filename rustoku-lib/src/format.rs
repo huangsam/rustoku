@@ -18,8 +18,8 @@ impl fmt::Display for Solution {
 /// Formats the board into a human-readable string representation.
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{}", format_grid(&self.cells).join("\n"))?;
-        write!(f, "Line format: {}", format_line(&self.cells))?;
+        writeln!(f, "{}", format_grid(self).join("\n"))?;
+        write!(f, "Line format: {}", format_line(self))?;
         Ok(())
     }
 }
@@ -62,26 +62,7 @@ impl fmt::Display for TechniqueFlags {
 /// Formats the solve path into a human-readable string representation.
 impl fmt::Display for SolvePath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let path: Vec<(usize, usize, u8, TechniqueFlags, &str)> = self
-            .steps
-            .iter()
-            .map(|step| match step {
-                crate::core::SolveStep::Placement {
-                    row,
-                    col,
-                    value,
-                    flags,
-                } => (*row, *col, *value, *flags, step.code()),
-                crate::core::SolveStep::CandidateElimination {
-                    row,
-                    col,
-                    value,
-                    flags,
-                } => (*row, *col, *value, *flags, step.code()),
-            })
-            .collect();
-
-        let formatted_lines = format_solve_path(&path, 5);
+        let formatted_lines = format_solve_path(self, 5);
         write!(f, "{}", formatted_lines.join("\n"))
     }
 }
@@ -123,13 +104,13 @@ impl fmt::Display for SolveStep {
 /// This function takes a 9x9 Sudoku board and formats it into a grid with
 /// horizontal and vertical separators to visually distinguish the 3x3 boxes.
 /// Each cell is represented by its number, with empty cells shown as a dot (`.`).
-pub fn format_grid(board: &[[u8; 9]; 9]) -> Vec<String> {
+pub fn format_grid(board: &Board) -> Vec<String> {
     let mut grid = Vec::new();
     let horizontal_line = "+-------+-------+-------+";
 
     grid.push(horizontal_line.to_string()); // Top line
 
-    for (r, row) in board.iter().enumerate().take(9) {
+    for (r, row) in board.cells.iter().enumerate().take(9) {
         let mut line = String::from("|"); // Start of the row
         for (c, &cell) in row.iter().enumerate().take(9) {
             match cell {
@@ -154,8 +135,9 @@ pub fn format_grid(board: &[[u8; 9]; 9]) -> Vec<String> {
 ///
 /// This function converts the board into a single string where each number is
 /// represented by its digit, and empty cells are represented by a dot (`.`).
-pub fn format_line(board: &[[u8; 9]; 9]) -> String {
+pub fn format_line(board: &Board) -> String {
     board
+        .cells
         .iter()
         .flatten()
         .map(|&n| (n + b'0') as char)
@@ -164,14 +146,11 @@ pub fn format_line(board: &[[u8; 9]; 9]) -> String {
 
 /// Formats a path of moves in the Sudoku solving process into a vector of strings.
 ///
-/// This function takes a vector of tuples representing moves in the format `(row, column, value)`
-/// and formats them into a human-readable string. Each move is represented as `(row, column, value)`,
-/// where `row` and `column` are 1-based indices, and `value` is the number placed in that cell.
-pub fn format_solve_path(
-    path: &[(usize, usize, u8, TechniqueFlags, &str)],
-    chunk_size: usize,
-) -> Vec<String> {
-    if path.is_empty() {
+/// This function takes a `SolvePath` struct and formats its moves into a human-readable string.
+/// Each move is represented as `(row, column, value)`, where `row` and `column` are 1-based indices,
+/// and `value` is the number placed in that cell.
+pub fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Vec<String> {
+    if solve_path.steps.is_empty() {
         return vec!["(No moves recorded)".to_string()];
     }
 
@@ -179,7 +158,23 @@ pub fn format_solve_path(
     let mut current_technique = None;
     let mut current_moves = Vec::new();
 
-    for (r, c, val, flags, action) in path {
+    for step in &solve_path.steps {
+        // Iterate directly over the steps
+        let (r, c, val, flags, action_code) = match step {
+            SolveStep::Placement {
+                row,
+                col,
+                value,
+                flags,
+            } => (*row, *col, *value, *flags, step.code()),
+            SolveStep::CandidateElimination {
+                row,
+                col,
+                value,
+                flags,
+            } => (*row, *col, *value, *flags, step.code()),
+        };
+
         let technique_name = format!("{}", flags);
 
         if current_technique.as_ref() != Some(&technique_name) {
@@ -195,7 +190,7 @@ pub fn format_solve_path(
             current_technique = Some(technique_name);
         }
 
-        current_moves.push(format!("R{}C{}={},A={}", r + 1, c + 1, val, action));
+        current_moves.push(format!("R{}C{}={},A={}", r + 1, c + 1, val, action_code));
     }
 
     // Flush final technique
@@ -212,11 +207,11 @@ pub fn format_solve_path(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::TechniqueFlags;
+    use crate::core::{SolvePath, SolveStep, TechniqueFlags};
 
     #[test]
     fn test_format_grid() {
-        let board = [
+        let board = Board::new([
             [5, 3, 0, 6, 7, 8, 9, 1, 2],
             [6, 7, 2, 1, 9, 5, 3, 4, 8],
             [1, 9, 8, 3, 4, 2, 5, 6, 7],
@@ -226,7 +221,7 @@ mod tests {
             [9, 6, 1, 5, 3, 7, 2, 8, 4],
             [2, 8, 7, 4, 1, 9, 6, 3, 5],
             [3, 4, 5, 2, 8, 6, 1, 7, 9],
-        ];
+        ]);
 
         let expected = vec![
             "+-------+-------+-------+",
@@ -249,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_format_line() {
-        let board = [
+        let board = Board::new([
             [5, 3, 0, 6, 7, 8, 9, 1, 2],
             [6, 7, 2, 1, 9, 5, 3, 4, 8],
             [1, 9, 8, 3, 4, 2, 5, 6, 7],
@@ -259,7 +254,7 @@ mod tests {
             [9, 6, 1, 5, 3, 7, 2, 8, 4],
             [2, 8, 7, 4, 1, 9, 6, 3, 5],
             [3, 4, 5, 2, 8, 6, 1, 7, 9],
-        ];
+        ]);
 
         let expected =
             "530678912672195348198342567859761423426853791713924856961537284287419635345286179";
@@ -268,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_format_grid_empty_board() {
-        let board = [[0; 9]; 9];
+        let board = Board::default();
 
         let expected = vec![
             "+-------+-------+-------+",
@@ -291,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_format_line_empty_board() {
-        let board = [[0; 9]; 9];
+        let board = Board::default();
         let expected =
             "000000000000000000000000000000000000000000000000000000000000000000000000000000000";
         assert_eq!(expected, format_line(&board));
@@ -328,52 +323,115 @@ mod tests {
 
     #[test]
     fn test_empty_path() {
-        let path: Vec<(usize, usize, u8, TechniqueFlags, &str)> = Vec::new();
-        let expected = vec!["(No moves recorded)".to_string()];
-        assert_eq!(format_solve_path(&path, 5), expected);
+        let solve_path = SolvePath { steps: Vec::new() }; // Create an empty SolvePath
+        let expected = vec!["(No moves recorded)"];
+        assert_eq!(format_solve_path(&solve_path, 5), expected);
     }
 
     #[test]
     fn test_single_technique_multiple_moves_with_chunking() {
-        let path = vec![
-            (0, 0, 1, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 1, 2, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 2, 3, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 3, 4, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 4, 5, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 5, 6, TechniqueFlags::NAKED_SINGLES, "plac"),
+        let steps = vec![
+            // Use the actual SolveStep enum variants
+            SolveStep::Placement {
+                row: 0,
+                col: 0,
+                value: 1,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 1,
+                value: 2,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 2,
+                value: 3,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 3,
+                value: 4,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 4,
+                value: 5,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 5,
+                value: 6,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
         ];
+        let solve_path = SolvePath { steps }; // Create SolvePath with these steps
         let chunk_size = 2; // Each line will have 2 moves
 
         let expected = vec![
-            "Naked Singles:".to_string(),
-            "  R1C1=1,A=plac R1C2=2,A=plac".to_string(),
-            "  R1C3=3,A=plac R1C4=4,A=plac".to_string(),
-            "  R1C5=5,A=plac R1C6=6,A=plac".to_string(),
+            "Naked Singles:",
+            "  R1C1=1,A=plac R1C2=2,A=plac",
+            "  R1C3=3,A=plac R1C4=4,A=plac",
+            "  R1C5=5,A=plac R1C6=6,A=plac",
         ];
-        assert_eq!(format_solve_path(&path, chunk_size), expected);
+        assert_eq!(format_solve_path(&solve_path, chunk_size), expected);
     }
 
     #[test]
     fn test_multiple_techniques_and_mixed_chunking() {
-        let path = vec![
-            (0, 0, 1, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (0, 1, 2, TechniqueFlags::NAKED_SINGLES, "plac"),
-            (1, 0, 3, TechniqueFlags::HIDDEN_SINGLES, "plac"),
-            (1, 1, 4, TechniqueFlags::HIDDEN_SINGLES, "plac"),
-            (1, 2, 5, TechniqueFlags::HIDDEN_SINGLES, "plac"),
-            (2, 0, 6, TechniqueFlags::HIDDEN_PAIRS, "elim"),
+        let steps = vec![
+            SolveStep::Placement {
+                row: 0,
+                col: 0,
+                value: 1,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 0,
+                col: 1,
+                value: 2,
+                flags: TechniqueFlags::NAKED_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 1,
+                col: 0,
+                value: 3,
+                flags: TechniqueFlags::HIDDEN_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 1,
+                col: 1,
+                value: 4,
+                flags: TechniqueFlags::HIDDEN_SINGLES,
+            },
+            SolveStep::Placement {
+                row: 1,
+                col: 2,
+                value: 5,
+                flags: TechniqueFlags::HIDDEN_SINGLES,
+            },
+            SolveStep::CandidateElimination {
+                row: 2,
+                col: 0,
+                value: 6,
+                flags: TechniqueFlags::HIDDEN_PAIRS,
+            }, // Changed to CandidateElimination to match `elim` action code
         ];
+        let solve_path = SolvePath { steps }; // Create SolvePath with these steps
         let chunk_size = 3; // Each line will have 3 moves
 
-        let expected: Vec<String> = vec![
-            "Naked Singles:".to_string(),
-            "  R1C1=1,A=plac R1C2=2,A=plac".to_string(),
-            "Hidden Singles:".to_string(),
-            "  R2C1=3,A=plac R2C2=4,A=plac R2C3=5,A=plac".to_string(),
-            "Hidden Pairs:".to_string(),
-            "  R3C1=6,A=elim".to_string(),
+        let expected = vec![
+            "Naked Singles:",
+            "  R1C1=1,A=plac R1C2=2,A=plac",
+            "Hidden Singles:",
+            "  R2C1=3,A=plac R2C2=4,A=plac R2C3=5,A=plac",
+            "Hidden Pairs:",
+            "  R3C1=6,A=elim",
         ];
-        assert_eq!(format_solve_path(&path, chunk_size), expected);
+        assert_eq!(format_solve_path(&solve_path, chunk_size), expected);
     }
 }
