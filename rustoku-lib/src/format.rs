@@ -104,7 +104,7 @@ impl fmt::Display for SolveStep {
 /// This function takes a 9x9 Sudoku board and formats it into a grid with
 /// horizontal and vertical separators to visually distinguish the 3x3 boxes.
 /// Each cell is represented by its number, with empty cells shown as a dot (`.`).
-pub fn format_grid(board: &Board) -> Vec<String> {
+pub(crate) fn format_grid(board: &Board) -> Vec<String> {
     let mut grid = Vec::new();
     let horizontal_line = "+-------+-------+-------+";
 
@@ -135,7 +135,7 @@ pub fn format_grid(board: &Board) -> Vec<String> {
 ///
 /// This function converts the board into a single string where each number is
 /// represented by its digit, and empty cells are represented by a dot (`.`).
-pub fn format_line(board: &Board) -> String {
+pub(crate) fn format_line(board: &Board) -> String {
     board
         .cells
         .iter()
@@ -149,7 +149,7 @@ pub fn format_line(board: &Board) -> String {
 /// This function takes a `SolvePath` struct and formats its moves into a human-readable string.
 /// Each move is represented as `(row, column, value)`, where `row` and `column` are 1-based indices,
 /// and `value` is the number placed in that cell.
-pub fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Vec<String> {
+pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Vec<String> {
     if solve_path.steps.is_empty() {
         return vec!["(No moves recorded)".to_string()];
     }
