@@ -10,7 +10,7 @@
 //! one-line representation for easy copying and pasting.
 
 pub mod core;
-pub mod error;
+mod error;
 mod format;
 
 pub use core::{Rustoku, generate_board};

@@ -1,5 +1,5 @@
 use assert_cmd::prelude::*;
-use rustoku_lib::error::RustokuError;
+use rustoku_lib::RustokuError;
 use std::process::Command;
 
 /// Helper function to get the path to our compiled binary
