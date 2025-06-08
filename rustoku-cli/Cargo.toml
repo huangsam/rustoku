@@ -12,7 +12,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-rustoku-lib = { version = "0.10.1", path = "../rustoku-lib" }
+rustoku-lib = { version = "0.11.0", path = "../rustoku-lib" }
 clap = { version = "4.5.38", features = ["derive"] }
 
 [dev-dependencies]
