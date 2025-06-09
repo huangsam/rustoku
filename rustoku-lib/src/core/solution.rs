@@ -16,7 +16,7 @@ pub struct Solution {
 }
 
 /// Solve path associated with a solution.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SolvePath {
     /// The sequence of steps taken to solve the Sudoku puzzle.
     pub steps: Vec<SolveStep>,
@@ -25,12 +25,6 @@ pub struct SolvePath {
 impl SolvePath {
     pub fn new() -> Self {
         SolvePath { steps: Vec::new() }
-    }
-}
-
-impl Default for SolvePath {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

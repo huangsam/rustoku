@@ -14,12 +14,12 @@ mod solution;
 mod techniques;
 
 pub use board::Board;
+pub use candidates::Candidates;
+pub use masks::Masks;
 pub use solution::{Solution, SolvePath, SolveStep};
 pub use techniques::flags::TechniqueFlags;
 
 use crate::error::RustokuError;
-use candidates::Candidates;
-use masks::Masks;
 use rand::prelude::SliceRandom;
 use rand::rng;
 use techniques::TechniquePropagator;
@@ -61,17 +61,20 @@ use techniques::TechniquePropagator;
 pub struct Rustoku {
     /// The current state of the Sudoku board.
     pub board: Board,
-    masks: Masks,
-    candidates: Candidates,
-    techniques: TechniqueFlags,
+    /// Bitmasks that help determine whether the board is safe.
+    pub masks: Masks,
+    /// Candidate cache from computing the bitmasks.
+    pub candidates: Candidates,
+    /// Techniques used during the initial phase of solving.
+    pub techniques: TechniqueFlags,
 }
 
 impl Rustoku {
     /// Constructs a new `Rustoku` instance from an initial `Board`.
     pub fn new(initial_board: Board) -> Result<Self, RustokuError> {
         let board = initial_board; // Now takes a Board directly
-        let mut masks = Masks::new();
-        let mut candidates = Candidates::new();
+        let mut masks = Masks::default();
+        let mut candidates = Candidates::default();
 
         // Initialize masks and check for duplicates based on the provided board
         for r in 0..9 {

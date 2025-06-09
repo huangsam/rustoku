@@ -6,20 +6,20 @@ use super::masks::Masks;
 /// This struct holds a 9x9 grid of candidate masks for each cell in the Rustoku board.
 /// Each cell's candidates are represented as a bitmask, where each bit corresponds to a number
 /// from 1 to 9. A bit set to 1 indicates that the corresponding number is a candidate for that cell.
-/// The `RustokuCandidates` struct provides methods to get and set candidate masks for specific cells,
-/// as well as to update the candidates based on the current state of the board and masks.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(super) struct Candidates {
+/// This struct provides methods to get and set candidate masks for specific cells, as well as to
+/// update the candidates based on the current state of the board and masks.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+pub struct Candidates {
     cache: [[u16; 9]; 9],
 }
 
 impl Candidates {
-    pub(super) fn new() -> Self {
+    pub fn new() -> Self {
         Candidates { cache: [[0; 9]; 9] }
     }
 
     /// Returns the candidate mask for a specific cell in the cache.
-    pub(super) fn get(&self, r: usize, c: usize) -> u16 {
+    pub fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
     }
 

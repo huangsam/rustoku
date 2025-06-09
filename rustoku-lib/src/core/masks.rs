@@ -3,15 +3,15 @@
 /// This struct holds bitmasks for each row, column, and 3x3 box in the Rustoku board.
 /// Each bit in the masks corresponds to a number from 1 to 9, where a bit set to 1 indicates
 /// that the corresponding number is present in that row, column, or box.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Masks {
-    pub(super) row_masks: [u16; 9],
-    pub(super) col_masks: [u16; 9],
-    pub(super) box_masks: [u16; 9],
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Masks {
+    row_masks: [u16; 9],
+    col_masks: [u16; 9],
+    box_masks: [u16; 9],
 }
 
 impl Masks {
-    pub(super) fn new() -> Self {
+    pub fn new() -> Self {
         Masks {
             row_masks: [0; 9],
             col_masks: [0; 9],
@@ -43,7 +43,7 @@ impl Masks {
     }
 
     /// Checks if a number can be safely placed in the specified cell.
-    pub(super) fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
+    pub fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
 
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_new_initializes_empty_masks() {
-        let masks = Masks::new();
+        let masks = Masks::default();
         assert_eq!(masks.row_masks, [0; 9]);
         assert_eq!(masks.col_masks, [0; 9]);
         assert_eq!(masks.box_masks, [0; 9]);
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_add_number_single_cell() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         assert_eq!(masks.row_masks[0], bit(1));
         assert_eq!(masks.col_masks[0], bit(1));
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_add_number_multiple_in_same_row() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         masks.add_number(0, 1, 5);
         assert_eq!(masks.row_masks[0], bits(&[1, 5]));
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_add_number_to_different_box() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(8, 8, 9);
         assert_eq!(masks.row_masks[8], bit(9));
         assert_eq!(masks.col_masks[8], bit(9));
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_add_number_already_present_no_change() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         let initial_row_0 = masks.row_masks[0];
         masks.add_number(0, 0, 1); // Adding again
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_remove_number_single_value_from_cell() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1); // Add 1
         masks.remove_number(0, 0, 1); // Remove 1
         assert_eq!(masks.row_masks[0], 0);
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_remove_number_from_shared_row() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         masks.add_number(0, 1, 5);
         masks.remove_number(0, 0, 1);
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_remove_number_not_present_no_change() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         let initial_row_0 = masks.row_masks[0];
         masks.remove_number(0, 0, 3); // Remove 3 (not present)
@@ -184,14 +184,14 @@ mod tests {
 
     #[test]
     fn test_is_safe_on_empty_board_always_true() {
-        let masks = Masks::new();
+        let masks = Masks::default();
         assert!(masks.is_safe(0, 0, 1)); // 1 should be safe anywhere
         assert!(masks.is_safe(8, 8, 9)); // 9 should be safe anywhere
     }
 
     #[test]
     fn test_is_safe_conflict_in_row() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1); // Place 1 at (0,0)
         assert!(!masks.is_safe(0, 1, 1)); // 1 should not be safe in same row
         assert!(masks.is_safe(0, 1, 2)); // 2 should be safe in same row
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_is_safe_conflict_in_column() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1); // Place 1 at (0,0)
         assert!(!masks.is_safe(1, 0, 1)); // 1 should not be safe in same col
         assert!(masks.is_safe(1, 0, 2)); // 2 should be safe in same col
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_is_safe_conflict_in_box() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(1, 1, 1); // Place 1 at (1,1) in box 0
         assert!(!masks.is_safe(0, 0, 1)); // 1 should not be safe in same box
         assert!(masks.is_safe(0, 0, 2)); // 2 should be safe in same box
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_is_safe_conflict_with_current_cell_value() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.add_number(0, 0, 1);
         assert!(!masks.is_safe(0, 0, 1)); // Should not be safe to place 1 where 1 already is
         assert!(masks.is_safe(0, 0, 2)); // Should be safe for other numbers
@@ -223,14 +223,14 @@ mod tests {
 
     #[test]
     fn test_compute_candidates_empty_cell_all_available() {
-        let masks = Masks::new();
+        let masks = Masks::default();
         let candidates = masks.compute_candidates_mask_for_cell(0, 0);
         assert_eq!(candidates, 0x1FF); // All 9 bits should be set
     }
 
     #[test]
     fn test_compute_candidates_row_has_1_to_8_only_9_available() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.row_masks[0] = bits(&[1, 2, 3, 4, 5, 6, 7, 8]); // Directly set mask
         let candidates = masks.compute_candidates_mask_for_cell(0, 0);
         assert_eq!(candidates, bit(9));
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_compute_candidates_col_has_1_to_8_only_9_available() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.col_masks[0] = bits(&[1, 2, 3, 4, 5, 6, 7, 8]); // Directly set mask
         let candidates = masks.compute_candidates_mask_for_cell(0, 0);
         assert_eq!(candidates, bit(9));
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_compute_candidates_box_has_1_to_8_only_9_available() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.box_masks[Masks::get_box_idx(1, 1)] = bits(&[1, 2, 3, 4, 5, 6, 7, 8]); // Directly set mask for box 0
         let candidates = masks.compute_candidates_mask_for_cell(1, 1);
         assert_eq!(candidates, bit(9));
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_compute_candidates_mixed_restrictions() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         // Row 0 has 1, 2
         masks.row_masks[0] = bits(&[1, 2]);
         // Col 0 has 3, 4
@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_compute_candidates_no_candidates_left() {
-        let mut masks = Masks::new();
+        let mut masks = Masks::default();
         masks.row_masks[0] = 0x1FF; // All 1-9 used in row
         let candidates = masks.compute_candidates_mask_for_cell(0, 0);
         assert_eq!(candidates, 0); // No candidates
