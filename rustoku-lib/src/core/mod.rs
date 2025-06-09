@@ -73,8 +73,8 @@ impl Rustoku {
     /// Constructs a new `Rustoku` instance from an initial `Board`.
     pub fn new(initial_board: Board) -> Result<Self, RustokuError> {
         let board = initial_board; // Now takes a Board directly
-        let mut masks = Masks::default();
-        let mut candidates = Candidates::default();
+        let mut masks = Masks::new();
+        let mut candidates = Candidates::new();
 
         // Initialize masks and check for duplicates based on the provided board
         for r in 0..9 {

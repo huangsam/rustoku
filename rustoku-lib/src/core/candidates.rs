@@ -8,13 +8,13 @@ use super::masks::Masks;
 /// from 1 to 9. A bit set to 1 indicates that the corresponding number is a candidate for that cell.
 /// This struct provides methods to get and set candidate masks for specific cells, as well as to
 /// update the candidates based on the current state of the board and masks.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Candidates {
     cache: [[u16; 9]; 9],
 }
 
 impl Candidates {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Candidates { cache: [[0; 9]; 9] }
     }
 
