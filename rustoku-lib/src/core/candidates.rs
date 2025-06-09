@@ -19,8 +19,21 @@ impl Candidates {
     }
 
     /// Returns the candidate mask for a specific cell in the cache.
-    pub fn get(&self, r: usize, c: usize) -> u16 {
+    pub(super) fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
+    }
+
+    /// Returns the actual candidate numbers (1-9) for a specific cell.
+    pub fn get_candidates(&self, r: usize, c: usize) -> Vec<u8> {
+        let mask = self.get(r, c);
+        let mut candidates = Vec::new();
+        for i in 0..9 {
+            // Check if the i-th bit is set (representing number i+1)
+            if (mask >> i) & 1 == 1 {
+                candidates.push((i + 1) as u8);
+            }
+        }
+        candidates
     }
 
     /// Sets the candidate mask for a specific cell in the cache.
@@ -62,5 +75,91 @@ impl Candidates {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_candidates_empty_mask() {
+        let candidates = Candidates::new(); // Starts with all 0s
+        let r = 0;
+        let c = 0;
+        let cands = candidates.get_candidates(r, c);
+        assert_eq!(cands, vec![]);
+    }
+
+    #[test]
+    fn test_get_candidates_full_mask() {
+        let mut candidates = Candidates::new();
+        let r = 0;
+        let c = 0;
+        // All bits from 0 to 8 set (representing numbers 1 to 9)
+        // 0b00000001_11111111 = 511 (binary)
+        let full_mask = (1 << 9) - 1; // Or 0b111111111
+        candidates.set(r, c, full_mask);
+        let cands = candidates.get_candidates(r, c);
+        assert_eq!(cands, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn test_get_candidates_single_candidate() {
+        let mut candidates = Candidates::new();
+        let r = 1;
+        let c = 2;
+
+        // Test for candidate 1 (bit 0)
+        candidates.set(r, c, 1 << 0); // Mask: 0b000000001
+        let cands_1 = candidates.get_candidates(r, c);
+        assert_eq!(cands_1, vec![1]);
+
+        // Test for candidate 5 (bit 4)
+        candidates.set(r, c, 1 << 4); // Mask: 0b000010000
+        let cands_5 = candidates.get_candidates(r, c);
+        assert_eq!(cands_5, vec![5]);
+
+        // Test for candidate 9 (bit 8)
+        candidates.set(r, c, 1 << 8); // Mask: 0b100000000
+        let cands_9 = candidates.get_candidates(r, c);
+        assert_eq!(cands_9, vec![9]);
+    }
+
+    #[test]
+    fn test_get_candidates_multiple_candidates() {
+        let mut candidates = Candidates::new();
+        let r = 3;
+        let c = 4;
+
+        // Candidates: 2, 4, 7
+        // Bit positions: 1, 3, 6
+        // Mask: (1 << 1) | (1 << 3) | (1 << 6)
+        // Mask: 0b01001010 = 2 + 8 + 64 = 74
+        let mask = (1 << 1) | (1 << 3) | (1 << 6); // 0b01001010
+        candidates.set(r, c, mask);
+        let cands = candidates.get_candidates(r, c);
+        assert_eq!(cands, vec![2, 4, 7]);
+
+        // Candidates: 1, 9
+        // Bit positions: 0, 8
+        let mask_1_9 = (1 << 0) | (1 << 8); // 0b100000001
+        candidates.set(r, c, mask_1_9);
+        let cands_1_9 = candidates.get_candidates(r, c);
+        assert_eq!(cands_1_9, vec![1, 9]);
+    }
+
+    #[test]
+    fn test_get_candidates_different_cells() {
+        let mut candidates = Candidates::new();
+
+        // Set candidates for (0,0)
+        candidates.set(0, 0, (1 << 0) | (1 << 2)); // Candidates 1, 3
+        // Set candidates for (8,8)
+        candidates.set(8, 8, (1 << 5) | (1 << 7)); // Candidates 6, 8
+
+        assert_eq!(candidates.get_candidates(0, 0), vec![1, 3]);
+        assert_eq!(candidates.get_candidates(8, 8), vec![6, 8]);
+        assert_eq!(candidates.get_candidates(0, 1), vec![]); // Unset cell
     }
 }

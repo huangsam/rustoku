@@ -61,7 +61,7 @@ use techniques::TechniquePropagator;
 pub struct Rustoku {
     /// The current state of the Sudoku board.
     pub board: Board,
-    /// Bitmasks that help determine whether the board is safe.
+    /// Bitmasks that check if a cell is safe in a row, column and box.
     pub masks: Masks,
     /// Candidate cache from computing the bitmasks.
     pub candidates: Candidates,
