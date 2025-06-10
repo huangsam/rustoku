@@ -243,9 +243,8 @@ impl Rustoku {
 /// Generate a puzzle with 30 clues:
 /// ```
 /// use rustoku_lib::generate_board;
-/// let puzzle = generate_board(30).unwrap();
-/// assert_eq!(puzzle.cells.len(), 9);
-/// assert_eq!(puzzle.cells[0].len(), 9);
+/// let puzzle = generate_board(30);
+/// assert!(puzzle.is_ok());
 /// ```
 pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     if !(17..=81).contains(&num_clues) {

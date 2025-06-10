@@ -9,7 +9,7 @@ use crate::error::RustokuError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Board {
     /// Each cell can contain a number from 1 to 9, or be empty (is 0).
-    pub cells: [[u8; 9]; 9],
+    pub(crate) cells: [[u8; 9]; 9],
 }
 
 impl Board {
@@ -25,7 +25,7 @@ impl Board {
     }
 
     /// Sets a value in the board at the specified row and column.
-    pub fn set(&mut self, r: usize, c: usize, value: u8) {
+    pub(super) fn set(&mut self, r: usize, c: usize, value: u8) {
         self.cells[r][c] = value;
     }
 
