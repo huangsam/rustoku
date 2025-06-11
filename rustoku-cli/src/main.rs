@@ -84,31 +84,13 @@ fn main() {
                         println!("🎯 Found 1 unique solution:");
                         println!("{}", solutions[0]);
                     }
-                    n if n <= 5 => {
-                        println!("🔍 Found {} solutions:\n", n);
+                    n => {
+                        println!("🔍 Found {} solutions:", n);
                         solutions.iter().enumerate().for_each(|(i, solution)| {
-                            println!("--- Solution {} ---", i + 1);
+                            println!("\n--- Solution {} ---", i + 1);
                             println!("{}", solution);
-                            if i < solutions.len() - 1 {
-                                println!(); // Add spacing between solutions
-                            }
                         });
                         println!("\n✅ All solutions displayed");
-                    }
-                    n => {
-                        println!("🚧 Found {} solutions (showing first 3):\n", n);
-                        solutions
-                            .iter()
-                            .take(3)
-                            .enumerate()
-                            .for_each(|(i, solution)| {
-                                println!("--- Solution {} ---", i + 1);
-                                println!("{}", solution);
-                                if i < 2 {
-                                    println!(); // Add spacing between first 3 solutions
-                                }
-                            });
-                        println!("\n💡 Puzzle has multiple solutions (+{} more)", n - 3);
                     }
                 }
             }),
