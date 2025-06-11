@@ -68,7 +68,7 @@ fn test_solve_any_no_solution() {
         .arg("078002609030008020002000083000000040043090000007300090200001036001840902050003007")
         .assert()
         .success()
-        .stdout(predicates::str::contains("No solution found."));
+        .stdout(predicates::str::contains("No solution found"));
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn test_solve_all_two_solutions() {
         .arg("295743861431865900876192543387459216612387495549216738763504189928671354154930000")
         .assert()
         .success()
-        .stdout(predicates::str::contains("Found 2 solution(s)."));
+        .stdout(predicates::str::contains("Found 2 solution(s)"));
 }
 
 #[test]
@@ -102,7 +102,7 @@ fn test_check_correct_solution() {
         .arg("295743861431865927876192543387459216612387495549216738763524189154938672928671354")
         .assert()
         .success()
-        .stdout(predicates::str::contains("The puzzle is solved correctly."));
+        .stdout(predicates::str::contains("The puzzle is solved correctly"));
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn test_check_incorrect_solution() {
         .assert()
         .success()
         .stdout(predicates::str::contains(
-            "The puzzle is NOT solved correctly.",
+            "The puzzle is NOT solved correctly",
         ));
 }
 

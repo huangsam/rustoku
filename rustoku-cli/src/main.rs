@@ -7,8 +7,8 @@ use rustoku_lib::{Rustoku, generate_board};
 #[command(
     author,
     version,
-    about = ">>> Rustoku: Lightning-fast Sudoku <<<",
-    long_about = "Rustoku handles solving, checking, and generating puzzles, delivering unparalleled speed and clarity."
+    about = "🟡 Rustoku: Lightning-fast Sudoku 🟡",
+    long_about = "Rustoku solves and generates puzzles, delivering unparalleled speed and clarity."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -65,7 +65,7 @@ fn main() {
             SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
                 rustoku = rustoku.with_techniques(TechniqueFlags::all());
                 match rustoku.solve_any() {
-                    None => println!("No solution found."),
+                    None => println!("No solution found ❌"),
                     Some(solution) => println!("{}", solution),
                 }
             }),
@@ -73,21 +73,22 @@ fn main() {
                 rustoku = rustoku.with_techniques(TechniqueFlags::all());
                 let solutions = rustoku.solve_all();
                 if solutions.is_empty() {
-                    println!("No solutions found.");
+                    println!("No solutions found ❌");
                 } else {
                     solutions.iter().enumerate().for_each(|(i, solution)| {
                         println!("\n--- Solution {} ---", i + 1);
                         println!("{}", solution);
                     });
-                    println!("\nFound {} solution(s).", solutions.len());
+                    println!("\nFound {} solution(s) ✅", solutions.len());
                 }
             }),
         },
         Commands::Check { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-            println!(
-                "The puzzle is {}solved correctly.",
-                if rustoku.is_solved() { "" } else { "NOT " }
-            );
+            if rustoku.is_solved() {
+                println!("The puzzle is solved correctly ✅");
+            } else {
+                println!("The puzzle is NOT solved correctly ❌");
+            }
         }),
         Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
             println!("{}", rustoku.board);
@@ -95,7 +96,7 @@ fn main() {
     };
 
     if let Err(e) = result {
-        eprintln!("Error: {}", e);
+        eprintln!("Error: {} 🔥", e);
         std::process::exit(1);
     }
 }
