@@ -5,7 +5,6 @@ use rustoku_lib::{Rustoku, generate_board};
 /// Root of the Rustoku CLI.
 #[derive(Parser, Debug)]
 #[command(
-    author,
     version,
     about = "🟡 Rustoku: Lightning-fast Sudoku 🟡",
     long_about = "Rustoku solves and generates puzzles, delivering unparalleled speed and clarity."
