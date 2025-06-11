@@ -113,7 +113,7 @@ fn test_check_incorrect_solution() {
         .assert()
         .success()
         .stdout(predicates::str::contains(
-            "The puzzle is NOT solved correctly",
+            "The puzzle is not solved correctly",
         ));
 }
 
