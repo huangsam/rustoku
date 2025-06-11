@@ -34,7 +34,7 @@ pub enum Commands {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
     },
-    /// 📋 Shows the Sudoku puzzle in a grid-like format
+    /// 🎨 Shows the Sudoku puzzle in a grid-like format
     Show {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
