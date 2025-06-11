@@ -61,7 +61,7 @@ fn main() {
 
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| {
-            println!("🎲 Generated puzzle with {} clues:\n", clues);
+            println!("🎲 Generated puzzle with {} clues:", clues);
             println!("{}", board)
         }),
         Commands::Solve { solve_command } => match solve_command {
@@ -70,7 +70,7 @@ fn main() {
                 match rustoku.solve_any() {
                     None => println!("🚫 No solution found"),
                     Some(solution) => {
-                        println!("🎯 Solution found:\n");
+                        println!("🎯 Solution found:");
                         println!("{}", solution);
                     }
                 }
@@ -81,7 +81,7 @@ fn main() {
                 match solutions.len() {
                     0 => println!("🚫 No solutions found"),
                     1 => {
-                        println!("🎯 Found 1 unique solution:\n");
+                        println!("🎯 Found 1 unique solution:");
                         println!("{}", solutions[0]);
                     }
                     n if n <= 5 => {
@@ -121,7 +121,7 @@ fn main() {
             }
         }),
         Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-            println!("📋 Puzzle display:\n");
+            println!("🎨 Show puzzle:");
             println!("{}", rustoku.board);
         }),
     };
