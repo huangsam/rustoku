@@ -7,7 +7,8 @@ use rustoku_lib::{Rustoku, generate_board};
 #[command(
     version,
     about = "🦀 Rustoku: Lightning-fast Sudoku solver 🦀",
-    long_about = "Rustoku solves and generates puzzles, delivering unparalleled speed and clarity"
+    long_about = "Rustoku solves and generates puzzles, delivering unparalleled speed and clarity",
+    color = clap::ColorChoice::Auto,
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -61,7 +62,7 @@ fn main() {
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| {
             println!("🎲 Generated puzzle with {} clues:\n", clues);
-            println!("{}\n", board)
+            println!("{}", board)
         }),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
@@ -70,7 +71,7 @@ fn main() {
                     None => println!("🚫 No solution found"),
                     Some(solution) => {
                         println!("🎯 Solution found:\n");
-                        println!("{}\n", solution);
+                        println!("{}", solution);
                     }
                 }
             }),
@@ -81,8 +82,8 @@ fn main() {
                     0 => println!("🚫 No solutions found"),
                     1 => {
                         println!("🎯 Found 1 unique solution:\n");
-                        println!("{}\n", solutions[0]);
-                    },
+                        println!("{}", solutions[0]);
+                    }
                     n if n <= 5 => {
                         println!("🔍 Found {} solutions:\n", n);
                         solutions.iter().enumerate().for_each(|(i, solution)| {
@@ -93,16 +94,20 @@ fn main() {
                             }
                         });
                         println!("\n✅ All solutions displayed");
-                    },
+                    }
                     n => {
-                        println!("⚠️  Found {} solutions (showing first 3):\n", n);
-                        solutions.iter().take(3).enumerate().for_each(|(i, solution)| {
-                            println!("--- Solution {} ---", i + 1);
-                            println!("{}", solution);
-                            if i < 2 {
-                                println!(); // Add spacing between first 3 solutions
-                            }
-                        });
+                        println!("⚠️ Found {} solutions (showing first 3):\n", n);
+                        solutions
+                            .iter()
+                            .take(3)
+                            .enumerate()
+                            .for_each(|(i, solution)| {
+                                println!("--- Solution {} ---", i + 1);
+                                println!("{}", solution);
+                                if i < 2 {
+                                    println!(); // Add spacing between first 3 solutions
+                                }
+                            });
                         println!("\n💡 Puzzle has multiple solutions (+{} more)", n - 3);
                     }
                 }
@@ -117,7 +122,7 @@ fn main() {
         }),
         Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
             println!("📋 Puzzle display:\n");
-            println!("{}\n", rustoku.board);
+            println!("{}", rustoku.board);
         }),
     };
 
