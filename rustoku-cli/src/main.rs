@@ -96,7 +96,7 @@ fn main() {
                         println!("\n✅ All solutions displayed");
                     }
                     n => {
-                        println!("⚠️ Found {} solutions (showing first 3):\n", n);
+                        println!("🚧 Found {} solutions (showing first 3):\n", n);
                         solutions
                             .iter()
                             .take(3)
