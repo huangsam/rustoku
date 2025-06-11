@@ -86,7 +86,7 @@ fn main() {
             if rustoku.is_solved() {
                 println!("The puzzle is solved correctly ✅");
             } else {
-                println!("The puzzle is NOT solved correctly ❌");
+                println!("The puzzle is not solved correctly ❌");
             }
         }),
         Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
