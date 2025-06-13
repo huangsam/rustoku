@@ -48,11 +48,17 @@ pub enum SolveCommands {
     Any {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
+        /// Show detailed solve path and techniques used
+        #[arg(short, long)]
+        verbose: bool,
     },
     /// 🔍 Attempts to find all puzzle solutions
     All {
         /// The Sudoku puzzle string (81 characters: `0-9` or `.` or `_`)
         puzzle: String,
+        /// Show detailed solve path and techniques used
+        #[arg(short, long)]
+        verbose: bool,
     },
 }
 
@@ -65,35 +71,51 @@ fn main() {
             println!("{}", board)
         }),
         Commands::Solve { solve_command } => match solve_command {
-            SolveCommands::Any { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                rustoku = rustoku.with_techniques(TechniqueFlags::all());
-                match rustoku.solve_any() {
-                    None => println!("🚫 No solution found"),
-                    Some(solution) => {
-                        println!("🎯 Solution found:");
-                        println!("{}", solution);
+            SolveCommands::Any { puzzle, verbose } => {
+                Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
+                    rustoku = rustoku.with_techniques(TechniqueFlags::all());
+                    match rustoku.solve_any() {
+                        None => println!("🚫 No solution found"),
+                        Some(solution) => {
+                            println!("🎯 Solution found:");
+                            if verbose {
+                                println!("{}\n\n{}", solution.board, solution.solve_path);
+                            } else {
+                                println!("{}", solution.board);
+                            }
+                        }
                     }
-                }
-            }),
-            SolveCommands::All { puzzle } => Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                rustoku = rustoku.with_techniques(TechniqueFlags::all());
-                let solutions = rustoku.solve_all();
-                match solutions.len() {
-                    0 => println!("🚫 No solutions found"),
-                    1 => {
-                        println!("🎯 Found 1 unique solution:");
-                        println!("{}", solutions[0]);
+                })
+            }
+            SolveCommands::All { puzzle, verbose } => {
+                Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
+                    rustoku = rustoku.with_techniques(TechniqueFlags::all());
+                    let solutions = rustoku.solve_all();
+                    match solutions.len() {
+                        0 => println!("🚫 No solutions found"),
+                        1 => {
+                            println!("🎯 Found 1 unique solution:");
+                            if verbose {
+                                println!("{}\n\n{}", solutions[0].board, solutions[0].solve_path);
+                            } else {
+                                println!("{}", solutions[0].board);
+                            }
+                        }
+                        n => {
+                            println!("🔍 Found {} solutions:", n);
+                            solutions.iter().enumerate().for_each(|(i, solution)| {
+                                println!("\n--- Solution {} ---", i + 1);
+                                if verbose {
+                                    println!("{}\n\n{}", solution.board, solution.solve_path);
+                                } else {
+                                    println!("{}", solution.board);
+                                }
+                            });
+                            println!("\n✅ All solutions displayed");
+                        }
                     }
-                    n => {
-                        println!("🔍 Found {} solutions:", n);
-                        solutions.iter().enumerate().for_each(|(i, solution)| {
-                            println!("\n--- Solution {} ---", i + 1);
-                            println!("{}", solution);
-                        });
-                        println!("\n✅ All solutions displayed");
-                    }
-                }
-            }),
+                })
+            }
         },
         Commands::Check { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
             if rustoku.is_solved() {
