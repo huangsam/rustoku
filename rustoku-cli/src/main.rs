@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{ColorChoice, Parser, Subcommand};
 use rustoku_lib::core::TechniqueFlags;
 use rustoku_lib::{Rustoku, generate_board};
 
@@ -8,7 +8,7 @@ use rustoku_lib::{Rustoku, generate_board};
     version,
     about = "🦀 Rustoku: Lightning-fast Sudoku solver 🦀",
     long_about = "Rustoku solves and generates puzzles, delivering unparalleled speed and clarity",
-    color = clap::ColorChoice::Auto,
+    color = ColorChoice::Always,
 )]
 pub struct Cli {
     #[command(subcommand)]
