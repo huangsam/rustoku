@@ -1,3 +1,4 @@
-/target
+.idea/
+target/
 .DS_Store
 Thumbs.db
