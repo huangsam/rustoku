@@ -79,8 +79,7 @@ impl fmt::Display for SolveStep {
             } => {
                 write!(
                     f,
-                    "Value {} is placed on R{}C{} by {}",
-                    value, row, col, flags
+                    "Value {value} is placed on R{row}C{col} by {flags}"
                 )
             }
             SolveStep::CandidateElimination {
@@ -91,8 +90,7 @@ impl fmt::Display for SolveStep {
             } => {
                 write!(
                     f,
-                    "Value {} is eliminated from R{}C{} by {}",
-                    value, row, col, flags
+                    "Value {value} is eliminated from R{row}C{col} by {flags}"
                 )
             }
         }
@@ -115,7 +113,7 @@ pub(crate) fn format_grid(board: &Board) -> Vec<String> {
         for (c, &cell) in row.iter().enumerate().take(9) {
             match cell {
                 0 => line.push_str(" ."), // Empty cell, two spaces for alignment
-                n => line.push_str(&format!(" {}", n)), // Number, two spaces for alignment
+                n => line.push_str(&format!(" {n}")), // Number, two spaces for alignment
             }
             if (c + 1) % 3 == 0 {
                 line.push_str(" |"); // Vertical separator after every 3rd column
@@ -175,12 +173,12 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Ve
             } => (*row, *col, *value, *flags, step.code()),
         };
 
-        let technique_name = format!("{}", flags);
+        let technique_name = format!("{flags}");
 
         if current_technique.as_ref() != Some(&technique_name) {
             // Flush previous technique's moves
             if let Some(tech) = current_technique {
-                result.push(format!("{}:", tech));
+                result.push(format!("{tech}:"));
                 // Break moves into chunks of 5 per line
                 for chunk in current_moves.chunks(chunk_size) {
                     result.push(format!("  {}", chunk.join(" ")));
@@ -195,7 +193,7 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Ve
 
     // Flush final technique
     if let Some(tech) = current_technique {
-        result.push(format!("{}:", tech));
+        result.push(format!("{tech}:"));
         for chunk in current_moves.chunks(chunk_size) {
             result.push(format!("  {}", chunk.join(" ")));
         }
@@ -295,28 +293,28 @@ mod tests {
     #[test]
     fn test_display_empty_mask() {
         let mask = TechniqueFlags::empty();
-        assert_eq!(format!("{}", mask), "None");
+        assert_eq!(format!("{mask}"), "None");
     }
 
     #[test]
     fn test_display_single_technique() {
         let mask = TechniqueFlags::NAKED_SINGLES;
-        assert_eq!(format!("{}", mask), "Naked Singles");
+        assert_eq!(format!("{mask}"), "Naked Singles");
 
         let mask = TechniqueFlags::XWING;
-        assert_eq!(format!("{}", mask), "X-Wing");
+        assert_eq!(format!("{mask}"), "X-Wing");
     }
 
     #[test]
     fn test_display_multiple_techniques() {
         let mask = TechniqueFlags::EASY;
-        assert_eq!(format!("{}", mask), "Naked Singles, Hidden Singles");
+        assert_eq!(format!("{mask}"), "Naked Singles, Hidden Singles");
 
         let mask = TechniqueFlags::NAKED_SINGLES
             | TechniqueFlags::XWING
             | TechniqueFlags::LOCKED_CANDIDATES;
         assert_eq!(
-            format!("{}", mask),
+            format!("{mask}"),
             "Naked Singles, Locked Candidates, X-Wing"
         );
     }

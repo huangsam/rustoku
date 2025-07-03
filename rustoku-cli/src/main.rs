@@ -67,8 +67,8 @@ fn main() {
 
     let result = match cli.command {
         Commands::Generate { clues } => generate_board(clues).map(|board| {
-            println!("🎲 Generated puzzle with {} clues:", clues);
-            println!("{}", board)
+            println!("🎲 Generated puzzle with {clues} clues:");
+            println!("{board}")
         }),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any { puzzle, verbose } => {
@@ -102,7 +102,7 @@ fn main() {
                             }
                         }
                         n => {
-                            println!("🔍 Found {} solutions:", n);
+                            println!("🔍 Found {n} solutions:");
                             solutions.iter().enumerate().for_each(|(i, solution)| {
                                 println!("\n--- Solution {} ---", i + 1);
                                 if verbose {
@@ -131,7 +131,7 @@ fn main() {
     };
 
     if let Err(e) = result {
-        eprintln!("💥 Error: {}", e);
+        eprintln!("💥 Error: {e}");
         std::process::exit(1);
     }
 }

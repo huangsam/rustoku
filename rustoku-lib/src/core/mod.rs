@@ -484,7 +484,7 @@ mod tests {
     fn test_generate_with_enough_clues() {
         (20..=80).step_by(20).for_each(|num_clues| {
             let board = generate_board(num_clues)
-                .unwrap_or_else(|_| panic!("Board generation failed for {} clues", num_clues));
+                .unwrap_or_else(|_| panic!("Board generation failed for {num_clues} clues"));
             let mut rustoku =
                 Rustoku::new(board).expect("Rustoku creation failed from generated board");
             let clues_count = board
@@ -495,17 +495,14 @@ mod tests {
                 .count();
             assert!(
                 clues_count >= num_clues,
-                "Expected at least {} clues, but found {} clues",
-                num_clues,
-                clues_count
+                "Expected at least {num_clues} clues, but found {clues_count} clues"
             );
 
             let solutions = rustoku.solve_all();
             assert_eq!(
                 1,
                 solutions.len(),
-                "Generated puzzle with {} clues should have a unique solution",
-                num_clues
+                "Generated puzzle with {num_clues} clues should have a unique solution"
             );
         })
     }
@@ -587,7 +584,7 @@ mod tests {
 
         for test_case in test_cases {
             let rustoku = Rustoku::new_from_str(test_case.trigger_string)
-                .expect(&format!("Rustoku creation failed for '{}'", test_case.name));
+                .unwrap_or_else(|_| panic!("Rustoku creation failed for '{}'", test_case.name));
             assert!(
                 rustoku
                     .with_techniques(test_case.technique_flag)
