@@ -77,10 +77,7 @@ impl fmt::Display for SolveStep {
                 value,
                 flags,
             } => {
-                write!(
-                    f,
-                    "Value {value} is placed on R{row}C{col} by {flags}"
-                )
+                write!(f, "Value {value} is placed on R{row}C{col} by {flags}")
             }
             SolveStep::CandidateElimination {
                 row,
