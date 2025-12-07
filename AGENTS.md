@@ -5,6 +5,7 @@
 Rustoku is a high-performance Sudoku puzzle solver and generator implemented in Rust. The project is structured as a workspace with two main components: `rustoku-lib`, a core library for Sudoku logic, and `rustoku-cli`, a command-line interface that leverages the library. The project emphasizes speed, correctness, and ease of use, utilizing advanced techniques like bitmasking for constraint tracking and backtracking with Minimum Remaining Values (MRV) for solving.
 
 Key features include:
+
 - **Solving**: Efficient backtracking solver with MRV heuristic
 - **Generation**: Creates puzzles with unique solutions and configurable clue counts
 - **Validation**: Checks puzzle correctness and solution validity
@@ -19,19 +20,19 @@ The project is licensed under MIT and targets Rust 1.85 with edition 2024.
 
 The core library (`rustoku-lib`) provides the fundamental Sudoku solving and generation capabilities. It exports the main `Rustoku` struct and utility functions like `generate_board`.
 
-#### Key Modules:
+#### Key Modules
 
 - **`core`**: Contains the `Rustoku` solver struct, `Board` representation, constraint `Masks`, `Candidates` cache, and solving logic
 - **`error`**: Defines `RustokuError` enum for various failure modes
 - **`format`**: Provides display implementations for boards, solutions, and solve paths
 
-#### Dependencies:
+#### Dependencies
 
 - `bitflags`: For efficient flag management (e.g., technique flags)
 - `rand`: For randomization in puzzle generation and candidate shuffling
 - `thiserror`: For ergonomic error handling
 
-#### Data Structures:
+#### Data Structures
 
 - **`Board`**: 9x9 grid representation with methods for cell access and iteration
 - **`Masks`**: Bitmask arrays tracking row, column, and box constraints
@@ -39,7 +40,7 @@ The core library (`rustoku-lib`) provides the fundamental Sudoku solving and gen
 - **`Solution`**: Contains solved board and solve path
 - **`SolvePath`**: Sequence of solve steps with technique information
 
-#### Algorithms:
+#### Algorithms
 
 - **Backtracking with MRV**: Finds empty cells with fewest candidates first
 - **Constraint Propagation**: Uses techniques like naked/hidden singles and pairs
@@ -49,7 +50,7 @@ The core library (`rustoku-lib`) provides the fundamental Sudoku solving and gen
 
 The command-line interface (`rustoku-cli`) provides user-friendly access to the library's functionality through subcommands.
 
-#### Commands:
+#### Commands
 
 - **`generate`**: Creates new puzzles with specified clue counts (default: 30)
 - **`solve any`**: Finds one solution with optional verbose solve path
@@ -57,12 +58,12 @@ The command-line interface (`rustoku-cli`) provides user-friendly access to the 
 - **`check`**: Validates if a puzzle is correctly solved
 - **`show`**: Displays puzzle in formatted grid
 
-#### Dependencies:
+#### Dependencies
 
 - `rustoku-lib`: Core functionality
 - `clap`: Command-line argument parsing with derive macros
 
-#### Example Usage:
+#### Example Usage
 
 ```bash
 # Generate a puzzle with 25 clues
@@ -93,8 +94,7 @@ Individual package `Cargo.toml` files specify component-specific dependencies an
 
 The library's API is designed for simplicity and performance, with a focus on immutable operations where possible and clear error handling.
 
-#### Main Struct:
- `Rustoku`
+#### Main Struct
 
 ```rust
 #[derive(Debug, Copy, Clone)]
@@ -106,7 +106,7 @@ pub struct Rustoku {
 }
 ```
 
-#### Key Methods:
+#### Key Methods
 
 
 **Construction:**
@@ -125,11 +125,11 @@ pub struct Rustoku {
 
 - `is_solved() -> bool`: Checks if current board is complete and valid
 
-#### Utility Functions:
+#### Utility Functions
 
 - `generate_board(num_clues: usize) -> Result<Board, RustokuError>`: Creates puzzle with unique solution
 
-#### Error Handling:
+#### Error Handling
 
 ```rust
 #[derive(Debug, Error)]
@@ -156,6 +156,7 @@ The CLI uses `clap` for argument parsing, providing a hierarchical command struc
 ### Bitmasking Optimization
 
 The library uses 32-bit masks for constraint tracking:
+
 - **Rows/Columns/Boxes**: Arrays of `u32` where each bit represents a digit (1-9)
 - **Candidates**: Per-cell bitmasks of possible values
 - **Safety Checks**: O(1) constraint validation using bitwise operations
