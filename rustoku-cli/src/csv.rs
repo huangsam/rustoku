@@ -81,7 +81,7 @@ pub fn solve_csv_file(
                         results_vec.push((
                             puzzle_clean,
                             solution_str,
-                            if matches { "✓" } else { "✗" },
+                            if matches { "pass" } else { "fail" },
                         ));
                     } else {
                         results_vec.push((puzzle_clean, solution_str, ""));
@@ -91,7 +91,7 @@ pub fn solve_csv_file(
             Err(_) => {
                 unsolvable += 1;
                 if !stats_only {
-                    results_vec.push((puzzle.to_string(), "UNSOLVABLE".to_string(), "✗"));
+                    results_vec.push((puzzle.to_string(), "UNSOLVABLE".to_string(), "fail"));
                 }
             }
         }
