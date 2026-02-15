@@ -226,7 +226,63 @@ impl Rustoku {
 
     /// Finds all possible solutions for the Sudoku puzzle.
     pub fn solve_all(&mut self) -> Vec<Solution> {
-        self.solve_until(0)
+        use rayon::prelude::*;
+
+        // Run technique propagation once on the current solver state.
+        let mut path = SolvePath::default();
+        if !self.techniques_make_valid_changes(&mut path) {
+            return Vec::new();
+        }
+
+        // If there is at least one empty cell, split work by the first MRV cell's candidates.
+        if let Some((r, c)) = self.find_next_empty_cell() {
+            let mask = self.candidates.get(r, c);
+            let mut nums: Vec<u8> = Vec::new();
+            for v in 1..=9u8 {
+                let bit = 1u16 << (v - 1);
+                if mask & bit != 0 && self.masks.is_safe(r, c, v) {
+                    nums.push(v);
+                }
+            }
+
+            let initial_path = path.clone();
+
+            // Parallelize each top-level candidate branch.
+            let chunks: Vec<Vec<Solution>> = nums
+                .par_iter()
+                .map(|&num| {
+                    let mut cloned = *self; // Rustoku is Copy/Clone
+                    let mut local_solutions: Vec<Solution> = Vec::new();
+                    let mut local_path = initial_path.clone();
+
+                    // Place the candidate and record the placement in the path.
+                    cloned.place_number(r, c, num);
+                    local_path.steps.push(SolveStep::Placement {
+                        row: r,
+                        col: c,
+                        value: num,
+                        flags: TechniqueFlags::empty(),
+                    });
+
+                    // Continue DFS from this state without re-running the propagator.
+                    cloned.solve_until_recursive(&mut local_solutions, &mut local_path, 0);
+                    local_solutions
+                })
+                .collect();
+
+            // Flatten results
+            let mut solutions = Vec::new();
+            for mut s in chunks {
+                solutions.append(&mut s);
+            }
+            solutions
+        } else {
+            // Already solved after propagation
+            vec![Solution {
+                board: self.board,
+                solve_path: path,
+            }]
+        }
     }
 
     /// Checks if the Sudoku puzzle is solved correctly.
