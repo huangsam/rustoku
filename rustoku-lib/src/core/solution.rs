@@ -41,6 +41,14 @@ pub enum SolveStep {
         value: u8,
         /// Flags indicating the technique used for this placement.
         flags: TechniqueFlags,
+        /// Position of this step in the solve sequence (0-indexed).
+        step_number: u32,
+        /// Bitmask of candidate values eliminated by this placement.
+        candidates_eliminated: u32,
+        /// Count of related cells involved in determining this placement.
+        related_cell_count: u8,
+        /// Difficulty metric for this step (0-10): 0=trivial, 10=hardest.
+        difficulty_point: u8,
     },
     /// A removal of a candidate value from the Sudoku board.
     CandidateElimination {
@@ -52,6 +60,14 @@ pub enum SolveStep {
         value: u8,
         /// Flags indicating the technique used for this elimination.
         flags: TechniqueFlags,
+        /// Position of this step in the solve sequence (0-indexed).
+        step_number: u32,
+        /// Bitmask of other candidate values eliminated along with this one.
+        candidates_eliminated: u32,
+        /// Count of related cells involved in determining this elimination.
+        related_cell_count: u8,
+        /// Difficulty metric for this step (0-10): 0=trivial, 10=hardest.
+        difficulty_point: u8,
     },
 }
 
@@ -61,6 +77,52 @@ impl SolveStep {
         match self {
             Self::CandidateElimination { .. } => "elim",
             Self::Placement { .. } => "plac",
+        }
+    }
+
+    /// Returns the step number (position in solve sequence).
+    pub fn step_number(&self) -> u32 {
+        match self {
+            Self::Placement { step_number, .. }
+            | Self::CandidateElimination { step_number, .. } => *step_number,
+        }
+    }
+
+    /// Returns the bitmask of candidates eliminated by this step.
+    pub fn candidates_eliminated(&self) -> u32 {
+        match self {
+            Self::Placement {
+                candidates_eliminated,
+                ..
+            }
+            | Self::CandidateElimination {
+                candidates_eliminated,
+                ..
+            } => *candidates_eliminated,
+        }
+    }
+
+    /// Returns the count of related cells involved in this step.
+    pub fn related_cell_count(&self) -> u8 {
+        match self {
+            Self::Placement {
+                related_cell_count, ..
+            }
+            | Self::CandidateElimination {
+                related_cell_count, ..
+            } => *related_cell_count,
+        }
+    }
+
+    /// Returns the difficulty metric for this step (0-10).
+    pub fn difficulty_point(&self) -> u8 {
+        match self {
+            Self::Placement {
+                difficulty_point, ..
+            }
+            | Self::CandidateElimination {
+                difficulty_point, ..
+            } => *difficulty_point,
         }
     }
 }

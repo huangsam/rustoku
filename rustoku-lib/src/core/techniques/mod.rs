@@ -67,13 +67,26 @@ impl<'a> TechniquePropagator<'a> {
     ) {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
+
+        // Count candidates eliminated by this placement
+        let affected_cells_count = self.count_affected_cells(r, c, num);
+        let candidates_eliminated_count = self.count_candidates_eliminated(r, c, num);
+
         self.candidates
             .update_affected_cells(r, c, self.masks, self.board);
+
+        let step_number = path.steps.len() as u32;
+        let difficulty_point = Self::difficulty_for_technique(flags);
+
         path.steps.push(SolveStep::Placement {
             row: r,
             col: c,
             value: num,
             flags,
+            step_number,
+            candidates_eliminated: candidates_eliminated_count,
+            related_cell_count: affected_cells_count.min(255) as u8,
+            difficulty_point,
         });
     }
 
@@ -101,11 +114,18 @@ impl<'a> TechniquePropagator<'a> {
         self.candidates.set(r, c, refined_mask);
 
         let num = candidate_bit.trailing_zeros() as u8 + 1; // Convert bit to number
+        let step_number = path.steps.len() as u32;
+        let difficulty_point = Self::difficulty_for_technique(flags);
+
         path.steps.push(SolveStep::CandidateElimination {
             row: r,
             col: c,
             value: num,
             flags,
+            step_number,
+            candidates_eliminated: 1, // Single candidate was eliminated
+            related_cell_count: 1,    // At minimum, this cell is affected
+            difficulty_point,
         });
 
         initial_mask != refined_mask // Return true if a candidate was eliminated
@@ -126,6 +146,10 @@ impl<'a> TechniquePropagator<'a> {
 
         // Log each eliminated candidate
         let eliminated_mask = initial_mask & elimination_mask; // what was actually eliminated
+        let eliminated_count = eliminated_mask.count_ones();
+        let step_number = path.steps.len() as u32;
+        let difficulty_point = Self::difficulty_for_technique(flags);
+
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
             if (eliminated_mask & candidate_bit) != 0 {
@@ -134,11 +158,89 @@ impl<'a> TechniquePropagator<'a> {
                     col: c,
                     value: candidate,
                     flags,
+                    step_number,
+                    candidates_eliminated: eliminated_count,
+                    related_cell_count: 1,
+                    difficulty_point,
                 });
             }
         }
 
         initial_mask != refined_mask // Return true if a candidate was eliminated
+    }
+
+    /// Counts affected cells when placing a number (cells in same row, column, or box).
+    fn count_affected_cells(&self, r: usize, c: usize, _num: u8) -> u32 {
+        let mut count = 0u32;
+        let box_r = (r / 3) * 3;
+        let box_c = (c / 3) * 3;
+
+        // Count cells in the same row
+        for col in 0..9 {
+            if col != c && self.board.is_empty(r, col) {
+                count += 1;
+            }
+        }
+
+        // Count cells in the same column
+        for row in 0..9 {
+            if row != r && self.board.is_empty(row, c) {
+                count += 1;
+            }
+        }
+
+        // Count cells in the same 3x3 box
+        for br in box_r..box_r + 3 {
+            for bc in box_c..box_c + 3 {
+                if (br != r || bc != c) && self.board.is_empty(br, bc) {
+                    count += 1;
+                }
+            }
+        }
+
+        count
+    }
+
+    /// Counts the number of candidates that would be eliminated by a placement.
+    fn count_candidates_eliminated(&self, r: usize, c: usize, num: u8) -> u32 {
+        let mut count = 0u32;
+        let box_r = (r / 3) * 3;
+        let box_c = (c / 3) * 3;
+        let candidate_bit = 1u16 << (num - 1);
+
+        // Count in the same row
+        for col in 0..9 {
+            if col != c && (self.candidates.get(r, col) & candidate_bit) != 0 {
+                count += 1;
+            }
+        }
+
+        // Count in the same column
+        for row in 0..9 {
+            if row != r && (self.candidates.get(row, c) & candidate_bit) != 0 {
+                count += 1;
+            }
+        }
+
+        // Count in the same 3x3 box
+        for br in box_r..box_r + 3 {
+            for bc in box_c..box_c + 3 {
+                if (br != r || bc != c) && (self.candidates.get(br, bc) & candidate_bit) != 0 {
+                    count += 1;
+                }
+            }
+        }
+
+        count
+    }
+
+    /// Returns a difficulty metric for a given technique.
+    fn difficulty_for_technique(flags: TechniqueFlags) -> u8 {
+        if flags.is_empty() {
+            0
+        } else {
+            flags.bits().trailing_zeros() as u8 + 1
+        }
     }
 
     /// Applies deterministic constraint propagation techniques iteratively.
@@ -178,6 +280,7 @@ impl<'a> TechniquePropagator<'a> {
                                 col,
                                 value,
                                 flags: _,
+                                ..
                             } => {
                                 self.remove_and_update(row, col, value);
                             }
@@ -186,6 +289,7 @@ impl<'a> TechniquePropagator<'a> {
                                 col,
                                 value,
                                 flags: _,
+                                ..
                             } => {
                                 // This is a candidate elimination step, we need to restore the candidate
                                 // in the candidates cache

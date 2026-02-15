@@ -53,8 +53,8 @@ The command-line interface (`rustoku-cli`) provides user-friendly access to the 
 #### Commands
 
 - **`generate`**: Creates new puzzles with specified clue counts (default: 30)
-- **`solve any`**: Finds one solution with optional verbose solve path
-- **`solve all`**: Finds all solutions (useful for validation)
+- **`solve any`**: Finds one solution with optional verbose solve path and human techniques
+- **`solve all`**: Finds all solutions with optional human techniques (useful for validation)
 - **`check`**: Validates if a puzzle is correctly solved
 - **`show`**: Displays puzzle in formatted grid
 
@@ -71,6 +71,9 @@ rustoku-cli generate --clues 25
 
 # Solve a puzzle and show solve path
 rustoku-cli solve any --verbose "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
+
+# Solve a puzzle with all human techniques enabled
+rustoku-cli solve any --human --verbose "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
 
 # Check if a puzzle is solved
 rustoku-cli check "534678912672195348198342567859761423426853791713924856961537284287419635345286179"

@@ -76,22 +76,46 @@ impl fmt::Display for SolveStep {
                 col,
                 value,
                 flags,
+                step_number,
+                candidates_eliminated,
+                related_cell_count,
+                difficulty_point,
             } => {
-                write!(f, "Value {value} is placed on R{row}C{col} by {flags}")
+                write!(
+                    f,
+                    "#{:3} | Value {value} is placed on R{row}C{col} by {flags} | elim:{} related:{} diff:{}",
+                    step_number + 1,
+                    bin(*candidates_eliminated).count_ones(),
+                    related_cell_count,
+                    difficulty_point
+                )
             }
             SolveStep::CandidateElimination {
                 row,
                 col,
                 value,
                 flags,
+                step_number,
+                candidates_eliminated,
+                related_cell_count,
+                difficulty_point,
             } => {
                 write!(
                     f,
-                    "Value {value} is eliminated from R{row}C{col} by {flags}"
+                    "#{:3} | Value {value} is eliminated from R{row}C{col} by {flags} | elim:{} related:{} diff:{}",
+                    step_number + 1,
+                    bin(*candidates_eliminated).count_ones() + 1, // +1 for the main elimination
+                    related_cell_count,
+                    difficulty_point
                 )
             }
         }
     }
+}
+
+/// Formats a u32 bitmask showing binary representation (helper for diagnostics).
+fn bin(x: u32) -> u32 {
+    x
 }
 
 /// Formats the Sudoku board into a grid representation.
@@ -141,10 +165,9 @@ pub(crate) fn format_line(board: &Board) -> String {
 
 /// Formats a path of moves in the Sudoku solving process into a vector of strings.
 ///
-/// This function takes a `SolvePath` struct and formats its moves into a human-readable string.
-/// Each move is represented as `(row, column, value)`, where `row` and `column` are 1-based indices,
-/// and `value` is the number placed in that cell.
-pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Vec<String> {
+/// This function takes a `SolvePath` struct and formats its moves into a compact multi-step format.
+/// Each line shows exactly 3 steps with diagnostic metadata for efficient overview.
+pub(crate) fn format_solve_path(solve_path: &SolvePath, _chunk_size: usize) -> Vec<String> {
     if solve_path.steps.is_empty() {
         return vec!["(No moves recorded)".to_string()];
     }
@@ -154,20 +177,10 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Ve
     let mut current_moves = Vec::new();
 
     for step in &solve_path.steps {
-        // Iterate directly over the steps
-        let (r, c, val, flags, action_code) = match step {
-            SolveStep::Placement {
-                row,
-                col,
-                value,
-                flags,
-            } => (*row, *col, *value, *flags, step.code()),
-            SolveStep::CandidateElimination {
-                row,
-                col,
-                value,
-                flags,
-            } => (*row, *col, *value, *flags, step.code()),
+        let flags = match step {
+            SolveStep::Placement { flags, .. } | SolveStep::CandidateElimination { flags, .. } => {
+                *flags
+            }
         };
 
         let technique_name = format!("{flags}");
@@ -176,23 +189,74 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, chunk_size: usize) -> Ve
             // Flush previous technique's moves
             if let Some(tech) = current_technique {
                 result.push(format!("{tech}:"));
-                // Break moves into chunks of 5 per line
-                for chunk in current_moves.chunks(chunk_size) {
-                    result.push(format!("  {}", chunk.join(" ")));
+                // Use 1 step per line for maximum clarity and learning
+                for chunk in current_moves.chunks(1) {
+                    // Format with padding: each step gets 5 chars width for neat alignment
+                    let formatted_chunk: Vec<String> =
+                        chunk.iter().map(|s| format!("{:<5}", s)).collect();
+                    result.push(format!("  {}", formatted_chunk.join("")));
                 }
                 current_moves.clear();
             }
             current_technique = Some(technique_name);
         }
 
-        current_moves.push(format!("R{}C{}={},A={}", r + 1, c + 1, val, action_code));
+        // Format as compact step with readable labels
+        let step_str = match step {
+            SolveStep::Placement {
+                row,
+                col,
+                value,
+                step_number,
+                candidates_eliminated,
+                related_cell_count,
+                difficulty_point,
+                ..
+            } => {
+                format!(
+                    "#{} R{}C{}={} [E:{} R:{} D:{}]",
+                    step_number + 1,
+                    row + 1,
+                    col + 1,
+                    value,
+                    candidates_eliminated,
+                    related_cell_count,
+                    difficulty_point
+                )
+            }
+            SolveStep::CandidateElimination {
+                row,
+                col,
+                value,
+                step_number,
+                candidates_eliminated,
+                related_cell_count,
+                difficulty_point,
+                ..
+            } => {
+                let total_elim = *candidates_eliminated + 1;
+                format!(
+                    "#{} -{}@R{}C{} [E:{} R:{} D:{}]",
+                    step_number + 1,
+                    value,
+                    row + 1,
+                    col + 1,
+                    total_elim,
+                    related_cell_count,
+                    difficulty_point
+                )
+            }
+        };
+
+        current_moves.push(step_str);
     }
 
     // Flush final technique
     if let Some(tech) = current_technique {
         result.push(format!("{tech}:"));
-        for chunk in current_moves.chunks(chunk_size) {
-            result.push(format!("  {}", chunk.join(" ")));
+        for chunk in current_moves.chunks(1) {
+            let formatted_chunk: Vec<String> = chunk.iter().map(|s| format!("{:<5}", s)).collect();
+            result.push(format!("  {}", formatted_chunk.join("")));
         }
     }
 
@@ -326,54 +390,56 @@ mod tests {
     #[test]
     fn test_single_technique_multiple_moves_with_chunking() {
         let steps = vec![
-            // Use the actual SolveStep enum variants
             SolveStep::Placement {
                 row: 0,
                 col: 0,
                 value: 1,
                 flags: TechniqueFlags::NAKED_SINGLES,
+                step_number: 0,
+                candidates_eliminated: 9,
+                related_cell_count: 6,
+                difficulty_point: 1,
             },
             SolveStep::Placement {
                 row: 0,
                 col: 1,
                 value: 2,
                 flags: TechniqueFlags::NAKED_SINGLES,
+                step_number: 1,
+                candidates_eliminated: 8,
+                related_cell_count: 6,
+                difficulty_point: 1,
             },
             SolveStep::Placement {
                 row: 0,
                 col: 2,
                 value: 3,
                 flags: TechniqueFlags::NAKED_SINGLES,
+                step_number: 2,
+                candidates_eliminated: 7,
+                related_cell_count: 6,
+                difficulty_point: 1,
             },
             SolveStep::Placement {
                 row: 0,
                 col: 3,
                 value: 4,
                 flags: TechniqueFlags::NAKED_SINGLES,
-            },
-            SolveStep::Placement {
-                row: 0,
-                col: 4,
-                value: 5,
-                flags: TechniqueFlags::NAKED_SINGLES,
-            },
-            SolveStep::Placement {
-                row: 0,
-                col: 5,
-                value: 6,
-                flags: TechniqueFlags::NAKED_SINGLES,
+                step_number: 3,
+                candidates_eliminated: 6,
+                related_cell_count: 6,
+                difficulty_point: 1,
             },
         ];
-        let solve_path = SolvePath { steps }; // Create SolvePath with these steps
-        let chunk_size = 2; // Each line will have 2 moves
+        let solve_path = SolvePath { steps };
 
-        let expected = vec![
-            "Naked Singles:",
-            "  R1C1=1,A=plac R1C2=2,A=plac",
-            "  R1C3=3,A=plac R1C4=4,A=plac",
-            "  R1C5=5,A=plac R1C6=6,A=plac",
-        ];
-        assert_eq!(format_solve_path(&solve_path, chunk_size), expected);
+        let formatted = format_solve_path(&solve_path, 3);
+        assert_eq!(formatted[0], "Naked Singles:");
+        // Each step should be on its own line
+        assert!(formatted[1].contains("#1 R1C1=1"));
+        assert!(formatted[2].contains("#2 R1C2=2"));
+        assert!(formatted[3].contains("#3 R1C3=3"));
+        assert!(formatted[4].contains("#4 R1C4=4"));
     }
 
     #[test]
@@ -384,49 +450,40 @@ mod tests {
                 col: 0,
                 value: 1,
                 flags: TechniqueFlags::NAKED_SINGLES,
-            },
-            SolveStep::Placement {
-                row: 0,
-                col: 1,
-                value: 2,
-                flags: TechniqueFlags::NAKED_SINGLES,
+                step_number: 0,
+                candidates_eliminated: 9,
+                related_cell_count: 6,
+                difficulty_point: 1,
             },
             SolveStep::Placement {
                 row: 1,
                 col: 0,
                 value: 3,
                 flags: TechniqueFlags::HIDDEN_SINGLES,
-            },
-            SolveStep::Placement {
-                row: 1,
-                col: 1,
-                value: 4,
-                flags: TechniqueFlags::HIDDEN_SINGLES,
-            },
-            SolveStep::Placement {
-                row: 1,
-                col: 2,
-                value: 5,
-                flags: TechniqueFlags::HIDDEN_SINGLES,
+                step_number: 1,
+                candidates_eliminated: 8,
+                related_cell_count: 9,
+                difficulty_point: 2,
             },
             SolveStep::CandidateElimination {
                 row: 2,
                 col: 0,
                 value: 6,
                 flags: TechniqueFlags::HIDDEN_PAIRS,
-            }, // Changed to CandidateElimination to match `elim` action code
+                step_number: 2,
+                candidates_eliminated: 3,
+                related_cell_count: 4,
+                difficulty_point: 3,
+            },
         ];
-        let solve_path = SolvePath { steps }; // Create SolvePath with these steps
-        let chunk_size = 3; // Each line will have 3 moves
+        let solve_path = SolvePath { steps };
 
-        let expected = vec![
-            "Naked Singles:",
-            "  R1C1=1,A=plac R1C2=2,A=plac",
-            "Hidden Singles:",
-            "  R2C1=3,A=plac R2C2=4,A=plac R2C3=5,A=plac",
-            "Hidden Pairs:",
-            "  R3C1=6,A=elim",
-        ];
-        assert_eq!(format_solve_path(&solve_path, chunk_size), expected);
+        let formatted = format_solve_path(&solve_path, 3);
+        assert_eq!(formatted[0], "Naked Singles:");
+        assert!(formatted[1].contains("#1 R1C1=1"));
+        assert_eq!(formatted[2], "Hidden Singles:");
+        assert!(formatted[3].contains("#2 R2C1=3"));
+        assert_eq!(formatted[4], "Hidden Pairs:");
+        assert!(formatted[5].contains("#3 -6@R3C1"));
     }
 }

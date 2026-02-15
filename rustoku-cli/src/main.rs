@@ -2,6 +2,8 @@ use clap::{ColorChoice, Parser, Subcommand};
 use rustoku_lib::core::TechniqueFlags;
 use rustoku_lib::{Rustoku, generate_board};
 
+mod csv;
+
 /// Root of the Rustoku CLI.
 #[derive(Parser, Debug)]
 #[command(
@@ -51,6 +53,9 @@ pub enum SolveCommands {
         /// Show detailed solve path and techniques used
         #[arg(short, long)]
         verbose: bool,
+        /// Use all human solving techniques (slower but more thorough)
+        #[arg(long)]
+        human: bool,
     },
     /// 🔍 Attempts to find all puzzle solutions
     All {
@@ -62,6 +67,24 @@ pub enum SolveCommands {
         /// Stop after finding this many solutions (0 = find all)
         #[arg(short = 'u', long = "until", default_value_t = 0_usize)]
         until: usize,
+        /// Use all human solving techniques (slower but more thorough)
+        #[arg(long)]
+        human: bool,
+    },
+    /// 📊 Solve puzzles from a CSV file
+    Csv {
+        /// Path to CSV file with 'quizzes' and optional 'solutions' columns
+        #[arg(value_name = "FILE")]
+        file: String,
+        /// Output file for results (defaults to stdout)
+        #[arg(short, long)]
+        output: Option<String>,
+        /// Use all human solving techniques (slower but more thorough)
+        #[arg(long)]
+        human: bool,
+        /// Show statistics only (count of solved/unsolved)
+        #[arg(long)]
+        stats_only: bool,
     },
 }
 
@@ -74,57 +97,85 @@ fn main() {
             println!("{board}")
         }),
         Commands::Solve { solve_command } => match solve_command {
-            SolveCommands::Any { puzzle, verbose } => Rustoku::builder()
-                .board_from_str(&puzzle)
-                .and_then(|b| b.techniques(TechniqueFlags::all()).build())
-                .map(|mut rustoku| match rustoku.solve_any() {
-                    None => println!("🚫 No solution found"),
-                    Some(solution) => {
-                        println!("🎯 Solution found:");
-                        if verbose {
-                            println!("{}\n\n{}", solution.board, solution.solve_path);
-                        } else {
-                            println!("{}", solution.board);
+            SolveCommands::Any {
+                puzzle,
+                verbose,
+                human,
+            } => {
+                let techniques = if human {
+                    TechniqueFlags::all()
+                } else {
+                    TechniqueFlags::EASY
+                };
+                Rustoku::builder()
+                    .board_from_str(&puzzle)
+                    .and_then(|b| b.techniques(techniques).build())
+                    .map(|mut rustoku| match rustoku.solve_any() {
+                        None => println!("🚫 No solution found"),
+                        Some(solution) => {
+                            println!("🎯 Solution found:");
+                            if verbose {
+                                println!("{}\n\n{}", solution.board, solution.solve_path);
+                            } else {
+                                println!("{}", solution.board);
+                            }
                         }
-                    }
-                }),
+                    })
+            }
             SolveCommands::All {
                 puzzle,
                 verbose,
                 until,
-            } => Rustoku::builder()
-                .board_from_str(&puzzle)
-                .and_then(|b| b.techniques(TechniqueFlags::all()).build())
-                .map(|mut rustoku| {
-                    let solutions = if until > 0 {
-                        rustoku.solve_until(until)
-                    } else {
-                        rustoku.solve_all()
-                    };
-                    match solutions.len() {
-                        0 => println!("🚫 No solutions found"),
-                        1 => {
-                            println!("🎯 Found 1 unique solution:");
-                            if verbose {
-                                println!("{}\n\n{}", solutions[0].board, solutions[0].solve_path);
-                            } else {
-                                println!("{}", solutions[0].board);
+                human,
+            } => {
+                let techniques = if human {
+                    TechniqueFlags::all()
+                } else {
+                    TechniqueFlags::EASY
+                };
+                Rustoku::builder()
+                    .board_from_str(&puzzle)
+                    .and_then(|b| b.techniques(techniques).build())
+                    .map(|mut rustoku| {
+                        let solutions = if until > 0 {
+                            rustoku.solve_until(until)
+                        } else {
+                            rustoku.solve_all()
+                        };
+                        match solutions.len() {
+                            0 => println!("🚫 No solutions found"),
+                            1 => {
+                                println!("🎯 Found 1 unique solution:");
+                                if verbose {
+                                    println!(
+                                        "{}\n\n{}",
+                                        solutions[0].board, solutions[0].solve_path
+                                    );
+                                } else {
+                                    println!("{}", solutions[0].board);
+                                }
+                            }
+                            n => {
+                                println!("🔍 Found {n} solutions:");
+                                solutions.iter().enumerate().for_each(|(i, solution)| {
+                                    println!("\n--- Solution {} ---", i + 1);
+                                    if verbose {
+                                        println!("{}\n\n{}", solution.board, solution.solve_path);
+                                    } else {
+                                        println!("{}", solution.board);
+                                    }
+                                });
+                                println!("\n✅ All solutions displayed");
                             }
                         }
-                        n => {
-                            println!("🔍 Found {n} solutions:");
-                            solutions.iter().enumerate().for_each(|(i, solution)| {
-                                println!("\n--- Solution {} ---", i + 1);
-                                if verbose {
-                                    println!("{}\n\n{}", solution.board, solution.solve_path);
-                                } else {
-                                    println!("{}", solution.board);
-                                }
-                            });
-                            println!("\n✅ All solutions displayed");
-                        }
-                    }
-                }),
+                    })
+            }
+            SolveCommands::Csv {
+                file,
+                output,
+                human,
+                stats_only,
+            } => csv::solve_csv_file(&file, output, human, stats_only),
         },
         Commands::Check { puzzle } => Rustoku::builder()
             .board_from_str(&puzzle)

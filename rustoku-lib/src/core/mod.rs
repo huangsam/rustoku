@@ -170,11 +170,16 @@ impl Rustoku {
             for &num in &nums {
                 if self.masks.is_safe(r, c, num) {
                     self.place_number(r, c, num);
+                    let step_number = path.steps.len() as u32;
                     path.steps.push(SolveStep::Placement {
                         row: r,
                         col: c,
                         value: num,
                         flags: TechniqueFlags::empty(),
+                        step_number,
+                        candidates_eliminated: 0,
+                        related_cell_count: 0,
+                        difficulty_point: 0,
                     });
                     count += self.solve_until_recursive(solutions, path, bound);
                     path.steps.pop();
@@ -257,11 +262,16 @@ impl Rustoku {
 
                     // Place the candidate and record the placement in the path.
                     cloned.place_number(r, c, num);
+                    let step_number = local_path.steps.len() as u32;
                     local_path.steps.push(SolveStep::Placement {
                         row: r,
                         col: c,
                         value: num,
                         flags: TechniqueFlags::empty(),
+                        step_number,
+                        candidates_eliminated: 0,
+                        related_cell_count: 0,
+                        difficulty_point: 0,
                     });
 
                     // Continue DFS from this state without re-running the propagator.
@@ -464,11 +474,16 @@ impl Iterator for Solutions {
             if self.solver.masks.is_safe(frame.r, frame.c, num) {
                 // place and record
                 self.solver.place_number(frame.r, frame.c, num);
+                let step_number = self.path.steps.len() as u32;
                 self.path.steps.push(SolveStep::Placement {
                     row: frame.r,
                     col: frame.c,
                     value: num,
                     flags: TechniqueFlags::empty(),
+                    step_number,
+                    candidates_eliminated: 0,
+                    related_cell_count: 0,
+                    difficulty_point: 0,
                 });
                 frame.placed = Some(num);
 
@@ -943,6 +958,7 @@ mod tests {
                     col,
                     value,
                     flags,
+                    ..
                 } if flags.contains(TechniqueFlags::HIDDEN_SINGLES) => Some((*row, *col, *value)),
                 _ => None,
             })
@@ -983,6 +999,7 @@ mod tests {
                     col,
                     value,
                     flags,
+                    ..
                 } if flags.contains(TechniqueFlags::NAKED_PAIRS) => Some((*row, *col, *value)),
                 _ => None,
             })
@@ -1024,6 +1041,7 @@ mod tests {
                     col,
                     value,
                     flags,
+                    ..
                 } if flags.contains(TechniqueFlags::HIDDEN_PAIRS) => Some((*row, *col, *value)),
                 _ => None,
             })
@@ -1065,6 +1083,7 @@ mod tests {
                     col,
                     value,
                     flags,
+                    ..
                 } if flags.contains(TechniqueFlags::LOCKED_CANDIDATES) => {
                     Some((*row, *col, *value))
                 }
@@ -1107,6 +1126,7 @@ mod tests {
                     col,
                     value,
                     flags,
+                    ..
                 } if flags.contains(TechniqueFlags::XWING) => Some((*row, *col, *value)),
                 _ => None,
             })
