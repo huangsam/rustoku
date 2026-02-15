@@ -1,5 +1,5 @@
 use super::TechniqueFlags;
-use super::{TechniquePropagator, TechniqueRule};
+use super::{TechniquePropagator, TechniqueRule, units};
 use crate::core::SolvePath;
 
 /// Hidden pairs technique implementation.
@@ -79,28 +79,13 @@ impl HiddenPairs {
     }
 }
 
-/// Helper to build unit cell arrays without heap allocation.
-fn row_cells(r: usize) -> [(usize, usize); 9] {
-    core::array::from_fn(|c| (r, c))
-}
-
-fn col_cells(c: usize) -> [(usize, usize); 9] {
-    core::array::from_fn(|r| (r, c))
-}
-
-fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
-    let start_row = (box_idx / 3) * 3;
-    let start_col = (box_idx % 3) * 3;
-    core::array::from_fn(|i| (start_row + i / 3, start_col + i % 3))
-}
-
 impl TechniqueRule for HiddenPairs {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Process rows
         for i in 0..9 {
-            let cells = row_cells(i);
+            let cells = units::row_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }
@@ -108,7 +93,7 @@ impl TechniqueRule for HiddenPairs {
 
         // Process columns
         for i in 0..9 {
-            let cells = col_cells(i);
+            let cells = units::col_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }
@@ -116,7 +101,7 @@ impl TechniqueRule for HiddenPairs {
 
         // Process 3x3 boxes
         for i in 0..9 {
-            let cells = box_cells(i);
+            let cells = units::box_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }

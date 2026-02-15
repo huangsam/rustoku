@@ -1,24 +1,9 @@
 use crate::core::SolvePath;
 
-use super::{TechniquePropagator, TechniqueRule};
+use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Hidden singles technique implementation.
 pub struct HiddenSingles;
-
-/// Helper to build unit cell arrays without heap allocation.
-fn row_cells(r: usize) -> [(usize, usize); 9] {
-    core::array::from_fn(|c| (r, c))
-}
-
-fn col_cells(c: usize) -> [(usize, usize); 9] {
-    core::array::from_fn(|r| (r, c))
-}
-
-fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
-    let start_row = (box_idx / 3) * 3;
-    let start_col = (box_idx % 3) * 3;
-    core::array::from_fn(|i| (start_row + i / 3, start_col + i % 3))
-}
 
 impl TechniqueRule for HiddenSingles {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
@@ -58,21 +43,21 @@ impl TechniqueRule for HiddenSingles {
             };
 
         for r in 0..9 {
-            let cells = row_cells(r);
+            let cells = units::row_cells(r);
             if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }
         }
 
         for c in 0..9 {
-            let cells = col_cells(c);
+            let cells = units::col_cells(c);
             if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }
         }
 
         for box_idx in 0..9 {
-            let cells = box_cells(box_idx);
+            let cells = units::box_cells(box_idx);
             if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }

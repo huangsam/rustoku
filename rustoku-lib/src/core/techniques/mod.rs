@@ -5,6 +5,7 @@ use super::candidates::Candidates;
 use super::masks::Masks;
 
 pub mod flags;
+pub mod units;
 mod hidden_pairs;
 mod hidden_singles;
 mod locked_candidates;
