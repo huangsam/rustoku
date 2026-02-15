@@ -50,60 +50,68 @@ impl HiddenPairs {
                 let n2_bit = 1 << (n2_val - 1);
                 let pair_mask = n1_bit | n2_bit; // The candidates we want to KEEP
 
-                let mut cells_containing_n1: Vec<(usize, usize)> = Vec::new();
-                let mut cells_containing_n2: Vec<(usize, usize)> = Vec::new();
+                // Find cells containing each candidate
+                let cells_with_n1 = Self::find_cells_with_candidate(unit_cells, n1_bit, prop);
+                let cells_with_n2 = Self::find_cells_with_candidate(unit_cells, n2_bit, prop);
 
-                for &(r, c) in unit_cells {
-                    if prop.board.is_empty(r, c) {
-                        let cell_cand_mask = prop.candidates.get(r, c);
-                        if (cell_cand_mask & n1_bit) != 0 {
-                            cells_containing_n1.push((r, c));
-                        }
-                        if (cell_cand_mask & n2_bit) != 0 {
-                            cells_containing_n2.push((r, c));
-                        }
-                    }
-                }
-
-                if cells_containing_n1.len() == 2
-                    && cells_containing_n2.len() == 2
-                    && cells_containing_n1[0] == cells_containing_n2[0]
-                    && cells_containing_n1[1] == cells_containing_n2[1]
+                // Check if we have exactly 2 cells for each candidate and they match
+                if cells_with_n1.len() == 2
+                    && cells_with_n2.len() == 2
+                    && cells_with_n1 == cells_with_n2
                 {
-                    let (r1, c1) = cells_containing_n1[0];
-                    let (r2, c2) = cells_containing_n1[1];
+                    let (r1, c1) = cells_with_n1[0];
+                    let (r2, c2) = cells_with_n1[1];
 
-                    // For the first cell in the pair
-                    let current_mask1 = prop.candidates.get(r1, c1);
-                    // The candidates to eliminate are all candidates EXCEPT for the pair_mask
-                    let elimination_mask1 = current_mask1 & !pair_mask;
-
-                    if elimination_mask1 != 0 {
-                        eliminations_made |= prop.eliminate_multiple_candidates(
-                            r1,
-                            c1,
-                            elimination_mask1,
-                            flags,
-                            path,
-                        );
-                    }
-
-                    // For the second cell in the pair
-                    let current_mask2 = prop.candidates.get(r2, c2);
-                    let elimination_mask2 = current_mask2 & !pair_mask;
-
-                    if elimination_mask2 != 0 {
-                        eliminations_made |= prop.eliminate_multiple_candidates(
-                            r2,
-                            c2,
-                            elimination_mask2,
-                            flags,
-                            path,
-                        )
-                    }
+                    // Eliminate other candidates from these cells
+                    eliminations_made |= Self::eliminate_other_candidates_from_cells(
+                        prop,
+                        &[(r1, c1), (r2, c2)],
+                        pair_mask,
+                        flags,
+                        path,
+                    );
                 }
             }
         }
+        eliminations_made
+    }
+
+    /// Finds all cells in a unit that contain a specific candidate.
+    fn find_cells_with_candidate(
+        unit_cells: &[(usize, usize)],
+        candidate_bit: u16,
+        prop: &TechniquePropagator,
+    ) -> Vec<(usize, usize)> {
+        unit_cells
+            .iter()
+            .filter(|&&(r, c)| {
+                prop.board.is_empty(r, c) && (prop.candidates.get(r, c) & candidate_bit) != 0
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// Eliminates candidates from specific cells, keeping only the specified mask.
+    fn eliminate_other_candidates_from_cells(
+        prop: &mut TechniquePropagator,
+        cells: &[(usize, usize)],
+        keep_mask: u16,
+        flags: TechniqueFlags,
+        path: &mut SolvePath,
+    ) -> bool {
+        let mut eliminations_made = false;
+
+        for &(r, c) in cells {
+            let current_mask = prop.candidates.get(r, c);
+            // The candidates to eliminate are all candidates EXCEPT for the keep_mask
+            let elimination_mask = current_mask & !keep_mask;
+
+            if elimination_mask != 0 {
+                eliminations_made |=
+                    prop.eliminate_multiple_candidates(r, c, elimination_mask, flags, path);
+            }
+        }
+
         eliminations_made
     }
 }

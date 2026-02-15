@@ -173,44 +173,50 @@ impl Rustoku {
         path: &mut SolvePath,
         bound: usize,
     ) -> usize {
-        if let Some((r, c)) = self.find_next_empty_cell() {
-            let mut count = 0;
-            // Use the candidate cache to only iterate valid candidates
-            let mask = self.candidates.get(r, c);
-            let mut nums = Self::candidates_from_mask(mask);
-            nums.shuffle(&mut rng());
-
-            for &num in &nums {
-                if self.masks.is_safe(r, c, num) {
-                    self.place_number(r, c, num);
-                    let step_number = path.steps.len() as u32;
-                    path.steps.push(SolveStep::Placement {
-                        row: r,
-                        col: c,
-                        value: num,
-                        flags: TechniqueFlags::empty(),
-                        step_number,
-                        candidates_eliminated: 0,
-                        related_cell_count: 0,
-                        difficulty_point: 0,
-                    });
-                    count += self.solve_until_recursive(solutions, path, bound);
-                    path.steps.pop();
-                    self.remove_number(r, c, num);
-
-                    if bound > 0 && solutions.len() >= bound {
-                        return count;
-                    }
-                }
-            }
-            count
-        } else {
+        // Early return for base case: no empty cells means puzzle is solved
+        let Some((r, c)) = self.find_next_empty_cell() else {
             solutions.push(Solution {
                 board: self.board,
                 solve_path: path.clone(),
             });
-            1
+            return 1;
+        };
+
+        let mut count = 0;
+        // Use the candidate cache to only iterate valid candidates
+        let mask = self.candidates.get(r, c);
+        let mut nums = Self::candidates_from_mask(mask);
+        nums.shuffle(&mut rng());
+
+        for &num in &nums {
+            if !self.masks.is_safe(r, c, num) {
+                continue;
+            }
+
+            self.place_number(r, c, num);
+            let step_number = path.steps.len() as u32;
+            path.steps.push(SolveStep::Placement {
+                row: r,
+                col: c,
+                value: num,
+                flags: TechniqueFlags::empty(),
+                step_number,
+                candidates_eliminated: 0,
+                related_cell_count: 0,
+                difficulty_point: 0,
+            });
+
+            count += self.solve_until_recursive(solutions, path, bound);
+            path.steps.pop();
+            self.remove_number(r, c, num);
+
+            // Early return if we've found enough solutions
+            if bound > 0 && solutions.len() >= bound {
+                return count;
+            }
         }
+
+        count
     }
 
     /// Run techniques and check if they make valid changes.

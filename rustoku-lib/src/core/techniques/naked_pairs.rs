@@ -42,6 +42,7 @@ impl NakedPairs {
         let mut eliminations_made = false;
         let mut two_cand_cells: Vec<(usize, usize, u16)> = Vec::new();
 
+        // Find all cells in the unit with exactly 2 candidates
         for &(r, c) in unit_cells {
             if prop.board.is_empty(r, c) {
                 let cand_mask = prop.candidates.get(r, c);
@@ -55,6 +56,7 @@ impl NakedPairs {
             return false;
         }
 
+        // Check each pair of cells with 2 candidates
         for i in 0..two_cand_cells.len() {
             for j in (i + 1)..two_cand_cells.len() {
                 let (r1, c1, mask1) = two_cand_cells[i];
@@ -63,28 +65,53 @@ impl NakedPairs {
                 if mask1 == mask2 {
                     let pair_cand_mask = mask1;
 
-                    for &(other_r, other_c) in unit_cells {
-                        if (other_r == r1 && other_c == c1) || (other_r == r2 && other_c == c2) {
-                            continue;
-                        }
-
-                        if prop.board.is_empty(other_r, other_c) {
-                            let initial_mask = prop.candidates.get(other_r, other_c);
-
-                            if (initial_mask & pair_cand_mask) != 0 {
-                                eliminations_made |= prop.eliminate_multiple_candidates(
-                                    other_r,
-                                    other_c,
-                                    pair_cand_mask,
-                                    flags,
-                                    path,
-                                );
-                            }
-                        }
-                    }
+                    // Eliminate these candidates from other cells in the unit
+                    eliminations_made |= Self::eliminate_candidates_from_other_cells(
+                        prop,
+                        unit_cells,
+                        &[(r1, c1), (r2, c2)],
+                        pair_cand_mask,
+                        flags,
+                        path,
+                    );
                 }
             }
         }
+        eliminations_made
+    }
+
+    /// Eliminates specific candidates from cells in a unit, excluding certain cells.
+    fn eliminate_candidates_from_other_cells(
+        prop: &mut TechniquePropagator,
+        unit_cells: &[(usize, usize)],
+        exclude_cells: &[(usize, usize)],
+        candidate_mask: u16,
+        flags: TechniqueFlags,
+        path: &mut SolvePath,
+    ) -> bool {
+        let mut eliminations_made = false;
+
+        for &(other_r, other_c) in unit_cells {
+            // Skip the cells that form the naked pair
+            if exclude_cells.contains(&(other_r, other_c)) {
+                continue;
+            }
+
+            if prop.board.is_empty(other_r, other_c) {
+                let initial_mask = prop.candidates.get(other_r, other_c);
+
+                if (initial_mask & candidate_mask) != 0 {
+                    eliminations_made |= prop.eliminate_multiple_candidates(
+                        other_r,
+                        other_c,
+                        candidate_mask,
+                        flags,
+                        path,
+                    );
+                }
+            }
+        }
+
         eliminations_made
     }
 }
