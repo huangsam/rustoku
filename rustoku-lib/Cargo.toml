@@ -13,7 +13,7 @@ categories.workspace = true
 
 [dependencies]
 bitflags = "2.9.1"
-rand = "0.9.1"
+rand = "0.10.0"
 thiserror = "2.0.12"
 rayon = "1.11"
 
