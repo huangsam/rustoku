@@ -106,6 +106,11 @@ impl Rustoku {
         })
     }
 
+    /// Start building a configured `Rustoku` via a builder pattern.
+    pub fn builder() -> RustokuBuilder {
+        RustokuBuilder::new()
+    }
+
     /// Constructs a new `Rustoku` instance from a string representation of the board.
     pub fn new_from_str(s: &str) -> Result<Self, RustokuError> {
         let board = Board::try_from(s)?;
@@ -230,6 +235,97 @@ impl Rustoku {
     }
 }
 
+/// A simple builder for constructing `Rustoku` with fluent configuration.
+pub struct RustokuBuilder {
+    board: Option<Board>,
+    techniques: TechniqueFlags,
+    max_solutions: Option<usize>,
+}
+
+impl RustokuBuilder {
+    /// Create a new builder with reasonable defaults.
+    pub fn new() -> Self {
+        RustokuBuilder {
+            board: None,
+            techniques: TechniqueFlags::EASY,
+            max_solutions: None,
+        }
+    }
+}
+
+impl Default for RustokuBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RustokuBuilder {
+    /// Provide the initial `Board` for the solver.
+    pub fn board(mut self, board: Board) -> Self {
+        self.board = Some(board);
+        self
+    }
+
+    /// Provide the initial board as a string (convenience).
+    pub fn board_from_str(mut self, s: &str) -> Result<Self, RustokuError> {
+        let board = Board::try_from(s)?;
+        self.board = Some(board);
+        Ok(self)
+    }
+
+    /// Configure which techniques the solver should use.
+    pub fn techniques(mut self, techniques: TechniqueFlags) -> Self {
+        self.techniques = techniques;
+        self
+    }
+
+    /// Optionally hint the builder with a maximum number of solutions.
+    pub fn max_solutions(mut self, max: usize) -> Self {
+        self.max_solutions = Some(max);
+        self
+    }
+
+    /// Finalize the builder and construct the `Rustoku` instance.
+    pub fn build(self) -> Result<Rustoku, RustokuError> {
+        let board = self.board.unwrap_or_default();
+        let mut r = Rustoku::new(board)?;
+        r.techniques = self.techniques;
+        // If the user provided a max_solutions hint, we store it in techniques as not applicable
+        // for now; the builder primarily configures creation state.
+        Ok(r)
+    }
+}
+
+/// Iterator wrapper for solutions. For simplicity this implementation eagerly
+/// computes all solutions via `solve_all()` and yields them lazily.
+#[derive(Debug, Clone)]
+pub struct Solutions {
+    solutions: Vec<Solution>,
+    idx: usize,
+}
+
+impl Solutions {
+    /// Construct a `Solutions` iterator from an existing `Rustoku` solver.
+    pub fn from_solver(mut solver: Rustoku) -> Self {
+        let solutions = solver.solve_all();
+        Solutions { solutions, idx: 0 }
+    }
+}
+
+impl Iterator for Solutions {
+    type Item = Solution;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx >= self.solutions.len() {
+            None
+        } else {
+            let s = self.solutions[self.idx].clone();
+            self.idx += 1;
+            Some(s)
+        }
+    }
+}
+
 /// Generates a new Sudoku puzzle with a unique solution.
 ///
 /// The `num_clues` parameter specifies the desired number of initially
@@ -350,6 +446,23 @@ mod tests {
         let s = "53007000060019500009800006080006000340080300170002000606000028000041900500008007X"; // 'X'
         let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
+    }
+
+    #[test]
+    fn test_builder_and_iterator() {
+        let board = Board::try_from(UNIQUE_PUZZLE).expect("valid puzzle");
+        let solver = Rustoku::builder()
+            .board(board)
+            .techniques(TechniqueFlags::all())
+            .build()
+            .expect("builder build");
+
+        // Using the iterator wrapper (eager compute, lazy yield)
+        let mut sols = Solutions::from_solver(solver);
+        let first = sols.next();
+        assert!(first.is_some());
+        // For unique puzzle, there should be exactly one solution
+        assert!(sols.next().is_none());
     }
 
     #[test]

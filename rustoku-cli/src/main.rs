@@ -71,25 +71,24 @@ fn main() {
             println!("{board}")
         }),
         Commands::Solve { solve_command } => match solve_command {
-            SolveCommands::Any { puzzle, verbose } => {
-                Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                    rustoku = rustoku.with_techniques(TechniqueFlags::all());
-                    match rustoku.solve_any() {
-                        None => println!("🚫 No solution found"),
-                        Some(solution) => {
-                            println!("🎯 Solution found:");
-                            if verbose {
-                                println!("{}\n\n{}", solution.board, solution.solve_path);
-                            } else {
-                                println!("{}", solution.board);
-                            }
+            SolveCommands::Any { puzzle, verbose } => Rustoku::builder()
+                .board_from_str(&puzzle)
+                .and_then(|b| b.techniques(TechniqueFlags::all()).build())
+                .map(|mut rustoku| match rustoku.solve_any() {
+                    None => println!("🚫 No solution found"),
+                    Some(solution) => {
+                        println!("🎯 Solution found:");
+                        if verbose {
+                            println!("{}\n\n{}", solution.board, solution.solve_path);
+                        } else {
+                            println!("{}", solution.board);
                         }
                     }
-                })
-            }
-            SolveCommands::All { puzzle, verbose } => {
-                Rustoku::new_from_str(&puzzle).map(|mut rustoku| {
-                    rustoku = rustoku.with_techniques(TechniqueFlags::all());
+                }),
+            SolveCommands::All { puzzle, verbose } => Rustoku::builder()
+                .board_from_str(&puzzle)
+                .and_then(|b| b.techniques(TechniqueFlags::all()).build())
+                .map(|mut rustoku| {
                     let solutions = rustoku.solve_all();
                     match solutions.len() {
                         0 => println!("🚫 No solutions found"),
@@ -114,20 +113,25 @@ fn main() {
                             println!("\n✅ All solutions displayed");
                         }
                     }
-                })
-            }
+                }),
         },
-        Commands::Check { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-            if rustoku.is_solved() {
-                println!("✅ Puzzle is solved correctly!");
-            } else {
-                println!("❌ Puzzle is not solved correctly");
-            }
-        }),
-        Commands::Show { puzzle } => Rustoku::new_from_str(&puzzle).map(|rustoku| {
-            println!("🎨 Show puzzle:");
-            println!("{}", rustoku.board);
-        }),
+        Commands::Check { puzzle } => Rustoku::builder()
+            .board_from_str(&puzzle)
+            .and_then(|b| b.build())
+            .map(|rustoku| {
+                if rustoku.is_solved() {
+                    println!("✅ Puzzle is solved correctly!");
+                } else {
+                    println!("❌ Puzzle is not solved correctly");
+                }
+            }),
+        Commands::Show { puzzle } => Rustoku::builder()
+            .board_from_str(&puzzle)
+            .and_then(|b| b.build())
+            .map(|rustoku| {
+                println!("🎨 Show puzzle:");
+                println!("{}", rustoku.board);
+            }),
     };
 
     if let Err(e) = result {
