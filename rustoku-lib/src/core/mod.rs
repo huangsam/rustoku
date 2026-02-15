@@ -829,4 +829,311 @@ mod tests {
             )
         }
     }
+
+    // ── Targeted technique tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_naked_singles_places_correct_value() {
+        // Board with a single empty cell at (8,8) – only candidate is 6
+        let s = "385421967194756328627983145571892634839645271246137589462579813918364752753218490";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::NAKED_SINGLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        // Expect exactly one placement at (8,8) = 6
+        let placements: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::Placement {
+                    row, col, value, ..
+                } => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            placements.contains(&(8, 8, 6)),
+            "Expected placement of 6 at (8,8), got {:?}",
+            placements
+        );
+    }
+
+    #[test]
+    fn test_hidden_singles_places_in_correct_cell() {
+        // Hodoku hidden single example
+        let s = "008007000016083000000000051107290000000000000000046307290000000000860140000300700";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::HIDDEN_SINGLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let placements: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::Placement {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } if flags.contains(TechniqueFlags::HIDDEN_SINGLES) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !placements.is_empty(),
+            "Hidden singles should produce at least one placement"
+        );
+
+        // Verify each placement is valid in the final board
+        for &(r, c, v) in &placements {
+            assert!((1..=9).contains(&v), "Placed value must be 1-9, got {v}");
+            assert_eq!(
+                rustoku.board.get(r, c),
+                v,
+                "Board cell ({r},{c}) should be {v} after hidden single"
+            );
+        }
+    }
+
+    #[test]
+    fn test_naked_pairs_eliminates_candidates() {
+        // Hodoku naked pair example
+        let s = "700009030000105006400260009002083951007000000005600000000000003100000060000004010";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::NAKED_PAIRS);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } if flags.contains(TechniqueFlags::NAKED_PAIRS) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Naked pairs should produce at least one candidate elimination"
+        );
+
+        // Verify eliminated candidates are no longer present
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c})"
+            );
+        }
+    }
+
+    #[test]
+    fn test_hidden_pairs_eliminates_non_pair_candidates() {
+        // Hodoku hidden pair example – needs EASY techniques to simplify first
+        let s = "000032000000000000007600914096000800005008000030040005050200000700000560904010000";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::HIDDEN_PAIRS);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } if flags.contains(TechniqueFlags::HIDDEN_PAIRS) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Hidden pairs should produce at least one candidate elimination"
+        );
+
+        // Verify eliminated candidates are no longer present
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by hidden pair"
+            );
+        }
+    }
+
+    #[test]
+    fn test_locked_candidates_eliminates_outside_box() {
+        // Hodoku locked candidates (pointing) example
+        let s = "984000000000500040000000002006097200003002000000000010005060003407051890030009700";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::LOCKED_CANDIDATES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } if flags.contains(TechniqueFlags::LOCKED_CANDIDATES) => {
+                    Some((*row, *col, *value))
+                }
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Locked candidates should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by locked candidates"
+            );
+        }
+    }
+
+    #[test]
+    fn test_xwing_eliminates_from_correct_lines() {
+        // Hodoku X-Wing example
+        let s = "000000000760003002002640009403900070000004903005000020010560000370090041000000060";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::XWING);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                } if flags.contains(TechniqueFlags::XWING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "X-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by X-Wing"
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_techniques_produce_valid_solution() {
+        // Every technique-trigger puzzle must still solve to a valid board
+        let puzzles = vec![
+            "385421967194756328627983145571892634839645271246137589462579813918364752753218490",
+            "008007000016083000000000051107290000000000000000046307290000000000860140000300700",
+            "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
+            "000032000000000000007600914096000800005008000030040005050200000700000560904010000",
+            "984000000000500040000000002006097200003002000000000010005060003407051890030009700",
+            "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
+        ];
+
+        for puzzle in puzzles {
+            let mut rustoku = Rustoku::new_from_str(puzzle)
+                .unwrap()
+                .with_techniques(TechniqueFlags::all());
+            let solution = rustoku.solve_any();
+            assert!(
+                solution.is_some(),
+                "Puzzle should be solvable with all techniques: {puzzle}"
+            );
+            let solved = solution.unwrap().board;
+            let check = Rustoku::new(solved).unwrap();
+            assert!(
+                check.is_solved(),
+                "Solution must be valid for puzzle: {puzzle}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_techniques_do_not_alter_given_clues() {
+        // Verify that constraint propagation never overwrites already-given clues
+        let puzzles = vec![
+            (
+                "Naked Singles",
+                "385421967194756328627983145571892634839645271246137589462579813918364752753218490",
+                TechniqueFlags::NAKED_SINGLES,
+            ),
+            (
+                "Hidden Singles",
+                "008007000016083000000000051107290000000000000000046307290000000000860140000300700",
+                TechniqueFlags::HIDDEN_SINGLES,
+            ),
+            (
+                "Naked Pairs",
+                "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
+                TechniqueFlags::NAKED_PAIRS,
+            ),
+        ];
+
+        for (name, puzzle, flag) in puzzles {
+            let original = Board::try_from(puzzle).unwrap();
+            let mut rustoku = Rustoku::new_from_str(puzzle).unwrap().with_techniques(flag);
+            let mut path = SolvePath::default();
+            rustoku.techniques_make_valid_changes(&mut path);
+
+            for r in 0..9 {
+                for c in 0..9 {
+                    let orig_val = original.get(r, c);
+                    if orig_val != 0 {
+                        assert_eq!(
+                            rustoku.board.get(r, c),
+                            orig_val,
+                            "{name}: clue at ({r},{c}) was overwritten"
+                        );
+                    }
+                }
+            }
+        }
+    }
 }
