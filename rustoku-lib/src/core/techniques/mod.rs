@@ -147,12 +147,12 @@ impl<'a> TechniquePropagator<'a> {
         // Log each eliminated candidate
         let eliminated_mask = initial_mask & elimination_mask; // what was actually eliminated
         let eliminated_count = eliminated_mask.count_ones();
-        let step_number = path.steps.len() as u32;
         let difficulty_point = Self::difficulty_for_technique(flags);
 
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
             if (eliminated_mask & candidate_bit) != 0 {
+                let step_number = path.steps.len() as u32;
                 path.steps.push(SolveStep::CandidateElimination {
                     row: r,
                     col: c,
@@ -170,6 +170,7 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Counts affected cells when placing a number (cells in same row, column, or box).
+    /// Deduplicates cells that appear in multiple units (row+box or col+box overlap).
     fn count_affected_cells(&self, r: usize, c: usize, _num: u8) -> u32 {
         let mut count = 0u32;
         let box_r = (r / 3) * 3;
@@ -189,10 +190,10 @@ impl<'a> TechniquePropagator<'a> {
             }
         }
 
-        // Count cells in the same 3x3 box
+        // Count cells in the same 3x3 box, excluding those already counted in the row or column
         for br in box_r..box_r + 3 {
             for bc in box_c..box_c + 3 {
-                if (br != r || bc != c) && self.board.is_empty(br, bc) {
+                if br != r && bc != c && self.board.is_empty(br, bc) {
                     count += 1;
                 }
             }
@@ -202,6 +203,7 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Counts the number of candidates that would be eliminated by a placement.
+    /// Deduplicates cells that appear in multiple units (row+box or col+box overlap).
     fn count_candidates_eliminated(&self, r: usize, c: usize, num: u8) -> u32 {
         let mut count = 0u32;
         let box_r = (r / 3) * 3;
@@ -222,10 +224,10 @@ impl<'a> TechniquePropagator<'a> {
             }
         }
 
-        // Count in the same 3x3 box
+        // Count in the same 3x3 box, excluding those already counted in the row or column
         for br in box_r..box_r + 3 {
             for bc in box_c..box_c + 3 {
-                if (br != r || bc != c) && (self.candidates.get(br, bc) & candidate_bit) != 0 {
+                if br != r && bc != c && (self.candidates.get(br, bc) & candidate_bit) != 0 {
                     count += 1;
                 }
             }

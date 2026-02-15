@@ -42,6 +42,7 @@ impl Candidates {
     }
 
     /// Update affected cells in the cache based on the current state of the board and masks.
+    /// Used for both placement and removal.
     pub(super) fn update_affected_cells(
         &mut self,
         r: usize,
@@ -49,20 +50,54 @@ impl Candidates {
         masks: &Masks,
         board: &Board,
     ) {
-        // Invalidate/update cache for the placed cell
-        self.cache[r][c] = 0; // No candidates for a filled cell
+        self.update_affected_cells_for(r, c, masks, board, None);
+    }
 
-        // Update cache for affected row, column, and box
+    /// Update affected cells, optionally filtering by a placed number.
+    /// When `placed_num` is Some, only recomputes cells that had that number as a candidate
+    /// (plus the placed cell itself and box cells). This is an optimization for placements.
+    /// When `placed_num` is None, recomputes all affected cells (needed for removals).
+    pub(super) fn update_affected_cells_for(
+        &mut self,
+        r: usize,
+        c: usize,
+        masks: &Masks,
+        board: &Board,
+        placed_num: Option<u8>,
+    ) {
+        // Invalidate/update cache for the target cell
+        if board.is_empty(r, c) {
+            // Removal case: recompute candidates for the now-empty cell
+            self.cache[r][c] = masks.compute_candidates_mask_for_cell(r, c);
+        } else {
+            // Placement case: no candidates for a filled cell
+            self.cache[r][c] = 0;
+        }
+
+        let num_bit = placed_num.map(|n| 1u16 << (n - 1));
+
+        // Update cache for affected row and column
         for i in 0..9 {
-            if board.is_empty(r, i) {
+            if board.is_empty(r, i) && i != c {
+                // Skip if we know the placed number and this cell didn't have it as a candidate
+                if let Some(bit) = num_bit {
+                    if self.cache[r][i] & bit == 0 {
+                        continue;
+                    }
+                }
                 self.cache[r][i] = masks.compute_candidates_mask_for_cell(r, i);
             }
-            if board.is_empty(i, c) {
+            if board.is_empty(i, c) && i != r {
+                if let Some(bit) = num_bit {
+                    if self.cache[i][c] & bit == 0 {
+                        continue;
+                    }
+                }
                 self.cache[i][c] = masks.compute_candidates_mask_for_cell(i, c);
             }
         }
 
-        // Update box cells
+        // Update box cells (excluding cells already handled by row/col above)
         let box_idx = Masks::get_box_idx(r, c);
         let start_row = (box_idx / 3) * 3;
         let start_col = (box_idx % 3) * 3;
@@ -70,7 +105,16 @@ impl Candidates {
             for c_offset in 0..3 {
                 let cur_r = start_row + r_offset;
                 let cur_c = start_col + c_offset;
+                // Skip the placed cell and cells already updated in the row/col pass
+                if (cur_r == r) || (cur_c == c) {
+                    continue;
+                }
                 if board.is_empty(cur_r, cur_c) {
+                    if let Some(bit) = num_bit {
+                        if self.cache[cur_r][cur_c] & bit == 0 {
+                            continue;
+                        }
+                    }
                     self.cache[cur_r][cur_c] = masks.compute_candidates_mask_for_cell(cur_r, cur_c);
                 }
             }

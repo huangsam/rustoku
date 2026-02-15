@@ -123,6 +123,17 @@ impl Rustoku {
         self
     }
 
+    /// Extracts candidate numbers (1-9) from a bitmask into a Vec.
+    fn candidates_from_mask(mask: u16) -> Vec<u8> {
+        let mut nums = Vec::with_capacity(mask.count_ones() as usize);
+        for v in 1..=9u8 {
+            if mask & (1 << (v - 1)) != 0 {
+                nums.push(v);
+            }
+        }
+        nums
+    }
+
     /// Helper for solver to find the next empty cell (MRV).
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         let mut min = (10, None); // Min candidates, (r, c)
@@ -143,7 +154,7 @@ impl Rustoku {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
         self.candidates
-            .update_affected_cells(r, c, &self.masks, &self.board);
+            .update_affected_cells_for(r, c, &self.masks, &self.board, Some(num));
     }
 
     /// Remove a number from the board and update masks and candidates.
@@ -164,7 +175,9 @@ impl Rustoku {
     ) -> usize {
         if let Some((r, c)) = self.find_next_empty_cell() {
             let mut count = 0;
-            let mut nums: Vec<u8> = (1..=9).collect();
+            // Use the candidate cache to only iterate valid candidates
+            let mask = self.candidates.get(r, c);
+            let mut nums = Self::candidates_from_mask(mask);
             nums.shuffle(&mut rng());
 
             for &num in &nums {
@@ -242,13 +255,7 @@ impl Rustoku {
         // If there is at least one empty cell, split work by the first MRV cell's candidates.
         if let Some((r, c)) = self.find_next_empty_cell() {
             let mask = self.candidates.get(r, c);
-            let mut nums: Vec<u8> = Vec::new();
-            for v in 1..=9u8 {
-                let bit = 1u16 << (v - 1);
-                if mask & bit != 0 && self.masks.is_safe(r, c, v) {
-                    nums.push(v);
-                }
-            }
+            let nums = Self::candidates_from_mask(mask);
 
             let initial_path = path.clone();
 
@@ -395,7 +402,8 @@ impl Solutions {
         let mut stack = Vec::new();
         if !finished {
             if let Some((r, c)) = solver.find_next_empty_cell() {
-                let mut nums: Vec<u8> = (1..=9).collect();
+                let mask = solver.candidates.get(r, c);
+                let mut nums = Rustoku::candidates_from_mask(mask);
                 nums.shuffle(&mut rng());
                 stack.push(Frame {
                     r,
@@ -430,7 +438,8 @@ impl Iterator for Solutions {
             // If stack is empty, check if there are any empty cells left
             if self.stack.is_empty() {
                 if let Some((r, c)) = self.solver.find_next_empty_cell() {
-                    let mut nums: Vec<u8> = (1..=9).collect();
+                    let mask = self.solver.candidates.get(r, c);
+                    let mut nums = Rustoku::candidates_from_mask(mask);
                     nums.shuffle(&mut rng());
                     self.stack.push(Frame {
                         r,
@@ -489,7 +498,8 @@ impl Iterator for Solutions {
 
                 // Find next empty cell after this placement
                 if let Some((nr, nc)) = self.solver.find_next_empty_cell() {
-                    let mut nums2: Vec<u8> = (1..=9).collect();
+                    let mask = self.solver.candidates.get(nr, nc);
+                    let mut nums2 = Rustoku::candidates_from_mask(mask);
                     nums2.shuffle(&mut rng());
                     self.stack.push(Frame {
                         r: nr,

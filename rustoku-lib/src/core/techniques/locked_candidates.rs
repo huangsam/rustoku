@@ -1,7 +1,6 @@
 use crate::core::{SolvePath, TechniqueFlags};
 
 use super::{TechniquePropagator, TechniqueRule};
-use std::collections::HashSet;
 
 /// Locked candidates technique implementation.
 pub struct LockedCandidates;
@@ -19,20 +18,23 @@ impl LockedCandidates {
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            let candidate_cells: Vec<usize> = (0..9)
-                .filter(|&col| {
-                    prop.board.is_empty(row, col)
-                        && (prop.candidates.get(row, col) & candidate_bit) != 0
-                })
-                .collect();
+            // Use a u16 bitmask to track which boxes contain this candidate in this row
+            let mut box_mask: u16 = 0;
+            let mut found_any = false;
 
-            let boxes: HashSet<usize> = candidate_cells
-                .iter()
-                .map(|&col| (row / 3) * 3 + (col / 3))
-                .collect();
+            for col in 0..9 {
+                if prop.board.is_empty(row, col)
+                    && (prop.candidates.get(row, col) & candidate_bit) != 0
+                {
+                    let box_idx = (row / 3) * 3 + (col / 3);
+                    box_mask |= 1 << box_idx;
+                    found_any = true;
+                }
+            }
 
-            if boxes.len() == 1 {
-                let box_idx = *boxes.iter().next().unwrap();
+            // All candidate cells are in exactly one box
+            if found_any && box_mask.count_ones() == 1 {
+                let box_idx = box_mask.trailing_zeros() as usize;
                 let start_row = (box_idx / 3) * 3;
                 let start_col = (box_idx % 3) * 3;
 
@@ -64,20 +66,23 @@ impl LockedCandidates {
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            let candidate_cells: Vec<usize> = (0..9)
-                .filter(|&row| {
-                    prop.board.is_empty(row, col)
-                        && (prop.candidates.get(row, col) & candidate_bit) != 0
-                })
-                .collect();
+            // Use a u16 bitmask to track which boxes contain this candidate in this column
+            let mut box_mask: u16 = 0;
+            let mut found_any = false;
 
-            let boxes: HashSet<usize> = candidate_cells
-                .iter()
-                .map(|&row| (row / 3) * 3 + (col / 3))
-                .collect();
+            for row in 0..9 {
+                if prop.board.is_empty(row, col)
+                    && (prop.candidates.get(row, col) & candidate_bit) != 0
+                {
+                    let box_idx = (row / 3) * 3 + (col / 3);
+                    box_mask |= 1 << box_idx;
+                    found_any = true;
+                }
+            }
 
-            if boxes.len() == 1 {
-                let box_idx = *boxes.iter().next().unwrap();
+            // All candidate cells are in exactly one box
+            if found_any && box_mask.count_ones() == 1 {
+                let box_idx = box_mask.trailing_zeros() as usize;
                 let start_row = (box_idx / 3) * 3;
                 let start_col = (box_idx % 3) * 3;
 
@@ -111,22 +116,31 @@ impl LockedCandidates {
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            let mut candidate_cells: Vec<(usize, usize)> = Vec::new();
+            // Use bitmasks to track which rows and columns contain this candidate in this box
+            let mut row_mask: u16 = 0;
+            let mut col_mask: u16 = 0;
+            let mut found_any = false;
+
             for r_offset in 0..3 {
                 for c_offset in 0..3 {
                     let r = start_row + r_offset;
                     let c = start_col + c_offset;
                     if prop.board.is_empty(r, c) && (prop.candidates.get(r, c) & candidate_bit) != 0
                     {
-                        candidate_cells.push((r, c));
+                        row_mask |= 1 << r;
+                        col_mask |= 1 << c;
+                        found_any = true;
                     }
                 }
             }
 
+            if !found_any {
+                continue;
+            }
+
             // Check if all candidates are in the same row
-            let rows: HashSet<usize> = candidate_cells.iter().map(|&(r, _)| r).collect();
-            if rows.len() == 1 {
-                let row = *rows.iter().next().unwrap();
+            if row_mask.count_ones() == 1 {
+                let row = row_mask.trailing_zeros() as usize;
 
                 for c in 0..9 {
                     if (c < start_col || c >= start_col + 3) && prop.board.is_empty(row, c) {
@@ -140,9 +154,8 @@ impl LockedCandidates {
             }
 
             // Check if all candidates are in the same column
-            let cols: HashSet<usize> = candidate_cells.iter().map(|&(_, c)| c).collect();
-            if cols.len() == 1 {
-                let col = *cols.iter().next().unwrap();
+            if col_mask.count_ones() == 1 {
+                let col = col_mask.trailing_zeros() as usize;
 
                 for r in 0..9 {
                     if (r < start_row || r >= start_row + 3) && prop.board.is_empty(r, col) {

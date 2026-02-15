@@ -79,37 +79,45 @@ impl HiddenPairs {
     }
 }
 
+/// Helper to build unit cell arrays without heap allocation.
+fn row_cells(r: usize) -> [(usize, usize); 9] {
+    core::array::from_fn(|c| (r, c))
+}
+
+fn col_cells(c: usize) -> [(usize, usize); 9] {
+    core::array::from_fn(|r| (r, c))
+}
+
+fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
+    let start_row = (box_idx / 3) * 3;
+    let start_col = (box_idx % 3) * 3;
+    core::array::from_fn(|i| (start_row + i / 3, start_col + i % 3))
+}
+
 impl TechniqueRule for HiddenPairs {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
         // Process rows
         for i in 0..9 {
-            let row_cells: Vec<(usize, usize)> = (0..9).map(|col| (i, col)).collect();
-            if Self::process_unit_for_hidden_pairs(prop, &row_cells, path, self.flags()) {
+            let cells = row_cells(i);
+            if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
 
         // Process columns
         for i in 0..9 {
-            let col_cells: Vec<(usize, usize)> = (0..9).map(|row| (row, i)).collect();
-            if Self::process_unit_for_hidden_pairs(prop, &col_cells, path, self.flags()) {
+            let cells = col_cells(i);
+            if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }
 
         // Process 3x3 boxes
         for i in 0..9 {
-            let mut box_cells: Vec<(usize, usize)> = Vec::with_capacity(9);
-            let start_row = (i / 3) * 3;
-            let start_col = (i % 3) * 3;
-            for r_offset in 0..3 {
-                for c_offset in 0..3 {
-                    box_cells.push((start_row + r_offset, start_col + c_offset));
-                }
-            }
-            if Self::process_unit_for_hidden_pairs(prop, &box_cells, path, self.flags()) {
+            let cells = box_cells(i);
+            if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
                 overall_placements_made = true;
             }
         }

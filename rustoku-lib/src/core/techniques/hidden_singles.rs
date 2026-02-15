@@ -5,6 +5,21 @@ use super::{TechniquePropagator, TechniqueRule};
 /// Hidden singles technique implementation.
 pub struct HiddenSingles;
 
+/// Helper to build unit cell arrays without heap allocation.
+fn row_cells(r: usize) -> [(usize, usize); 9] {
+    core::array::from_fn(|c| (r, c))
+}
+
+fn col_cells(c: usize) -> [(usize, usize); 9] {
+    core::array::from_fn(|r| (r, c))
+}
+
+fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
+    let start_row = (box_idx / 3) * 3;
+    let start_col = (box_idx % 3) * 3;
+    core::array::from_fn(|i| (start_row + i / 3, start_col + i % 3))
+}
+
 impl TechniqueRule for HiddenSingles {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
@@ -43,29 +58,22 @@ impl TechniqueRule for HiddenSingles {
             };
 
         for r in 0..9 {
-            let row_cells: Vec<(usize, usize)> = (0..9).map(|c| (r, c)).collect();
-            if check_unit_hidden_singles(&row_cells, prop, path) {
+            let cells = row_cells(r);
+            if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }
         }
 
         for c in 0..9 {
-            let col_cells: Vec<(usize, usize)> = (0..9).map(|r| (r, c)).collect();
-            if check_unit_hidden_singles(&col_cells, prop, path) {
+            let cells = col_cells(c);
+            if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }
         }
 
         for box_idx in 0..9 {
-            let mut box_cells: Vec<(usize, usize)> = Vec::with_capacity(9);
-            let start_row = (box_idx / 3) * 3;
-            let start_col = (box_idx % 3) * 3;
-            for r_offset in 0..3 {
-                for c_offset in 0..3 {
-                    box_cells.push((start_row + r_offset, start_col + c_offset));
-                }
-            }
-            if check_unit_hidden_singles(&box_cells, prop, path) {
+            let cells = box_cells(box_idx);
+            if check_unit_hidden_singles(&cells, prop, path) {
                 overall_placements_made = true;
             }
         }
