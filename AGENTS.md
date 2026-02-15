@@ -214,21 +214,18 @@ CLI directly instantiates `Rustoku` structs and calls methods, with minimal abst
 
 ### API Design Enhancements
 
-1. **Builder Pattern**: Replace `with_techniques` with a full builder for more configuration options
-2. **Iterator-based Solving**: Add `Solutions` iterator for lazy evaluation of multiple solutions
-3. **Async Support**: Consider tokio-based async solving for very large search spaces
-4. **Serialization**: Add serde support for JSON/binary puzzle formats
+1. **Async Support**: Consider tokio-based async solving for very large search spaces
+2. **Serialization**: Add serde support for JSON/binary puzzle formats
 
 ### Performance Optimizations
 
 1. **SIMD Acceleration**: Use SIMD for bulk mask operations on modern CPUs
-2. **Parallel Solving**: Multi-threaded solution finding for `solve_all`
-3. **Memory Pool**: Object pooling for frequent allocations during backtracking
-4. **Profile-guided Optimization**: Use PGO for better branch prediction
+2. **Memory Pool**: Object pooling for frequent allocations during backtracking
+3. **Profile-guided Optimization**: Use PGO for better branch prediction
 
 ### Algorithm Improvements
 
-1. **Advanced Techniques**: Implement more Sudoku techniques (X-Wing, Swordfish, etc.)
+1. **Advanced Techniques**: Implement more Sudoku techniques (Swordfish, XY-Wing, etc.)
 2. **Heuristic Tuning**: Dynamic MRV with technique-based scoring
 3. **Constraint Learning**: Learn from solving patterns to improve generation
 4. **Approximate Solving**: Fast approximate solvers for very hard puzzles
@@ -236,9 +233,8 @@ CLI directly instantiates `Rustoku` structs and calls methods, with minimal abst
 ### CLI Enhancements
 
 1. **Interactive Mode**: TUI for step-by-step solving with user input
-2. **Batch Processing**: Process multiple puzzles from files
-3. **Progress Indicators**: Show solving progress for long-running puzzles
-4. **Export Formats**: Support for various puzzle formats (JSON, CSV, images)
+2. **Progress Indicators**: Enhanced progress bars for long-running puzzles
+3. **Export Formats**: Support for various puzzle formats (JSON, images)
 
 ### Testing and Quality
 
@@ -258,5 +254,4 @@ CLI directly instantiates `Rustoku` structs and calls methods, with minimal abst
 
 1. **Interactive Tutorial**: Built-in CLI tutorial for new users
 2. **Visualization**: ASCII art solve animations
-3. **API Documentation**: Comprehensive docs.rs with examples
-4. **Benchmark Suite**: Public benchmark results and comparisons
+3. **Benchmark Suite**: Public benchmark results and comparisons
