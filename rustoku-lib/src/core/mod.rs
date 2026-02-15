@@ -296,19 +296,59 @@ impl RustokuBuilder {
     }
 }
 
-/// Iterator wrapper for solutions. For simplicity this implementation eagerly
-/// computes all solutions via `solve_all()` and yields them lazily.
-#[derive(Debug, Clone)]
+/// Lazy iterator wrapper for solutions. Uses an explicit DFS stack and yields
+/// solutions one-by-one without computing them all up-front.
+#[derive(Debug)]
 pub struct Solutions {
-    solutions: Vec<Solution>,
+    solver: Rustoku,
+    path: SolvePath,
+    stack: Vec<Frame>,
+    finished: bool,
+}
+
+#[derive(Debug)]
+struct Frame {
+    r: usize,
+    c: usize,
+    nums: Vec<u8>,
     idx: usize,
+    placed: Option<u8>,
 }
 
 impl Solutions {
     /// Construct a `Solutions` iterator from an existing `Rustoku` solver.
+    /// This will run the technique propagator once before starting DFS.
     pub fn from_solver(mut solver: Rustoku) -> Self {
-        let solutions = solver.solve_all();
-        Solutions { solutions, idx: 0 }
+        let mut path = SolvePath::default();
+        let mut finished = false;
+
+        if !solver.techniques_make_valid_changes(&mut path) {
+            finished = true;
+        }
+
+        let mut stack = Vec::new();
+        if !finished {
+            if let Some((r, c)) = solver.find_next_empty_cell() {
+                let mut nums: Vec<u8> = (1..=9).collect();
+                nums.shuffle(&mut rng());
+                stack.push(Frame {
+                    r,
+                    c,
+                    nums,
+                    idx: 0,
+                    placed: None,
+                });
+            } else {
+                // Already solved; leave stack empty and let next() yield the board once
+            }
+        }
+
+        Solutions {
+            solver,
+            path,
+            stack,
+            finished,
+        }
     }
 }
 
@@ -316,12 +356,94 @@ impl Iterator for Solutions {
     type Item = Solution;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.idx >= self.solutions.len() {
-            None
-        } else {
-            let s = self.solutions[self.idx].clone();
-            self.idx += 1;
-            Some(s)
+        if self.finished {
+            return None;
+        }
+
+        loop {
+            // If stack is empty, check if there are any empty cells left
+            if self.stack.is_empty() {
+                if let Some((r, c)) = self.solver.find_next_empty_cell() {
+                    let mut nums: Vec<u8> = (1..=9).collect();
+                    nums.shuffle(&mut rng());
+                    self.stack.push(Frame {
+                        r,
+                        c,
+                        nums,
+                        idx: 0,
+                        placed: None,
+                    });
+                    continue;
+                } else {
+                    // No empty cells -> current board is a solution
+                    let sol = Solution {
+                        board: self.solver.board,
+                        solve_path: self.path.clone(),
+                    };
+                    self.finished = true;
+                    return Some(sol);
+                }
+            }
+
+            let last_idx = self.stack.len() - 1;
+            let frame = &mut self.stack[last_idx];
+
+            // If we've exhausted candidates for this frame
+            if frame.idx >= frame.nums.len() {
+                if let Some(num) = frame.placed {
+                    // remove the previously placed number
+                    self.solver.remove_number(frame.r, frame.c, num);
+                    self.path.steps.pop();
+                    frame.placed = None;
+                } else {
+                    // No placement was made for this frame; pop it and continue
+                    self.stack.pop();
+                }
+                continue;
+            }
+
+            let num = frame.nums[frame.idx];
+            frame.idx += 1;
+
+            if self.solver.masks.is_safe(frame.r, frame.c, num) {
+                // place and record
+                self.solver.place_number(frame.r, frame.c, num);
+                self.path.steps.push(SolveStep::Placement {
+                    row: frame.r,
+                    col: frame.c,
+                    value: num,
+                    flags: TechniqueFlags::empty(),
+                });
+                frame.placed = Some(num);
+
+                // Find next empty cell after this placement
+                if let Some((nr, nc)) = self.solver.find_next_empty_cell() {
+                    let mut nums2: Vec<u8> = (1..=9).collect();
+                    nums2.shuffle(&mut rng());
+                    self.stack.push(Frame {
+                        r: nr,
+                        c: nc,
+                        nums: nums2,
+                        idx: 0,
+                        placed: None,
+                    });
+                    continue;
+                } else {
+                    // Found a solution. Capture it, then backtrack one placement so iteration can continue.
+                    let solution = Solution {
+                        board: self.solver.board,
+                        solve_path: self.path.clone(),
+                    };
+                    // Backtrack the placement we just made on this frame
+                    if let Some(pnum) = frame.placed {
+                        self.solver.remove_number(frame.r, frame.c, pnum);
+                        self.path.steps.pop();
+                        frame.placed = None;
+                    }
+                    return Some(solution);
+                }
+            }
+            // else try next candidate
         }
     }
 }
