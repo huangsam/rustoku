@@ -801,7 +801,8 @@ mod tests {
             TechniqueTestCase {
                 name: "Hidden Pairs",
                 trigger_string: "000032000000000000007600914096000800005008000030040005050200000700000560904010000",
-                technique_flag: TechniqueFlags::HIDDEN_PAIRS,
+                // Needs easy techniques to reduce candidates first, then hidden pairs to find the pair
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::HIDDEN_PAIRS,
             },
             // https://hodoku.sourceforge.net/en/show_example.php?file=lc101&tech=Locked+Candidates+Type+1+%28Pointing%29
             TechniqueTestCase {
@@ -820,11 +821,17 @@ mod tests {
         for test_case in test_cases {
             let rustoku = Rustoku::new_from_str(test_case.trigger_string)
                 .unwrap_or_else(|_| panic!("Rustoku creation failed for '{}'", test_case.name));
+            let mut path = SolvePath::default();
             assert!(
                 rustoku
                     .with_techniques(test_case.technique_flag)
-                    .techniques_make_valid_changes(&mut SolvePath::default()),
-                "The board should change for '{}'",
+                    .techniques_make_valid_changes(&mut path),
+                "Propagation should not contradict for '{}'",
+                test_case.name
+            );
+            assert!(
+                !path.steps.is_empty(),
+                "Expected at least one placement or elimination for '{}'",
                 test_case.name
             )
         }
