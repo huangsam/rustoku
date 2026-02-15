@@ -4,7 +4,7 @@ resolver = "3"
 
 [workspace.package]
 authors = ["Samuel Huang <samhuang91@gmail.com>"]
-version = "0.12.3"
+version = "0.13.0"
 edition = "2024"
 rust-version = "1.87"
 readme = "README.md"
