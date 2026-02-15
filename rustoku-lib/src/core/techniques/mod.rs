@@ -5,12 +5,12 @@ use super::candidates::Candidates;
 use super::masks::Masks;
 
 pub mod flags;
-pub mod units;
 mod hidden_pairs;
 mod hidden_singles;
 mod locked_candidates;
 mod naked_pairs;
 mod naked_singles;
+pub mod units;
 mod x_wing;
 
 use flags::TechniqueFlags;
