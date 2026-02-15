@@ -321,9 +321,10 @@ impl<'a> TechniquePropagator<'a> {
 /// are expected to return one flag that helps with technique attribution when
 /// people want to visualize the solve path.
 ///
-/// To get started on the intuition behind the techniques, check out the
-/// [Techniques Wiki](https://www.sudokuwiki.org/Introduction) and browse
-/// through the basic, tough, diabolical and extreme strategies.
+/// To get started on the intuition behind the techniques, check out
+/// [SudokuWiki](https://www.sudokuwiki.org/Introduction) and
+/// [HoDoKu](https://hodoku.sourceforge.net/en/tech_intro.php)
+/// to understand the basic strategies and techniques used in Sudoku solving.
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
