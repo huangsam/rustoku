@@ -322,7 +322,7 @@ impl<'a> TechniquePropagator<'a> {
 /// people want to visualize the solve path.
 ///
 /// To get started on the intuition behind the techniques, check out the
-/// [Techniques Wiki](https://www.sudokuwiki.org/Getting_Started) and browse
+/// [Techniques Wiki](https://www.sudokuwiki.org/Introduction) and browse
 /// through the basic, tough, diabolical and extreme strategies.
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
