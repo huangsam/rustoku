@@ -3,6 +3,25 @@ use crate::core::SolvePath;
 use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Hidden singles technique implementation.
+///
+/// A hidden single occurs when a number can only appear in one cell within a unit
+/// (row, column, or box), even though that cell may contain other candidates.
+/// Since the number must go somewhere in the unit and only one cell can take it,
+/// we can place it in that cell.
+///
+/// Each number 1-9 must appear exactly once in each row, column, and box.
+/// If a number has only one possible cell left in a unit, that cell must contain it,
+/// regardless of what other candidates the cell might have.
+///
+/// Consider this row: [1,2,3] [1,4] [2,5] [2,5] [2,5] [6,7] [6,7] [6,7] [8,9]
+///
+/// Number 1 appears only in the first cell. Even though that cell has other candidates
+/// (2 and 3), we know it must contain 1, so we can place 1 there and eliminate 2 and 3.
+///
+/// 1. For each unit (row, column, box) and each number 1-9:
+/// 2. Count how many cells in the unit can contain that number
+/// 3. If exactly one cell can contain it, place the number in that cell
+/// 4. Update constraints and candidates for the entire board
 pub struct HiddenSingles;
 
 impl TechniqueRule for HiddenSingles {

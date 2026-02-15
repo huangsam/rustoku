@@ -3,6 +3,18 @@ use crate::core::SolvePath;
 use super::{TechniquePropagator, TechniqueRule};
 
 /// Naked singles technique implementation.
+///
+/// A naked single occurs when a cell has only one possible candidate number remaining.
+/// Since the cell must contain that number, we can place it immediately.
+///
+/// If a cell has only one candidate, that candidate must be the correct value for that cell.
+/// This is the most basic and fundamental Sudoku solving technique.
+///
+/// If a cell has candidates {5}, then 5 must be placed in that cell.
+///
+/// 1. Scan all empty cells
+/// 2. If a cell has exactly one candidate, place that number
+/// 3. Update constraints and candidates for the entire board
 pub struct NakedSingles;
 
 impl TechniqueRule for NakedSingles {

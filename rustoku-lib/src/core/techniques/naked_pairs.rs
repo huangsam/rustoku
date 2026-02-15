@@ -3,10 +3,36 @@ use crate::core::{SolvePath, TechniqueFlags};
 use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Naked pairs technique implementation.
+///
+/// A naked pair occurs when two cells in the same unit (row, column, or box) both contain
+/// exactly the same two candidate numbers. Since these two cells must contain these two
+/// numbers between them, no other cell in the same unit can contain either of these numbers.
+///
+/// If two cells in a unit are the only possible locations for two specific numbers, then
+/// those numbers cannot appear anywhere else in that unit. This allows us to eliminate
+/// those candidates from all other cells in the unit.
+///
+/// Consider this row: [1,2] [1,2] [3,4,5] [3,4,5] [3,4,5] [6,7,8] [6,7,8] [6,7,8] [9]
+///
+/// The first two cells both have candidates {1,2}. Since these two cells must take 1 and 2,
+/// we can eliminate 1 and 2 from all other cells in the row, leaving:
+/// [1,2] [1,2] [3,4,5] [3,4,5] [3,4,5] [6,7,8] [6,7,8] [6,7,8] [9]
+///
+/// 1. Find all cells in a unit that have exactly 2 candidates
+/// 2. For each pair of such cells, check if they have identical candidate sets
+/// 3. If they do, eliminate those candidates from all other cells in the unit
+/// 4. Repeat for rows, columns, and boxes
 pub struct NakedPairs;
 
 impl NakedPairs {
-    // Helper function for Naked Pairs, made private to this impl block
+    /// Process a single unit (row, column, or box) for naked pairs.
+    ///
+    /// This function implements the core naked pairs algorithm for one unit:
+    /// - Find cells with exactly 2 candidates
+    /// - Identify pairs of cells with identical candidate sets
+    /// - Eliminate those candidates from other cells in the unit
+    ///
+    /// Returns true if any eliminations were made.
     fn process_unit_for_naked_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],

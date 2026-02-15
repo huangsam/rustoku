@@ -3,10 +3,39 @@ use super::{TechniquePropagator, TechniqueRule, units};
 use crate::core::SolvePath;
 
 /// Hidden pairs technique implementation.
+///
+/// A hidden pair occurs when two numbers in a unit (row, column, or box) can only appear
+/// in exactly two cells. Even if those cells contain other candidates, the fact that only
+/// those two cells can contain the pair means we can eliminate all other candidates from
+/// those cells.
+///
+/// If two numbers can only appear in two specific cells within a unit, then those cells
+/// must contain those two numbers (in some order). Therefore, any other candidates in
+/// those cells can be eliminated.
+///
+/// Consider this row: [1,2,3] [1,2,4] [5,6] [5,6] [5,6] [7,8,9] [7,8,9] [7,8,9] [7,8,9]
+///
+/// Numbers 1 and 2 only appear in the first two cells. Even though those cells have
+/// other candidates (3 and 4), we know they must contain 1 and 2 between them.
+/// We can eliminate 3 from the first cell and 4 from the second cell, leaving:
+/// [1,2] [1,2] [5,6] [5,6] [5,6] [7,8,9] [7,8,9] [7,8,9] [7,8,9]
+///
+/// 1. For each pair of numbers (n1, n2), find cells in the unit that contain n1 and n2
+/// 2. If exactly 2 cells contain n1 AND exactly 2 cells contain n2 AND they are the same cells,
+///    then we have a hidden pair
+/// 3. Eliminate all other candidates from those two cells
+/// 4. Repeat for rows, columns, and boxes
 pub struct HiddenPairs;
 
 impl HiddenPairs {
-    // Helper function for Hidden Pairs, made private to this impl block
+    /// Process a single unit (row, column, or box) for hidden pairs.
+    ///
+    /// This function implements the core hidden pairs algorithm for one unit:
+    /// - For each pair of numbers, check if they appear in exactly 2 cells
+    /// - If those cells are the same for both numbers, we have a hidden pair
+    /// - Eliminate other candidates from those cells
+    ///
+    /// Returns true if any eliminations were made.
     fn process_unit_for_hidden_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
