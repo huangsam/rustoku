@@ -59,6 +59,9 @@ pub enum SolveCommands {
         /// Show detailed solve path and techniques used
         #[arg(short, long)]
         verbose: bool,
+        /// Stop after finding this many solutions (0 = find all)
+        #[arg(short = 'u', long = "until", default_value_t = 0_usize)]
+        until: usize,
     },
 }
 
@@ -85,11 +88,19 @@ fn main() {
                         }
                     }
                 }),
-            SolveCommands::All { puzzle, verbose } => Rustoku::builder()
+            SolveCommands::All {
+                puzzle,
+                verbose,
+                until,
+            } => Rustoku::builder()
                 .board_from_str(&puzzle)
                 .and_then(|b| b.techniques(TechniqueFlags::all()).build())
                 .map(|mut rustoku| {
-                    let solutions = rustoku.solve_all();
+                    let solutions = if until > 0 {
+                        rustoku.solve_until(until)
+                    } else {
+                        rustoku.solve_all()
+                    };
                     match solutions.len() {
                         0 => println!("🚫 No solutions found"),
                         1 => {

@@ -125,3 +125,39 @@ fn test_show_puzzle() {
         .stdout(predicates::str::contains("9005")) // Board start
         .stdout(predicates::str::contains("0803")); // Board end
 }
+
+#[test]
+fn test_solve_all_with_until_flag_limits_results() {
+    // Unique puzzle -> until=1 should return exactly one solution
+    get_rustoku_bin()
+        .arg("solve")
+        .arg("all")
+        .arg("530070000600195000098000060800060003400803001700020006060000280000419005000080079")
+        .arg("--until")
+        .arg("1")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Found 1 unique solution"));
+
+    // Two-solution puzzle -> until=2 should return at most two solutions
+    get_rustoku_bin()
+        .arg("solve")
+        .arg("all")
+        .arg("295743861431865900876192543387459216612387495549216738763504189928671354154938600")
+        .arg("--until")
+        .arg("2")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Found 2 solutions"));
+
+    // 63-solution puzzle -> until=5 should return at most 5 solutions
+    get_rustoku_bin()
+        .arg("solve")
+        .arg("all")
+        .arg("000000500080760092001005470056309000009001004320500010000200700700090030000000000")
+        .arg("--until")
+        .arg("5")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Found 5 solutions"));
+}
