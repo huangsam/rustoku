@@ -320,6 +320,10 @@ impl<'a> TechniquePropagator<'a> {
 /// and modify the solve path with placements and eliminations. In addition, they
 /// are expected to return one flag that helps with technique attribution when
 /// people want to visualize the solve path.
+///
+/// To get started on the intuition behind the techniques, check out the
+/// [Techniques Wiki](https://www.sudokuwiki.org/Getting_Started) and browse
+/// through the basic, tough, diabolical and extreme strategies.
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
