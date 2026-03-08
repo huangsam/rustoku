@@ -7,7 +7,7 @@ bitflags! {
     /// - Byte 0: Singles & Subsets (0-7)
     /// - Byte 1: Intersections (8-15)
     /// - Byte 2: Fish (16-23)
-    /// - Byte 3: Wings & Chains & Uniqueness (24-31)
+    /// - Byte 3: Wings & Chains & Other (24-31)
     ///
     /// Composite groups (EASY, MEDIUM, HARD) are also provided for convenience.
     #[repr(transparent)]
