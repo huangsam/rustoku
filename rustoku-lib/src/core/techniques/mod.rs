@@ -10,8 +10,11 @@ mod hidden_singles;
 mod locked_candidates;
 mod naked_pairs;
 mod naked_singles;
+mod naked_triples;
+mod swordfish;
 pub mod units;
 mod x_wing;
+mod xy_wing;
 
 use flags::TechniqueFlags;
 use hidden_pairs::HiddenPairs;
@@ -19,7 +22,10 @@ use hidden_singles::HiddenSingles;
 use locked_candidates::LockedCandidates;
 use naked_pairs::NakedPairs;
 use naked_singles::NakedSingles;
+use naked_triples::NakedTriples;
+use swordfish::Swordfish;
 use x_wing::XWing;
+use xy_wing::XYWing;
 
 /// Propagates constraints via zero or more techniques.
 ///
@@ -253,8 +259,11 @@ impl<'a> TechniquePropagator<'a> {
             &HiddenSingles,
             &NakedPairs,
             &HiddenPairs,
+            &NakedTriples,
             &LockedCandidates,
             &XWing,
+            &Swordfish,
+            &XYWing,
         ];
 
         loop {

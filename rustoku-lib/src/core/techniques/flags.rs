@@ -17,12 +17,18 @@ bitflags! {
         const LOCKED_CANDIDATES = 1 << 4;
         /// Apply the X-Wing technique.
         const XWING = 1 << 5;
+        /// Apply the Swordfish technique.
+        const SWORDFISH = 1 << 6;
+        /// Apply the XY-Wing technique.
+        const XY_WING = 1 << 7;
+        /// Apply the naked triples technique.
+        const NAKED_TRIPLES = 1 << 8;
 
         /// Apply easy techniques like naked singles.
         const EASY = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
         /// Apply medium techniques like naked pairs.
-        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits() | Self::LOCKED_CANDIDATES.bits();
+        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits() | Self::LOCKED_CANDIDATES.bits() | Self::NAKED_TRIPLES.bits();
         /// Apply hard techniques like X-Wings.
-        const HARD = Self::XWING.bits();
+        const HARD = Self::XWING.bits() | Self::SWORDFISH.bits() | Self::XY_WING.bits();
     }
 }

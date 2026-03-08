@@ -903,6 +903,28 @@ mod tests {
                 trigger_string: "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
                 technique_flag: TechniqueFlags::XWING,
             },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=bf301&tech=Swordfish
+            TechniqueTestCase {
+                name: "Swordfish",
+                trigger_string: "160540070008001030030800000700050069600902057000000000000030040000000016000164500",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::SWORDFISH,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=xy01&tech=XY-Wing
+            TechniqueTestCase {
+                name: "XY-Wing",
+                trigger_string: "000060000000010863003009000904000000300000704570820000000006580690007000000040030",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::XY_WING,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=l302&tech=Locked+Triple
+            TechniqueTestCase {
+                name: "Naked Triples",
+                trigger_string: "400500370320000004060000000800002030210840000000000090070090100040651000000070000",
+                technique_flag: TechniqueFlags::NAKED_TRIPLES,
+            },
         ];
 
         for test_case in test_cases {
@@ -1174,6 +1196,9 @@ mod tests {
             "000032000000000000007600914096000800005008000030040005050200000700000560904010000",
             "984000000000500040000000002006097200003002000000000010005060003407051890030009700",
             "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
+            "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
+            "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
+            "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
         ];
 
         for puzzle in puzzles {
@@ -1213,6 +1238,21 @@ mod tests {
                 "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
                 TechniqueFlags::NAKED_PAIRS,
             ),
+            (
+                "Swordfish",
+                "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
+            ),
+            (
+                "XY-Wing",
+                "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::XY_WING,
+            ),
+            (
+                "Naked Triples",
+                "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
+                TechniqueFlags::NAKED_TRIPLES,
+            ),
         ];
 
         for (name, puzzle, flag) in puzzles {
@@ -1233,6 +1273,129 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn test_swordfish_eliminates_from_correct_lines() {
+        // Hodoku Swordfish example
+        let s = "160540070008001030030800000700050069600902057000000000000030040000000016000164500";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::SWORDFISH) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Swordfish should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by Swordfish"
+            );
+        }
+    }
+
+    #[test]
+    fn test_xy_wing_eliminates_z_from_peers() {
+        // Hodoku XY-Wing example
+        let s = "000060000000010863003009000904000000300000704570820000000006580690007000000040030";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::XY_WING,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::XY_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "XY-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by XY-Wing"
+            );
+        }
+    }
+
+    #[test]
+    fn test_naked_triples_eliminates_candidates() {
+        // Hodoku Naked Triples example
+        let s = "400500370320000004060000000800002030210840000000000090070090100040651000000070000";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::NAKED_TRIPLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::NAKED_TRIPLES) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Naked Triples should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by Naked Triples"
+            );
         }
     }
 }
