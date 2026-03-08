@@ -17,6 +17,7 @@ pub mod units;
 mod w_wing;
 mod x_wing;
 mod xy_wing;
+mod xyz_wing;
 
 use flags::TechniqueFlags;
 use hidden_pairs::HiddenPairs;
@@ -30,6 +31,7 @@ use swordfish::Swordfish;
 use w_wing::WWing;
 use x_wing::XWing;
 use xy_wing::XYWing;
+use xyz_wing::XyzWing;
 
 /// Propagates constraints via zero or more techniques.
 ///
@@ -269,6 +271,7 @@ impl<'a> TechniquePropagator<'a> {
             &XWing,
             &Swordfish,
             &XYWing,
+            &XyzWing,
             &WWing,
         ];
 

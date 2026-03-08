@@ -54,6 +54,24 @@ impl fmt::Display for TechniqueFlags {
         if self.contains(TechniqueFlags::X_WING) {
             techniques.push("X-Wing");
         }
+        if self.contains(TechniqueFlags::SWORDFISH) {
+            techniques.push("Swordfish");
+        }
+        if self.contains(TechniqueFlags::XY_WING) {
+            techniques.push("XY-Wing");
+        }
+        if self.contains(TechniqueFlags::XYZ_WING) {
+            techniques.push("XYZ-Wing");
+        }
+        if self.contains(TechniqueFlags::W_WING) {
+            techniques.push("W-Wing");
+        }
+        if self.contains(TechniqueFlags::NAKED_TRIPLES) {
+            techniques.push("Naked Triples");
+        }
+        if self.contains(TechniqueFlags::HIDDEN_TRIPLES) {
+            techniques.push("Hidden Triples");
+        }
 
         write!(f, "{}", techniques.join(", "))
     }

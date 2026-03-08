@@ -37,8 +37,10 @@ bitflags! {
 
         /// Apply the XY-Wing technique.
         const XY_WING = 1 << 24;
+        /// Apply the XYZ-Wing technique.
+        const XYZ_WING = 1 << 25;
         /// Apply the W-Wing technique.
-        const W_WING = 1 << 25;
+        const W_WING = 1 << 26;
 
         /// Alias for X_WING.
         #[deprecated(note = "use X_WING instead")]
@@ -56,6 +58,7 @@ bitflags! {
         const HARD = Self::X_WING.bits()
             | Self::SWORDFISH.bits()
             | Self::XY_WING.bits()
+            | Self::XYZ_WING.bits()
             | Self::W_WING.bits();
     }
 }

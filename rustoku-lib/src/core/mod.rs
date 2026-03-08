@@ -937,6 +937,12 @@ mod tests {
                 trigger_string: "025100000000009030400708900040000800150400000000060004000000008263040000080390106",
                 technique_flag: TechniqueFlags::EASY | TechniqueFlags::W_WING,
             },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=xyz01&tech=XYZ-Wing
+            TechniqueTestCase {
+                name: "XYZ-Wing",
+                trigger_string: "069000000000021000000800400001530080007600050000000100000000003902080010000340205",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::XYZ_WING,
+            },
         ];
 
         for test_case in test_cases {
@@ -1212,6 +1218,7 @@ mod tests {
             "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
             "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
             "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+            "069000000000021000000800400001530080007600050000000100000000003902080010000340205", // XYZ-Wing
         ];
 
         for puzzle in puzzles {
@@ -1270,6 +1277,11 @@ mod tests {
                 "Hidden Triples",
                 "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
                 TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES,
+            ),
+            (
+                "XYZ-Wing",
+                "069000000000021000000800400001530080007600050000000100000000003902080010000340205",
+                TechniqueFlags::EASY | TechniqueFlags::XYZ_WING,
             ),
         ];
 
