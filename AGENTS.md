@@ -2,7 +2,7 @@
 
 ## Overview
 
-Rustoku is a Rust workspace with two crates: `rustoku-lib` (solver/generator library) and `rustoku-cli` (CLI tool). Rust 1.85, edition 2024, MIT license.
+Rustoku is a Rust workspace with two crates: `rustoku-lib` (solver/generator library) and `rustoku-cli` (CLI tool). Rust 1.87, edition 2024, MIT license.
 
 ## Architecture
 
