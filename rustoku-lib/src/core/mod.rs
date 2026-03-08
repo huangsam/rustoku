@@ -901,7 +901,7 @@ mod tests {
             TechniqueTestCase {
                 name: "X-Wing",
                 trigger_string: "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
-                technique_flag: TechniqueFlags::XWING,
+                technique_flag: TechniqueFlags::X_WING,
             },
             // https://hodoku.sourceforge.net/en/show_example.php?file=bf301&tech=Swordfish
             TechniqueTestCase {
@@ -1163,7 +1163,7 @@ mod tests {
         let s = "000000000760003002002640009403900070000004903005000020010560000370090041000000060";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
-            .with_techniques(TechniqueFlags::XWING);
+            .with_techniques(TechniqueFlags::X_WING);
         let mut path = SolvePath::default();
         rustoku.techniques_make_valid_changes(&mut path);
 
@@ -1177,7 +1177,7 @@ mod tests {
                     value,
                     flags,
                     ..
-                } if flags.contains(TechniqueFlags::XWING) => Some((*row, *col, *value)),
+                } if flags.contains(TechniqueFlags::X_WING) => Some((*row, *col, *value)),
                 _ => None,
             })
             .collect();

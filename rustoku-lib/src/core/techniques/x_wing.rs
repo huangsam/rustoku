@@ -187,6 +187,6 @@ impl TechniqueRule for XWing {
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {
-        crate::core::TechniqueFlags::XWING
+        crate::core::TechniqueFlags::X_WING
     }
 }

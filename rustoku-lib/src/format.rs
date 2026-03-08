@@ -51,7 +51,7 @@ impl fmt::Display for TechniqueFlags {
         if self.contains(TechniqueFlags::LOCKED_CANDIDATES) {
             techniques.push("Locked Candidates");
         }
-        if self.contains(TechniqueFlags::XWING) {
+        if self.contains(TechniqueFlags::X_WING) {
             techniques.push("X-Wing");
         }
 
@@ -362,7 +362,7 @@ mod tests {
         let mask = TechniqueFlags::NAKED_SINGLES;
         assert_eq!(format!("{mask}"), "Naked Singles");
 
-        let mask = TechniqueFlags::XWING;
+        let mask = TechniqueFlags::X_WING;
         assert_eq!(format!("{mask}"), "X-Wing");
     }
 
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(format!("{mask}"), "Naked Singles, Hidden Singles");
 
         let mask = TechniqueFlags::NAKED_SINGLES
-            | TechniqueFlags::XWING
+            | TechniqueFlags::X_WING
             | TechniqueFlags::LOCKED_CANDIDATES;
         assert_eq!(
             format!("{mask}"),
