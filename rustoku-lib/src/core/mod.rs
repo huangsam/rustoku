@@ -925,6 +925,18 @@ mod tests {
                 trigger_string: "400500370320000004060000000800002030210840000000000090070090100040651000000070000",
                 technique_flag: TechniqueFlags::NAKED_TRIPLES,
             },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=h301&tech=Hidden+Triple
+            TechniqueTestCase {
+                name: "Hidden Triples",
+                trigger_string: "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=w01&tech=W-Wing
+            TechniqueTestCase {
+                name: "W-Wing",
+                trigger_string: "025100000000009030400708900040000800150400000000060004000000008263040000080390106",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::W_WING,
+            },
         ];
 
         for test_case in test_cases {
@@ -1199,6 +1211,7 @@ mod tests {
             "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
             "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
             "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
+            "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
         ];
 
         for puzzle in puzzles {
@@ -1252,6 +1265,11 @@ mod tests {
                 "Naked Triples",
                 "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
                 TechniqueFlags::NAKED_TRIPLES,
+            ),
+            (
+                "Hidden Triples",
+                "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+                TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES,
             ),
         ];
 
@@ -1395,6 +1413,88 @@ mod tests {
                 remaining & cand_bit,
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by Naked Triples"
+            );
+        }
+    }
+
+    #[test]
+    fn test_hidden_triples_eliminates_candidates() {
+        // Hodoku Hidden Triples example
+        let s = "200000400500000006001034080000500040000000000060790000090200600003009001000080037";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::HIDDEN_TRIPLES) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Hidden Triples should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by Hidden Triples"
+            );
+        }
+    }
+
+    #[test]
+    fn test_w_wing_eliminates_candidates() {
+        // Hodoku W-Wing example
+        let s = "025100000000009030400708900040000800150400000000060004000000008263040000080390106";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::W_WING,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::W_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "W-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by W-Wing"
             );
         }
     }

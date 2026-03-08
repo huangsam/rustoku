@@ -131,8 +131,8 @@ mod tests {
         let candidates = Candidates::new(); // Starts with all 0s
         let r = 0;
         let c = 0;
-        let cands = candidates.get_candidates(r, c);
-        assert_eq!(cands, vec![]);
+        let cands: Vec<u8> = candidates.get_candidates(r, c);
+        assert_eq!(cands, Vec::<u8>::new());
     }
 
     #[test]
@@ -204,6 +204,6 @@ mod tests {
 
         assert_eq!(candidates.get_candidates(0, 0), vec![1, 3]);
         assert_eq!(candidates.get_candidates(8, 8), vec![6, 8]);
-        assert_eq!(candidates.get_candidates(0, 1), vec![]); // Unset cell
+        assert_eq!(candidates.get_candidates(0, 1), Vec::<u8>::new()); // Unset cell
     }
 }

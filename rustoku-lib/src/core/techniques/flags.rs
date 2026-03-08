@@ -23,12 +23,16 @@ bitflags! {
         const XY_WING = 1 << 7;
         /// Apply the naked triples technique.
         const NAKED_TRIPLES = 1 << 8;
+        /// Apply the hidden triples technique.
+        const HIDDEN_TRIPLES = 1 << 9;
+        /// Apply the W-Wing technique.
+        const W_WING = 1 << 10;
 
         /// Apply easy techniques like naked singles.
         const EASY = Self::NAKED_SINGLES.bits() | Self::HIDDEN_SINGLES.bits();
         /// Apply medium techniques like naked pairs.
-        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits() | Self::LOCKED_CANDIDATES.bits() | Self::NAKED_TRIPLES.bits();
+        const MEDIUM = Self::NAKED_PAIRS.bits() | Self::HIDDEN_PAIRS.bits() | Self::LOCKED_CANDIDATES.bits() | Self::NAKED_TRIPLES.bits() | Self::HIDDEN_TRIPLES.bits();
         /// Apply hard techniques like X-Wings.
-        const HARD = Self::XWING.bits() | Self::SWORDFISH.bits() | Self::XY_WING.bits();
+        const HARD = Self::XWING.bits() | Self::SWORDFISH.bits() | Self::XY_WING.bits() | Self::W_WING.bits();
     }
 }
