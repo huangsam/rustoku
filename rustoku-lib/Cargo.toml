@@ -22,6 +22,7 @@ clap = { version = "4.5.60", features = ["derive"] }
 [dev-dependencies]
 criterion = { version = "0.8.2", features = ["html_reports"] }
 serde_json = "1.0"
+proptest = "1.4"
 
 [[bench]]
 name = "rustoku_benchmark"

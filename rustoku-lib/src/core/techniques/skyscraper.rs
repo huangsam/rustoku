@@ -44,22 +44,25 @@ impl Skyscraper {
 
                 if shared_cols.len() == 1 {
                     let shared_col = shared_cols[0];
-                    let roof_col1 = cols1.iter().find(|&&c| c != shared_col).unwrap();
-                    let roof_col2 = cols2.iter().find(|&&c| c != shared_col).unwrap();
+                    // Safe: cols1 and cols2 each have 2 elements, shared_cols has 1, so there's always 1 non-shared element
+                    let roof_col1 = cols1.iter().find(|&&c| c != shared_col);
+                    let roof_col2 = cols2.iter().find(|&&c| c != shared_col);
 
-                    // Eliminate candidate from cells that see BOTH roof cells.
-                    for r in 0..9 {
-                        for c in 0..9 {
-                            if (r == r1 && c == *roof_col1) || (r == r2 && c == *roof_col2) {
-                                continue;
-                            }
-                            if Self::sees(r, c, r1, *roof_col1)
-                                && Self::sees(r, c, r2, *roof_col2)
-                                && prop.board.is_empty(r, c)
-                                && (prop.candidates.get(r, c) & candidate_bit) != 0
-                            {
-                                eliminations_made |=
-                                    prop.eliminate_candidate(r, c, candidate_bit, flags, path);
+                    if let (Some(roof_col1), Some(roof_col2)) = (roof_col1, roof_col2) {
+                        // Eliminate candidate from cells that see BOTH roof cells.
+                        for r in 0..9 {
+                            for c in 0..9 {
+                                if (r == r1 && c == *roof_col1) || (r == r2 && c == *roof_col2) {
+                                    continue;
+                                }
+                                if Self::sees(r, c, r1, *roof_col1)
+                                    && Self::sees(r, c, r2, *roof_col2)
+                                    && prop.board.is_empty(r, c)
+                                    && (prop.candidates.get(r, c) & candidate_bit) != 0
+                                {
+                                    eliminations_made |=
+                                        prop.eliminate_candidate(r, c, candidate_bit, flags, path);
+                                }
                             }
                         }
                     }
@@ -94,21 +97,24 @@ impl Skyscraper {
 
                 if shared_rows.len() == 1 {
                     let shared_row = shared_rows[0];
-                    let roof_row1 = rows1.iter().find(|&&r| r != shared_row).unwrap();
-                    let roof_row2 = rows2.iter().find(|&&r| r != shared_row).unwrap();
+                    // Safe: rows1 and rows2 each have 2 elements, shared_rows has 1, so there's always 1 non-shared element
+                    let roof_row1 = rows1.iter().find(|&&r| r != shared_row);
+                    let roof_row2 = rows2.iter().find(|&&r| r != shared_row);
 
-                    for r in 0..9 {
-                        for c in 0..9 {
-                            if (r == *roof_row1 && c == c1) || (r == *roof_row2 && c == c2) {
-                                continue;
-                            }
-                            if Self::sees(r, c, *roof_row1, c1)
-                                && Self::sees(r, c, *roof_row2, c2)
-                                && prop.board.is_empty(r, c)
-                                && (prop.candidates.get(r, c) & candidate_bit) != 0
-                            {
-                                eliminations_made |=
-                                    prop.eliminate_candidate(r, c, candidate_bit, flags, path);
+                    if let (Some(roof_row1), Some(roof_row2)) = (roof_row1, roof_row2) {
+                        for r in 0..9 {
+                            for c in 0..9 {
+                                if (r == *roof_row1 && c == c1) || (r == *roof_row2 && c == c2) {
+                                    continue;
+                                }
+                                if Self::sees(r, c, *roof_row1, c1)
+                                    && Self::sees(r, c, *roof_row2, c2)
+                                    && prop.board.is_empty(r, c)
+                                    && (prop.candidates.get(r, c) & candidate_bit) != 0
+                                {
+                                    eliminations_made |=
+                                        prop.eliminate_candidate(r, c, candidate_bit, flags, path);
+                                }
                             }
                         }
                     }

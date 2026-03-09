@@ -203,7 +203,11 @@ impl AlternatingInferenceChain {
         // Any node that sees BOTH the first and last node MUST be false.
 
         let start = &chain.nodes[0];
-        let end = chain.nodes.last().unwrap();
+        // Safe: we checked chain.nodes.len() >= 4 above
+        let end = chain
+            .nodes
+            .last()
+            .expect("chain should have at least 4 nodes");
 
         // They must be different nodes but have the SAME value to eliminate that value from peers.
         // (If they are different values, it's a completely different type of deduction, like a grouped chain).
@@ -298,7 +302,11 @@ impl TechniqueRule for AlternatingInferenceChain {
                     continue;
                 }
 
-                let current_node = current_path.nodes.last().unwrap();
+                // Safe: we just popped current_path from queue, so nodes is not empty
+                let current_node = current_path
+                    .nodes
+                    .last()
+                    .expect("path nodes should never be empty");
                 let need_strong = current_path.last_link == LinkType::Weak;
 
                 let next_nodes =
