@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-08
+
+### Added
+- Advanced human-like solving techniques:
+    - **Swordfish** and **Jellyfish** for complex grid-based eliminations
+    - **Skyscraper** for Turbot Fish-style patterns
+    - **W-Wing** for bi-local/bi-value interactions
+    - **XY-Wing** and **XYZ-Wing** for bent-wing eliminations
+    - **Hidden Quads**, **Hidden Triples**, and **Naked Quads**, **Naked Triples** for group-based pruning
+- Dynamic CSV-based integration testing in the CLI
+- Embedded CSV test data for portable and reliable validation
+- Hodoku reference links in technical documentation for all solving techniques
+
+### Changed
+- Replaced hardcoded library tests with dataset-wide CSV validation
+- Standardized puzzle strings to use `0` instead of `.`
+- Enhanced `CONTRIBUTING.md` with technical architecture details
+
+### Fixed
+- Typo in embedded test data that caused puzzle validation failure
+- Correctness issues in bent-wing technique eliminations
+
 ## [0.13.0] - 2026-02-15
 
 ### Added
