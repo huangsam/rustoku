@@ -975,6 +975,8 @@ dependencies = [
  "console_error_panic_hook",
  "getrandom 0.4.2",
  "rustoku-lib",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
 ]
 

@@ -20,4 +20,7 @@ pub enum RustokuError {
     /// The puzzle generation process failed.
     #[error("Puzzle generation failed ")]
     GenerateFailure,
+    /// The difficulty string is not one of: easy, medium, hard, expert.
+    #[error("Unknown difficulty {0:?}; expected one of: easy, medium, hard, expert")]
+    UnknownDifficulty(String),
 }

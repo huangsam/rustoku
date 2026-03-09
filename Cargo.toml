@@ -1,5 +1,6 @@
 [workspace]
 members = ["rustoku-lib", "rustoku-cli", "rustoku-wasm", "rustoku-py"]
+default-members = ["rustoku-lib", "rustoku-cli"]
 resolver = "3"
 
 [workspace.package]

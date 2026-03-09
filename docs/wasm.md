@@ -34,6 +34,28 @@ Generates a new Sudoku puzzle.
 - **Input**: `"easy"`, `"medium"`, `"hard"`, or `"expert"`.
 - **Output**: 81-character puzzle string.
 
+### `solve_all(board_str: string): string`
+Finds every solution for a puzzle.
+- **Output**: JSON-encoded `string[]`. Parse with `JSON.parse()`.
+  Returns `"[]"` if no solution exists or the input is invalid.
+
+### `solve_steps(board_str: string, difficulty: string): string`
+Solves a puzzle and returns a full step-by-step trace.
+- **`difficulty`**: `"easy"`, `"medium"`, `"hard"`, or `"expert"`.
+- **Output**: JSON-encoded `{ board: string, steps: Step[] }`, or `"null"` if
+  unsolvable or input is invalid. Each `Step` has: `type` (`"placement"` or
+  `"elimination"`), `row`, `col`, `value`, `technique`, `step_number`,
+  `candidates_eliminated`, `related_cell_count`, `difficulty_point`.
+
+### `candidates(board_str: string): string`
+Returns the valid candidate digits for every cell.
+- **Output**: JSON-encoded `number[][][]` (9×9 grid). Filled cells return `[]`.
+  Returns `"null"` if the input is invalid.
+
+### `generate_clues(num_clues: number): string`
+Generates a puzzle with exactly `num_clues` given cells (17–81).
+- **Output**: 81-character puzzle string, or an empty string on failure.
+
 ### `check(board_str: string): boolean`
 Validates a solved Sudoku board.
 - **Input**: 81-character string.
@@ -48,16 +70,35 @@ Validates a solved Sudoku board.
 
 2. **Use in `main.js`**:
     ```javascript
-    import init, { solve, generate } from './pkg/rustoku_wasm.js';
+    import init, { solve, solve_all, solve_steps, candidates, generate, generate_clues, check } from './pkg/rustoku_wasm.js';
 
     async function run() {
-      // Initialize WASM
       await init();
 
-      // Use the engine
-      const puzzle = generate("easy");
+      // Generate and solve
+      const puzzle = generate("hard");
       const solution = solve(puzzle);
-      console.log("Solved puzzle:", solution);
+      console.log("Solved:", solution);
+
+      // All solutions (uniqueness check)
+      const all = JSON.parse(solve_all(puzzle));
+      console.log("Solution count:", all.length);
+
+      // Step-by-step trace
+      const trace = JSON.parse(solve_steps(puzzle, "hard"));
+      if (trace) {
+        trace.steps.slice(0, 3).forEach(s =>
+          console.log(`R${s.row}C${s.col} = ${s.value} via ${s.technique}`)
+        );
+      }
+
+      // Pencil-mark candidates
+      const grid = JSON.parse(candidates(puzzle));
+      console.log("Candidates at R0C2:", grid[0][2]);
+
+      // Generate by clue count
+      const sparse = generate_clues(22);
+      console.log("22-clue puzzle:", sparse);
     }
 
     run();

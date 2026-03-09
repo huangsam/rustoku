@@ -10,6 +10,7 @@ repository.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+publish = false  # distributed via npm using wasm-pack, not crates.io
 
 [lib]
 crate-type = ["cdylib"]
@@ -19,3 +20,5 @@ rustoku-lib = { path = "../rustoku-lib" }
 wasm-bindgen = "0.2.99"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 getrandom = { version = "0.4.2", features = ["wasm_js"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }

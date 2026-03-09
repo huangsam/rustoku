@@ -9,6 +9,7 @@
 //! output includes the matrix-like representation of the board as well as the
 //! one-line representation for easy copying and pasting.
 
+pub mod bind;
 pub mod core;
 mod error;
 mod format;

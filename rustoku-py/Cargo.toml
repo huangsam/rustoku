@@ -10,6 +10,7 @@ repository.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+publish = false  # distributed via PyPI using maturin, not crates.io
 
 [lib]
 name = "rustoku"
