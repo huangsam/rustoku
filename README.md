@@ -8,17 +8,21 @@
 
 Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and clarity.
 It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for
-puzzle navigation. Available as a Rust [library] and [CLI].
+puzzle navigation. Available as Rust [library] and [CLI] crates.
 
 - **Fast solving with clear solve paths:** Rustoku can find solutions in microseconds, even
 for the most complex puzzles. Plus, it shows you the step-by-step solve path for understanding
 how the solution was reached
 - **Unique and configurable puzzle generation:** Create Sudoku puzzles that are guaranteed to
-have only one solution. You can also customize the difficulty by generating puzzles with a
-specific number of clues
+have only one solution. You can also customize the difficulty of the puzzle to your liking
 - **Human-like puzzle solving:** Take control with Rustoku's CLI interface. Beyond raw speed, it
-mimics human expertise, employing a full range of techniques from [Naked Singles] to [X-Wing]
+mimics human expertise, employing a full range of techniques from Naked Singles to X-Wing
 to solve puzzles with precision
+
+[bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
+[MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/
+[library]: https://crates.io/crates/rustoku-lib
+[CLI]: https://crates.io/crates/rustoku-cli
 
 ## Getting Started
 
@@ -74,10 +78,3 @@ Try some more examples from these sites:
 - [Ritvik19/Sudoku-Dataset](https://huggingface.co/datasets/Ritvik19/Sudoku-Dataset)
 
 Dive into the world of high-performance Sudoku today!
-
-[bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
-[MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/
-[library]: https://crates.io/crates/rustoku-lib
-[CLI]: https://crates.io/crates/rustoku-cli
-[Naked Singles]: https://hodoku.sourceforge.net/en/tech_singles.php#n1
-[X-Wing]: https://hodoku.sourceforge.net/en/tech_fishb.php#bf2
