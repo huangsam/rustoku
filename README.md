@@ -12,6 +12,7 @@ Rustoku is a highly optimized Sudoku puzzle solver and generator built with a fo
 - **Unique and configurable puzzle generation:** Create Sudoku puzzles that are guaranteed to have only one solution. You can also customize the difficulty of the puzzle to your liking
 - **Human-like puzzle solving:** Beyond raw speed, it mimics human expertise, employing a full range of techniques from Naked Singles to X-Wing to solve puzzles with precision
 - **WebAssembly Support:** Run the Sudoku engine directly in your browser with zero latency using the `rustoku-wasm` crate
+- **Python Bindings:** Use the high-performance engine from Python via `rustoku-py`, built with PyO3 and maturin
 
 [bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
 [MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/

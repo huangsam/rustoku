@@ -4,7 +4,6 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **Python Bindings**: Provide high-performance generation and solving for the Python AI community.
 - **Property-based Testing**: Mathematically verify correctness against millions of random inputs.
 - **Export Formats**: Support saving puzzles and solutions as JSON, PNG, or SVG.
 - **Profile-Guided Optimization**: Use real-world execution profiles to optimize machine code.

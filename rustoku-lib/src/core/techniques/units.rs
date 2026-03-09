@@ -66,16 +66,16 @@ mod tests {
     #[test]
     fn test_row_cells() {
         let cells = row_cells(5);
-        for c in 0..9 {
-            assert_eq!(cells[c], (5, c));
+        for (c, &cell) in cells.iter().enumerate() {
+            assert_eq!(cell, (5, c));
         }
     }
 
     #[test]
     fn test_col_cells() {
         let cells = col_cells(3);
-        for r in 0..9 {
-            assert_eq!(cells[r], (r, 3));
+        for (r, &cell) in cells.iter().enumerate() {
+            assert_eq!(cell, (r, 3));
         }
     }
 
