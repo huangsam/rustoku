@@ -2,43 +2,6 @@
 
 Thank you for your interest in contributing to Rustoku! This document covers development reference, coding guidelines, and publishing instructions.
 
-## Development Reference
-
-### Data Structures
-
-| Struct | Description | Size |
-|---|---|---|
-| `Board` | 9×9 `[[u8; 9]; 9]` grid | 81 bytes |
-| `Masks` | Row/col/box constraint bitmasks (`[u32; 9]` × 3) | 108 bytes |
-| `Candidates` | Per-cell candidate bitmasks (`[[u32; 9]; 9]`) | 324 bytes |
-| `Solution` | Solved board + `SolvePath` | varies |
-| `SolvePath` | Sequence of steps with technique info | varies |
-| `TechniqueFlags` | Bitflags for enabled human techniques | 4 bytes |
-
-### Algorithms
-
-- **Backtracking with MRV**: Selects empty cell with fewest candidates first, dramatically reducing search space.
-- **Constraint Propagation**: Optional human-like techniques (naked singles, hidden singles, naked pairs, hidden pairs) applied before backtracking.
-- **Puzzle Generation**: Generates a full solved board, then removes clues one at a time while verifying the solution remains unique via `solve_until(2)`.
-
-### Error Handling
-
-`RustokuError` variants (in `rustoku-lib/src/error.rs`):
-
-| Variant | Meaning |
-|---|---|
-| `InvalidClueCount` | Clues not in 17–81 range |
-| `InvalidInputLength` | Input string ≠ 81 chars |
-| `InvalidInputCharacter` | Non-digit character in input |
-| `DuplicateValues` | Initial board has constraint violations |
-| `GenerateFailure` | Puzzle generation did not converge |
-
-### Performance Details
-
-- Bitmask operations enable O(1) constraint checks: `masks.row[r] & (1 << val) == 0` means `val` is available in row `r`.
-- Candidate cache (`Candidates`) is updated incrementally during backtracking—never recomputed from scratch.
-- Criterion benchmarks live in `rustoku-lib/benches/`. Typical results: **solve_any ~10–50μs**, **solve_all ~20–100μs**.
-
 ## Potential Improvements
 
 - **Profile-Guided Optimization (PGO)**: Squeeze out an additional 10-20% performance by using real-world execution profiles to optimize machine code layout.
