@@ -31,11 +31,13 @@ rustoku/
 | `.solve_until(n)` → `Vec<Solution>` | Find up to *n* solutions |
 | `.is_solved()` → `bool` | Validate board completeness |
 | `generate_board(clues)` → `Result<Board>` | Generate puzzle (17–81 clues) |
+| `generate_board_by_difficulty(diff, n)` → `Result<Board>` | Generate puzzle by difficulty (Easy–Expert) |
 
 ## CLI Commands
 
 ```bash
 rustoku-cli generate --clues 25
+rustoku-cli generate --difficulty hard
 rustoku-cli solve any --verbose --human "<81-char puzzle>"
 rustoku-cli solve all "<81-char puzzle>"
 rustoku-cli check "<81-char solution>"
