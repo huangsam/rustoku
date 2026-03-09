@@ -15,9 +15,3 @@ updates:
     directory: "/rustoku-py"
     schedule:
       interval: "weekly"
-
-  # Keeps the generated npm package (wasm-bindgen JS glue) up to date.
-  - package-ecosystem: "npm"
-    directory: "/rustoku-wasm/pkg"
-    schedule:
-      interval: "weekly"
