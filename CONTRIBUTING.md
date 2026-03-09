@@ -41,8 +41,7 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **Algorithms**: Dynamic MRV scoring; constraint learning
-- **Performance**: SIMD for bulk mask ops; memory pooling during backtracking; PGO
+- **Performance**: PGO for machine code
 - **API**: Async solving (tokio); serde serialization; WASM compilation; PyO3 bindings
 - **CLI**: Interactive TUI mode; progress indicators; export formats (JSON, images)
 - **Testing**: Property-based testing (proptest); cargo-fuzz; performance regression tests; >95% coverage target
