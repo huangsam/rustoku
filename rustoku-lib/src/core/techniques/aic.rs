@@ -230,16 +230,18 @@ impl AlternatingInferenceChain {
                         // Target must be weakly linked (see) both start and end
                         // Note: Technically for different values, target just needs to "see" start and end.
                         // But since start and end are the same value, "seeing" is equivalent to is_weak_link.
-                        if Self::is_weak_link(start, &target) && Self::is_weak_link(end, &target)
+                        if Self::is_weak_link(start, &target)
+                            && Self::is_weak_link(end, &target)
                             && prop.eliminate_candidate(
                                 r,
                                 c,
                                 val_mask,
                                 TechniqueFlags::ALTERNATING_INFERENCE_CHAIN,
                                 path,
-                            ) {
-                                progress = true;
-                            }
+                            )
+                        {
+                            progress = true;
+                        }
                     }
                 }
             }
@@ -257,9 +259,10 @@ impl AlternatingInferenceChain {
                     remove_mask,
                     TechniqueFlags::ALTERNATING_INFERENCE_CHAIN,
                     path,
-                ) {
-                    progress = true;
-                }
+                )
+            {
+                progress = true;
+            }
         }
 
         progress
@@ -317,10 +320,12 @@ impl TechniqueRule for AlternatingInferenceChain {
 
                     // If we just added a strong link, we can check for eliminations
                     // (AICs must start and end with strong links, hence even number of nodes)
-                    if new_path.last_link == LinkType::Strong && new_path.nodes.len() >= 4
-                        && AlternatingInferenceChain::find_eliminations(prop, path, &new_path) {
-                            return true; // We made an elimination, return to let propagator restart
-                        }
+                    if new_path.last_link == LinkType::Strong
+                        && new_path.nodes.len() >= 4
+                        && AlternatingInferenceChain::find_eliminations(prop, path, &new_path)
+                    {
+                        return true; // We made an elimination, return to let propagator restart
+                    }
 
                     queue.push_back(new_path);
                 }
