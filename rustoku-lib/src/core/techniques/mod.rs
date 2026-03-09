@@ -9,6 +9,7 @@ mod hidden_pairs;
 mod hidden_quads;
 mod hidden_singles;
 mod hidden_triples;
+mod jellyfish;
 mod locked_candidates;
 mod naked_pairs;
 mod naked_quads;
@@ -26,6 +27,7 @@ use hidden_pairs::HiddenPairs;
 use hidden_quads::HiddenQuads;
 use hidden_singles::HiddenSingles;
 use hidden_triples::HiddenTriples;
+use jellyfish::Jellyfish;
 use locked_candidates::LockedCandidates;
 use naked_pairs::NakedPairs;
 use naked_quads::NakedQuads;
@@ -276,6 +278,7 @@ impl<'a> TechniquePropagator<'a> {
             &NakedQuads,
             &HiddenQuads,
             &Swordfish,
+            &Jellyfish,
             &WWing,
             &XYWing,
             &XyzWing,
@@ -416,6 +419,14 @@ mod tests {
                     | TechniqueFlags::MEDIUM
                     | TechniqueFlags::SWORDFISH,
             },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=bf401&tech=Jellyfish
+            TechniqueTestCase {
+                name: "Jellyfish",
+                trigger_string: "200000003080030050003402100001205400000090000009308600002506900090020070400000001",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::JELLYFISH,
+            },
             // https://hodoku.sourceforge.net/en/show_example.php?file=xy01&tech=XY-Wing
             TechniqueTestCase {
                 name: "XY-Wing",
@@ -527,6 +538,11 @@ mod tests {
                 "Swordfish",
                 "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
                 TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
+            ),
+            (
+                "Jellyfish",
+                "200000003080030050003402100001205400000090000009308600002506900090020070400000001",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::JELLYFISH,
             ),
             (
                 "XY-Wing",
