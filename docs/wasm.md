@@ -42,26 +42,26 @@ Validates a solved Sudoku board.
 ## Web Integration Example (Vite)
 
 1. **Build the pkg**:
-   ```bash
-   wasm-pack build --target web --out-dir brainstorm/web/pkg
-   ```
+    ```bash
+    wasm-pack build --target web --out-dir brainstorm/web/pkg
+    ```
 
 2. **Use in `main.js`**:
-   ```javascript
-   import init, { solve, generate } from './pkg/rustoku_wasm.js';
+    ```javascript
+    import init, { solve, generate } from './pkg/rustoku_wasm.js';
 
-   async function run() {
-     // Initialize WASM
-     await init();
+    async function run() {
+      // Initialize WASM
+      await init();
 
-     // Use the engine
-     const puzzle = generate("easy");
-     const solution = solve(puzzle);
-     console.log("Solved puzzle:", solution);
-   }
+      // Use the engine
+      const puzzle = generate("easy");
+      const solution = solve(puzzle);
+      console.log("Solved puzzle:", solution);
+    }
 
-   run();
-   ```
+    run();
+    ```
 
 ## Integration Tips
 
