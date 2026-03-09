@@ -187,7 +187,7 @@ pub(crate) fn format_grid(board: &Board) -> Vec<String> {
 ///
 /// This function converts the board into a single string where each number is
 /// represented by its digit, and empty cells are represented by a dot (`.`).
-pub(crate) fn format_line(board: &Board) -> String {
+pub fn format_line(board: &Board) -> String {
     board
         .cells
         .iter()

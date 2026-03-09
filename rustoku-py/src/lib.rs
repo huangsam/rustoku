@@ -1,29 +1,8 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rustoku_lib::core::Difficulty;
-use rustoku_lib::{Rustoku, generate_board_by_difficulty};
-
-fn parse_difficulty(s: &str) -> PyResult<Difficulty> {
-    match s.to_lowercase().as_str() {
-        "easy" => Ok(Difficulty::Easy),
-        "medium" => Ok(Difficulty::Medium),
-        "hard" => Ok(Difficulty::Hard),
-        "expert" => Ok(Difficulty::Expert),
-        other => Err(PyValueError::new_err(format!(
-            "unknown difficulty {:?}; expected one of: easy, medium, hard, expert",
-            other
-        ))),
-    }
-}
-
-fn board_to_line(display: String) -> String {
-    display
-        .split("Line format: ")
-        .nth(1)
-        .unwrap_or("")
-        .trim()
-        .to_string()
-}
+use rustoku_lib::{Rustoku, format_line, generate_board_by_difficulty};
+use std::str::FromStr;
 
 /// Solves a Sudoku puzzle.
 ///
@@ -38,7 +17,7 @@ fn solve(puzzle: &str) -> PyResult<String> {
         Rustoku::new_from_str(puzzle).map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(rustoku
         .solve_any()
-        .map(|s| board_to_line(format!("{}", s.board)))
+        .map(|s| format_line(&s.board))
         .unwrap_or_default())
 }
 
@@ -50,10 +29,15 @@ fn solve(puzzle: &str) -> PyResult<String> {
 /// Raises `ValueError` if the difficulty string is invalid or generation fails.
 #[pyfunction]
 fn generate(difficulty: &str) -> PyResult<String> {
-    let diff = parse_difficulty(difficulty)?;
+    let diff = Difficulty::from_str(difficulty).map_err(|_| {
+        PyValueError::new_err(format!(
+            "unknown difficulty {:?}; expected one of: easy, medium, hard, expert",
+            difficulty
+        ))
+    })?;
     let board = generate_board_by_difficulty(diff, 100)
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
-    Ok(board_to_line(format!("{}", board)))
+    Ok(format_line(&board))
 }
 
 /// Checks if an 81-character Sudoku string is a valid, fully-solved board.
