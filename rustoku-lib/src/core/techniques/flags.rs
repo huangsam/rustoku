@@ -74,12 +74,7 @@ pub enum Difficulty {
 
 impl std::fmt::Display for Difficulty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Difficulty::Easy => write!(f, "Easy"),
-            Difficulty::Medium => write!(f, "Medium"),
-            Difficulty::Hard => write!(f, "Hard"),
-            Difficulty::Expert => write!(f, "Expert"),
-        }
+        write!(f, "{}", self.difficulty_name())
     }
 }
 
