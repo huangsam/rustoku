@@ -39,6 +39,8 @@ bitflags! {
         const SWORDFISH = 1 << 19;
         /// Apply the Jellyfish technique.
         const JELLYFISH = 1 << 20;
+        /// Apply the Skyscraper technique.
+        const SKYSCRAPER = 1 << 21;
 
         /// Apply the W-Wing technique.
         const W_WING = 1 << 24;

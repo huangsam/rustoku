@@ -15,6 +15,7 @@ mod naked_pairs;
 mod naked_quads;
 mod naked_singles;
 mod naked_triples;
+mod skyscraper;
 mod swordfish;
 pub mod units;
 mod w_wing;
@@ -33,6 +34,7 @@ use naked_pairs::NakedPairs;
 use naked_quads::NakedQuads;
 use naked_singles::NakedSingles;
 use naked_triples::NakedTriples;
+use skyscraper::Skyscraper;
 use swordfish::Swordfish;
 use w_wing::WWing;
 use x_wing::XWing;
@@ -279,6 +281,7 @@ impl<'a> TechniquePropagator<'a> {
             &HiddenQuads,
             &Swordfish,
             &Jellyfish,
+            &Skyscraper,
             &WWing,
             &XYWing,
             &XyzWing,
@@ -427,6 +430,14 @@ mod tests {
                     | TechniqueFlags::MEDIUM
                     | TechniqueFlags::JELLYFISH,
             },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=sk01&tech=Skyscraper
+            TechniqueTestCase {
+                name: "Skyscraper",
+                trigger_string: "000000000001902060000006790902000600370000950005000004140003005709024000000800000",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::SKYSCRAPER,
+            },
             // https://hodoku.sourceforge.net/en/show_example.php?file=xy01&tech=XY-Wing
             TechniqueTestCase {
                 name: "XY-Wing",
@@ -543,6 +554,11 @@ mod tests {
                 "Jellyfish",
                 "200000003080030050003402100001205400000090000009308600002506900090020070400000001",
                 TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::JELLYFISH,
+            ),
+            (
+                "Skyscraper",
+                "000000000001902060000006790902000600370000950005000004140003005709024000000800000",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SKYSCRAPER,
             ),
             (
                 "XY-Wing",
