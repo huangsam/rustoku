@@ -356,3 +356,218 @@ pub trait TechniqueRule {
     /// Returns the flags associated with this technique.
     fn flags(&self) -> TechniqueFlags;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::Rustoku;
+
+    struct TechniqueTestCase<'a> {
+        name: &'a str,
+        trigger_string: &'a str,
+        technique_flag: TechniqueFlags,
+    }
+
+    #[test]
+    fn test_each_technique_makes_valid_changes() {
+        let test_cases = vec![
+            // Last digit is empty, no other option exists
+            TechniqueTestCase {
+                name: "Naked Singles",
+                trigger_string: "385421967194756328627983145571892634839645271246137589462579813918364752753218490",
+                technique_flag: TechniqueFlags::NAKED_SINGLES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=h101&tech=Hidden+Single
+            TechniqueTestCase {
+                name: "Hidden Singles",
+                trigger_string: "008007000016083000000000051107290000000000000000046307290000000000860140000300700",
+                technique_flag: TechniqueFlags::HIDDEN_SINGLES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=n201&tech=Naked+Pair
+            TechniqueTestCase {
+                name: "Naked Pairs",
+                trigger_string: "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
+                technique_flag: TechniqueFlags::NAKED_PAIRS,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=h201&tech=Hidden+Pair
+            TechniqueTestCase {
+                name: "Hidden Pairs",
+                trigger_string: "000032000000000000007600914096000800005008000030040005050200000700000560904010000",
+                // Needs easy techniques to reduce candidates first, then hidden pairs to find the pair
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::HIDDEN_PAIRS,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=lc101&tech=Locked+Candidates+Type+1+%28Pointing%29
+            TechniqueTestCase {
+                name: "Locked Candidates",
+                trigger_string: "984000000000500040000000002006097200003002000000000010005060003407051890030009700",
+                technique_flag: TechniqueFlags::LOCKED_CANDIDATES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=bf201&tech=X-Wing
+            TechniqueTestCase {
+                name: "X-Wing",
+                trigger_string: "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
+                technique_flag: TechniqueFlags::X_WING,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=bf301&tech=Swordfish
+            TechniqueTestCase {
+                name: "Swordfish",
+                trigger_string: "160540070008001030030800000700050069600902057000000000000030040000000016000164500",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::SWORDFISH,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=xy01&tech=XY-Wing
+            TechniqueTestCase {
+                name: "XY-Wing",
+                trigger_string: "000060000000010863003009000904000000300000704570820000000006580690007000000040030",
+                technique_flag: TechniqueFlags::EASY
+                    | TechniqueFlags::MEDIUM
+                    | TechniqueFlags::XY_WING,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=l302&tech=Locked+Triple
+            TechniqueTestCase {
+                name: "Naked Triples",
+                trigger_string: "400500370320000004060000000800002030210840000000000090070090100040651000000070000",
+                technique_flag: TechniqueFlags::NAKED_TRIPLES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=h301&tech=Hidden+Triple
+            TechniqueTestCase {
+                name: "Hidden Triples",
+                trigger_string: "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=w01&tech=W-Wing
+            TechniqueTestCase {
+                name: "W-Wing",
+                trigger_string: "025100000000009030400708900040000800150400000000060004000000008263040000080390106",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::W_WING,
+            },
+            // https://hodoku.sourceforge.net/en/show_example.php?file=xyz01&tech=XYZ-Wing
+            TechniqueTestCase {
+                name: "XYZ-Wing",
+                trigger_string: "069000000000021000000800400001530080007600050000000100000000003902080010000340205",
+                technique_flag: TechniqueFlags::EASY | TechniqueFlags::XYZ_WING,
+            },
+        ];
+
+        for test_case in test_cases {
+            let rustoku = Rustoku::new_from_str(test_case.trigger_string)
+                .unwrap_or_else(|_| panic!("Rustoku creation failed for '{}'", test_case.name));
+            let mut path = SolvePath::default();
+            assert!(
+                rustoku
+                    .with_techniques(test_case.technique_flag)
+                    .techniques_make_valid_changes(&mut path),
+                "Propagation should not contradict for '{}'",
+                test_case.name
+            );
+            assert!(
+                !path.steps.is_empty(),
+                "Expected at least one placement or elimination for '{}'",
+                test_case.name
+            )
+        }
+    }
+
+    #[test]
+    fn test_all_techniques_produce_valid_solution() {
+        // Every technique-trigger puzzle must still solve to a valid board
+        let puzzles = vec![
+            "385421967194756328627983145571892634839645271246137589462579813918364752753218490",
+            "008007000016083000000000051107290000000000000000046307290000000000860140000300700",
+            "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
+            "000032000000000000007600914096000800005008000030040005050200000700000560904010000",
+            "984000000000500040000000002006097200003002000000000010005060003407051890030009700",
+            "000000000760003002002640009403900070000004903005000020010560000370090041000000060",
+            "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
+            "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
+            "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
+            "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+            "069000000000021000000800400001530080007600050000000100000000003902080010000340205", // XYZ-Wing
+        ];
+
+        for puzzle in puzzles {
+            let mut rustoku = Rustoku::new_from_str(puzzle)
+                .unwrap()
+                .with_techniques(TechniqueFlags::all());
+            let solution = rustoku.solve_any();
+            assert!(
+                solution.is_some(),
+                "Puzzle should be solvable with all techniques: {puzzle}"
+            );
+            let solved = solution.unwrap().board;
+            let check = Rustoku::new(solved).unwrap();
+            assert!(
+                check.is_solved(),
+                "Solution must be valid for puzzle: {puzzle}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_techniques_do_not_alter_given_clues() {
+        // Verify that constraint propagation never overwrites already-given clues
+        let puzzles = vec![
+            (
+                "Naked Singles",
+                "385421967194756328627983145571892634839645271246137589462579813918364752753218490",
+                TechniqueFlags::NAKED_SINGLES,
+            ),
+            (
+                "Hidden Singles",
+                "008007000016083000000000051107290000000000000000046307290000000000860140000300700",
+                TechniqueFlags::HIDDEN_SINGLES,
+            ),
+            (
+                "Naked Pairs",
+                "700009030000105006400260009002083951007000000005600000000000003100000060000004010",
+                TechniqueFlags::NAKED_PAIRS,
+            ),
+            (
+                "Swordfish",
+                "000970081200083005600000000400000027008705000006400000905010200000000040060000103",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
+            ),
+            (
+                "XY-Wing",
+                "004000000030701000700000090070060100608400000000050024080009005100300080943000700",
+                TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::XY_WING,
+            ),
+            (
+                "Naked Triples",
+                "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
+                TechniqueFlags::NAKED_TRIPLES,
+            ),
+            (
+                "Hidden Triples",
+                "200000400500000006001034080000500040000000000060790000090200600003009001000080037",
+                TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES,
+            ),
+            (
+                "XYZ-Wing",
+                "069000000000021000000800400001530080007600050000000100000000003902080010000340205",
+                TechniqueFlags::EASY | TechniqueFlags::XYZ_WING,
+            ),
+        ];
+
+        for (name, puzzle, flag) in puzzles {
+            let original = Board::try_from(puzzle).unwrap();
+            let mut rustoku = Rustoku::new_from_str(puzzle).unwrap().with_techniques(flag);
+            let mut path = SolvePath::default();
+            rustoku.techniques_make_valid_changes(&mut path);
+
+            for r in 0..9 {
+                for c in 0..9 {
+                    let orig_val = original.get(r, c);
+                    if orig_val != 0 {
+                        assert_eq!(
+                            rustoku.board.get(r, c),
+                            orig_val,
+                            "{name}: clue at ({r},{c}) was overwritten"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

@@ -89,3 +89,61 @@ impl TryFrom<&str> for Board {
         bytes.try_into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::RustokuError;
+
+    const UNIQUE_PUZZLE: &str =
+        "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+
+    #[test]
+    fn test_new_with_bytes_and_str() {
+        let board = [
+            [5, 3, 0, 0, 7, 0, 0, 0, 0],
+            [6, 0, 0, 1, 9, 5, 0, 0, 0],
+            [0, 9, 8, 0, 0, 0, 0, 6, 0],
+            [8, 0, 0, 0, 6, 0, 0, 0, 3],
+            [4, 0, 0, 8, 0, 3, 0, 0, 1],
+            [7, 0, 0, 0, 2, 0, 0, 0, 6],
+            [0, 6, 0, 0, 0, 0, 2, 8, 0],
+            [0, 0, 0, 4, 1, 9, 0, 0, 5],
+            [0, 0, 0, 0, 8, 0, 0, 7, 9],
+        ];
+
+        let flat_bytes: [u8; 81] = board
+            .concat()
+            .try_into()
+            .expect("Concat board to bytes failed");
+        let board_str: String = flat_bytes.iter().map(|&b| (b + b'0') as char).collect();
+
+        let board_from_new = Board::new(board);
+        let board_from_bytes = Board::try_from(flat_bytes).expect("Board from flat bytes failed");
+        let board_from_str = Board::try_from(board_str.as_str()).expect("Board from string failed");
+
+        assert_eq!(board_from_new, board_from_bytes);
+        assert_eq!(board_from_new, board_from_str);
+        assert_eq!(board_from_bytes, board_from_str);
+    }
+
+    #[test]
+    fn test_try_from_with_valid_input() {
+        let rustoku = Board::try_from(UNIQUE_PUZZLE);
+        assert!(rustoku.is_ok());
+    }
+
+    #[test]
+    fn test_try_from_with_invalid_length() {
+        let s = "530070000"; // Too short
+        let rustoku = Board::try_from(s);
+        assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
+    }
+
+    #[test]
+    fn test_try_from_with_invalid_character() {
+        let s = "53007000060019500009800006080006000340080300170002000606000028000041900500008007X"; // 'X'
+        let rustoku = Board::try_from(s);
+        assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
+    }
+}
