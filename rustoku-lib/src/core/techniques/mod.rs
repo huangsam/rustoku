@@ -6,10 +6,12 @@ use super::masks::Masks;
 
 pub mod flags;
 mod hidden_pairs;
+mod hidden_quads;
 mod hidden_singles;
 mod hidden_triples;
 mod locked_candidates;
 mod naked_pairs;
+mod naked_quads;
 mod naked_singles;
 mod naked_triples;
 mod swordfish;
@@ -21,10 +23,12 @@ mod xyz_wing;
 
 use flags::TechniqueFlags;
 use hidden_pairs::HiddenPairs;
+use hidden_quads::HiddenQuads;
 use hidden_singles::HiddenSingles;
 use hidden_triples::HiddenTriples;
 use locked_candidates::LockedCandidates;
 use naked_pairs::NakedPairs;
+use naked_quads::NakedQuads;
 use naked_singles::NakedSingles;
 use naked_triples::NakedTriples;
 use swordfish::Swordfish;
@@ -265,14 +269,16 @@ impl<'a> TechniquePropagator<'a> {
             &HiddenSingles,
             &NakedPairs,
             &HiddenPairs,
+            &LockedCandidates,
             &NakedTriples,
             &HiddenTriples,
-            &LockedCandidates,
             &XWing,
+            &NakedQuads,
+            &HiddenQuads,
             &Swordfish,
+            &WWing,
             &XYWing,
             &XyzWing,
-            &WWing,
         ];
 
         loop {
