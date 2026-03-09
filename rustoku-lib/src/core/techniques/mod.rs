@@ -4,6 +4,7 @@ use super::board::Board;
 use super::candidates::Candidates;
 use super::masks::Masks;
 
+mod aic;
 pub mod flags;
 mod hidden_pairs;
 mod hidden_quads;
@@ -23,6 +24,7 @@ mod x_wing;
 mod xy_wing;
 mod xyz_wing;
 
+use aic::AlternatingInferenceChain;
 use flags::TechniqueFlags;
 use hidden_pairs::HiddenPairs;
 use hidden_quads::HiddenQuads;
@@ -285,6 +287,7 @@ impl<'a> TechniquePropagator<'a> {
             &WWing,
             &XYWing,
             &XyzWing,
+            &AlternatingInferenceChain,
         ];
 
         loop {

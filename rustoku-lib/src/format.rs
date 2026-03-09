@@ -84,6 +84,9 @@ impl fmt::Display for TechniqueFlags {
         if self.contains(TechniqueFlags::SKYSCRAPER) {
             techniques.push("Skyscraper");
         }
+        if self.contains(TechniqueFlags::ALTERNATING_INFERENCE_CHAIN) {
+            techniques.push("Alternating Inference Chain");
+        }
 
         write!(f, "{}", techniques.join(", "))
     }
@@ -541,23 +544,28 @@ mod tests {
             (TechniqueFlags::W_WING, "W-Wing", "Expert"),
             (TechniqueFlags::XY_WING, "XY-Wing", "Expert"),
             (TechniqueFlags::XYZ_WING, "XYZ-Wing", "Expert"),
+            (
+                TechniqueFlags::ALTERNATING_INFERENCE_CHAIN,
+                "Alternating Inference Chain",
+                "Expert",
+            ),
         ];
 
-        for (flag, name, diff) in all_flags {
+        for (flag, expected_name, expected_difficulty) in all_flags {
             let formatted_name = format!("{}", flag);
             assert!(
-                formatted_name.contains(name),
+                formatted_name.contains(expected_name),
                 "Flag {:?} should contain name {}, but got {}",
                 flag,
-                name,
+                expected_name,
                 formatted_name
             );
 
             let difficulty_name = flag.difficulty_name();
             assert_eq!(
-                difficulty_name, diff,
+                difficulty_name, expected_difficulty,
                 "Flag {:?} should have difficulty {}, but got {}",
-                flag, diff, difficulty_name
+                flag, expected_difficulty, difficulty_name
             );
         }
     }

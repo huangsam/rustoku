@@ -48,6 +48,8 @@ bitflags! {
         const XY_WING = 1 << 25;
         /// Apply the XYZ-Wing technique.
         const XYZ_WING = 1 << 26;
+        /// Apply the Alternating Inference Chain (AIC) technique.
+        const ALTERNATING_INFERENCE_CHAIN = 1 << 27;
 
         /// Alias for X_WING.
         #[deprecated(note = "use X_WING instead")]
