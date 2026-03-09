@@ -5,7 +5,19 @@
 
 version: 2
 updates:
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keeps maturin (build-system requirement in pyproject.toml) up to date.
+  - package-ecosystem: "pip"
+    directory: "/rustoku-py"
+    schedule:
+      interval: "weekly"
+
+  # Keeps the generated npm package (wasm-bindgen JS glue) up to date.
+  - package-ecosystem: "npm"
+    directory: "/rustoku-wasm/pkg"
     schedule:
       interval: "weekly"

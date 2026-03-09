@@ -29,3 +29,33 @@ jobs:
         run: cargo clippy --no-deps -p rustoku-py -p rustoku-wasm
       - name: Run cargo doc
         run: cargo doc --no-deps
+
+  python-build:
+    name: Python
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build Python extension
+        run: maturin build --release
+        working-directory: rustoku-py
+
+  wasm-build:
+    name: WASM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build WASM module
+        run: wasm-pack build --release --target web
+        working-directory: rustoku-wasm
