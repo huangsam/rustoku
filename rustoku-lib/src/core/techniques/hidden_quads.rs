@@ -3,6 +3,21 @@ use super::{TechniquePropagator, TechniqueRule, units};
 use crate::core::SolvePath;
 
 /// Hidden quads technique implementation.
+///
+/// A hidden quad occurs when four candidate numbers in a unit (row, column, or box)
+/// appear in exactly four cells, and nowhere else in that unit.
+///
+/// Even if those four cells contain other "extraneous" candidates, we know that
+/// those four specific cells *must* contain the four quad numbers between them.
+/// Therefore, we can safely eliminate all other candidates from those four cells.
+///
+/// This is the "hidden" counterpart to Naked Quads. While Naked Quads are found by
+/// looking at cell candidate counts, Hidden Quads are found by looking at the
+/// distribution of candidate positions across a unit.
+///
+/// Example:
+/// If in a row, the numbers {2, 4, 7, 8} appear only in cells C2, C5, C6, and C9,
+/// then any other numbers in those four cells (like a 3 or a 5) can be removed.
 pub struct HiddenQuads;
 
 impl HiddenQuads {

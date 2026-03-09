@@ -3,6 +3,25 @@ use crate::core::SolvePath;
 use super::{TechniquePropagator, TechniqueRule};
 
 /// XYZ-Wing technique implementation.
+///
+/// An XYZ-Wing is an extension of the XY-Wing that involves three cells:
+/// - A **pivot** cell with exactly 3 candidates {X, Y, Z}.
+/// - A **pincer** cell that sees the pivot and has 2 candidates {X, Z}.
+/// - Another **pincer** cell that sees the pivot and has 2 candidates {Y, Z}.
+///
+/// The pivot cell must be either X, Y, or Z:
+/// - If pivot = X, the first pincer ({X, Z}) must be Z (if it also sees the Z-elimination target).
+/// - If pivot = Y, the second pincer ({Y, Z}) must be Z (if it also sees the Z-elimination target).
+/// - If pivot = Z, the pivot itself is Z.
+///
+/// In all three cases, at least one of these three cells must be Z. Therefore,
+/// any cell that "sees" all three cells (the pivot and both pincers) can have
+/// candidate Z eliminated.
+///
+/// Note that for a cell to see all three, the pivot and pincers must be arranged
+/// such that they share a common intersection (usually the pivot and one pincer
+/// in a house, and the pivot and the other pincer in a different house, with the
+/// target cell seeing all three).
 pub struct XyzWing;
 
 impl XyzWing {
