@@ -135,6 +135,7 @@ impl Rustoku {
     }
 
     /// Helper for solver to find the next empty cell (MRV).
+    #[inline]
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         let mut min = (10, None); // Min candidates, (r, c)
         for (r, c) in self.board.iter_empty_cells() {
@@ -150,6 +151,7 @@ impl Rustoku {
     }
 
     /// Place and remove operations for the solver, updated to use the new structs.
+    #[inline]
     fn place_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, num);
         self.masks.add_number(r, c, num);
@@ -158,6 +160,7 @@ impl Rustoku {
     }
 
     /// Remove a number from the board and update masks and candidates.
+    #[inline]
     fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0); // Set back to empty
         self.masks.remove_number(r, c, num);

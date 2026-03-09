@@ -19,6 +19,7 @@ impl Candidates {
     }
 
     /// Returns the candidate mask for a specific cell in the cache.
+    #[inline]
     pub(super) fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
     }
@@ -37,6 +38,7 @@ impl Candidates {
     }
 
     /// Sets the candidate mask for a specific cell in the cache.
+    #[inline]
     pub(super) fn set(&mut self, r: usize, c: usize, mask: u16) {
         self.cache[r][c] = mask;
     }

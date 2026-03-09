@@ -20,11 +20,13 @@ impl Masks {
     }
 
     /// Computes the index of the 3x3 box based on the row and column indices.
+    #[inline]
     pub(super) fn get_box_idx(r: usize, c: usize) -> usize {
         (r / 3) * 3 + (c / 3)
     }
 
     /// Adds a number to the masks for the specified row, column, and box.
+    #[inline]
     pub(super) fn add_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_set = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -34,6 +36,7 @@ impl Masks {
     }
 
     /// Removes a number from the masks for the specified row, column, and box.
+    #[inline]
     pub(super) fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_unset = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -43,6 +46,7 @@ impl Masks {
     }
 
     /// Checks if a number can be safely placed in the specified cell.
+    #[inline]
     pub fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
         let box_idx = Self::get_box_idx(r, c);
@@ -53,6 +57,7 @@ impl Masks {
     }
 
     /// Computes the candidates mask for a specific cell based on the current masks.
+    #[inline]
     pub(super) fn compute_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
