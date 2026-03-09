@@ -48,6 +48,7 @@ mod tests {
     #[test]
     fn test_naked_singles_places_correct_value() {
         // Board with a single empty cell at (8,8) – only candidate is 6
+        // Puzzle string normalized to 0s instead of dots
         let s = "385421967194756328627983145571892634839645271246137589462579813918364752753218490";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -72,5 +73,20 @@ mod tests {
             "Expected placement of 6 at (8,8), got {:?}",
             placements
         );
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
+        }
     }
 }

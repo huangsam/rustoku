@@ -186,6 +186,7 @@ mod tests {
     #[test]
     fn test_swordfish_eliminates_from_correct_lines() {
         // Hodoku Swordfish example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=bf301&tech=Swordfish
         let s = "160540070008001030030800000700050069600902057000000000000030040000000016000164500";
         let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
             TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
@@ -221,6 +222,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by Swordfish"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

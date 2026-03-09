@@ -177,6 +177,7 @@ mod tests {
     #[test]
     fn test_skyscraper_eliminates_from_correct_lines() {
         // Hodoku Skyscraper example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=sk01&tech=Skyscraper
         let s = "000000000001902060000006790902000600370000950005000004140003005709024000000800000";
         let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
             TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SKYSCRAPER,
@@ -212,6 +213,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by Skyscraper"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

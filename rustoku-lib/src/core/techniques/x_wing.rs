@@ -198,6 +198,7 @@ mod tests {
     #[test]
     fn test_xwing_eliminates_from_correct_lines() {
         // Hodoku X-Wing example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=bf201&tech=X-Wing
         let s = "000000000760003002002640009403900070000004903005000020010560000370090041000000060";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -233,6 +234,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by X-Wing"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

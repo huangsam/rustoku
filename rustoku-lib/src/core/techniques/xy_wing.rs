@@ -196,6 +196,7 @@ mod tests {
     #[test]
     fn test_xy_wing_eliminates_z_from_peers() {
         // Hodoku XY-Wing example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=y101&tech=XY-Wing
         let s = "000060000000010863003009000904000000300000704570820000000006580690007000000040030";
         let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
             TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::XY_WING,
@@ -231,6 +232,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by XY-Wing"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

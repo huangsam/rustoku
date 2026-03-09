@@ -135,19 +135,21 @@ impl TechniqueRule for HiddenQuads {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::{Rustoku, SolveStep, TechniqueFlags};
+    use crate::core::{Rustoku, TechniqueFlags};
 
     #[test]
-    fn test_hidden_quads() {
-        let mut sudoku = Rustoku::new_from_str(
-            "8..57.29.39..........2.......1...5.8...496......8.....2.9.....1..8....7.56.....82",
-        )
-        .unwrap();
-        sudoku = sudoku.with_techniques(TechniqueFlags::HIDDEN_QUADS | TechniqueFlags::EASY);
-        let sol = sudoku.solve_any().unwrap();
+    fn test_hidden_quads_eliminates_candidates() {
+        // Hodoku Hidden Quads example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=h401&tech=Hidden+Quad
+        let s = "800570290390000000000200000001000508000496000000800000209000001008000070560000082";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::HIDDEN_QUADS | TechniqueFlags::EASY);
+        let mut path = crate::core::SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
 
-        let has_hidden_quad = sol.solve_path.steps.iter().any(|step| match step {
-            SolveStep::CandidateElimination { flags, .. } => {
+        let has_hidden_quad = path.steps.iter().any(|step| match step {
+            crate::core::SolveStep::CandidateElimination { flags, .. } => {
                 flags.contains(TechniqueFlags::HIDDEN_QUADS)
             }
             _ => false,
@@ -157,5 +159,20 @@ mod tests {
             has_hidden_quad,
             "Expected HIDDEN_QUADS technique to be used in solution path"
         );
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
+        }
     }
 }

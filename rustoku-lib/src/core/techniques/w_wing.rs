@@ -230,6 +230,7 @@ mod tests {
     #[test]
     fn test_w_wing_eliminates_candidates() {
         // Hodoku W-Wing example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=w101&tech=W-Wing
         let s = "025100000000009030400708900040000800150400000000060004000000008263040000080390106";
         let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
             TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::W_WING,
@@ -265,6 +266,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by W-Wing"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

@@ -188,6 +188,7 @@ mod tests {
     #[test]
     fn test_jellyfish_eliminates_from_correct_lines() {
         // Hodoku Jellyfish example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=bf401&tech=Jellyfish
         let s = "200000003080030050003402100001205400000090000009308600002506900090020070400000001";
         let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
             TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::JELLYFISH,
@@ -223,6 +224,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by Jellyfish"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

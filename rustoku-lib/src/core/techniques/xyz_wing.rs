@@ -130,6 +130,7 @@ mod tests {
     #[test]
     fn test_xyz_wing_eliminates_z_from_peers() {
         // Hodoku XYZ-Wing example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=z101&tech=XYZ-Wing
         let s = "069000000000021000000800400001530080007600050000000100000000003902080010000340205";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -156,5 +157,20 @@ mod tests {
             !eliminations.is_empty(),
             "XYZ-Wing should produce at least one candidate elimination"
         );
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
+        }
     }
 }

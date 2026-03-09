@@ -158,6 +158,7 @@ mod tests {
     #[test]
     fn test_hidden_pairs_eliminates_non_pair_candidates() {
         // Hodoku hidden pair example – needs EASY techniques to simplify first
+        // https://hodoku.sourceforge.net/en/show_example.php?file=h201&tech=Hidden+Pair
         let s = "000032000000000000007600914096000800005008000030040005050200000700000560904010000";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -194,6 +195,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by hidden pair"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

@@ -96,6 +96,7 @@ mod tests {
     #[test]
     fn test_hidden_singles_places_in_correct_cell() {
         // Hodoku hidden single example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=h101&tech=Hidden+Single
         let s = "008007000016083000000000051107290000000000000000046307290000000000860140000300700";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -131,6 +132,21 @@ mod tests {
                 v,
                 "Board cell ({r},{c}) should be {v} after hidden single"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

@@ -256,6 +256,7 @@ mod tests {
     #[test]
     fn test_locked_candidates_eliminates_outside_box() {
         // Hodoku locked candidates (pointing) example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=lc101&tech=Locked+Candidates+Type+1+%28Pointing%29
         let s = "984000000000500040000000002006097200003002000000000010005060003407051890030009700";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -293,6 +294,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c}) by locked candidates"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }

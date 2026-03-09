@@ -124,21 +124,22 @@ impl TechniqueRule for NakedQuads {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::{Rustoku, SolveStep, TechniqueFlags};
+    use crate::core::{Rustoku, TechniqueFlags};
 
     // Naked quad example
     #[test]
-    fn test_naked_quads() {
-        let mut sudoku = Rustoku::new_from_str(
-            ".......6.....3..47.325.....6....7..52.7.1.9.8.81..4........2...........1..587....",
-        )
-        .unwrap();
-        // Combine with basic subsets (Naked Singles etc.) to help setup the board so the quad is actionable if needed
-        sudoku = sudoku.with_techniques(TechniqueFlags::NAKED_QUADS | TechniqueFlags::EASY);
-        let sol = sudoku.solve_any().unwrap();
+    fn test_naked_quads_eliminates_candidates() {
+        // Hodoku Naked Quads example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=n401&tech=Naked+Quad
+        let s = "000000060000030047032500000600007005207010908081004000000002000000000001005870000";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::NAKED_QUADS);
+        let mut path = crate::core::SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
 
-        let has_naked_quad = sol.solve_path.steps.iter().any(|step| match step {
-            SolveStep::CandidateElimination { flags, .. } => {
+        let has_naked_quad = path.steps.iter().any(|step| match step {
+            crate::core::SolveStep::CandidateElimination { flags, .. } => {
                 flags.contains(TechniqueFlags::NAKED_QUADS)
             }
             _ => false,
@@ -148,5 +149,20 @@ mod tests {
             has_naked_quad,
             "Expected NAKED_QUADS technique to be used in solution path"
         );
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
+        }
     }
 }

@@ -158,6 +158,7 @@ mod tests {
     #[test]
     fn test_naked_pairs_eliminates_candidates() {
         // Hodoku naked pair example
+        // https://hodoku.sourceforge.net/en/show_example.php?file=n201&tech=Naked+Pair
         let s = "700009030000105006400260009002083951007000000005600000000000003100000060000004010";
         let mut rustoku = Rustoku::new_from_str(s)
             .unwrap()
@@ -194,6 +195,21 @@ mod tests {
                 0,
                 "Candidate {v} should be eliminated from ({r},{c})"
             );
+        }
+
+        // Verify that initial clues were not altered
+        let original = crate::core::Board::try_from(s).unwrap();
+        for r in 0..9 {
+            for c in 0..9 {
+                let orig_val = original.get(r, c);
+                if orig_val != 0 {
+                    assert_eq!(
+                        rustoku.board.get(r, c),
+                        orig_val,
+                        "Clue at ({r},{c}) was overwritten"
+                    );
+                }
+            }
         }
     }
 }
