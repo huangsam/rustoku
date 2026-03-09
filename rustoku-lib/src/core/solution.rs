@@ -1,4 +1,5 @@
 use crate::core::TechniqueFlags;
+use serde::{Serialize, Deserialize};
 
 use super::board::Board;
 
@@ -7,7 +8,7 @@ use super::board::Board;
 /// Most of the time, users just want to see the solved board, but this struct also
 /// provides the sequence of moves that led to the solution, which can be useful for debugging
 /// or understanding the solving process.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Solution {
     /// The solved Sudoku board, represented as a 2D array.
     pub board: Board,
@@ -16,7 +17,7 @@ pub struct Solution {
 }
 
 /// Solve path associated with a solution.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SolvePath {
     /// The sequence of steps taken to solve the Sudoku puzzle.
     pub steps: Vec<SolveStep>,
@@ -29,7 +30,7 @@ impl SolvePath {
 }
 
 /// Single step in the solving process.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SolveStep {
     /// A placement of a single value on the Sudoku board.
     Placement {

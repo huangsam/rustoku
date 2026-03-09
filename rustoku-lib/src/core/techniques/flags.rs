@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use serde::{Serialize, Deserialize};
 
 bitflags! {
     /// Bitflags indicating which human techniques are active/enabled.
@@ -11,7 +12,7 @@ bitflags! {
     ///
     /// Composite groups (EASY, MEDIUM, HARD, EXPERT) are here for convenience.
     #[repr(transparent)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
     pub struct TechniqueFlags: u32 {
         /// Apply the naked singles technique.
         const NAKED_SINGLES = 1 << 0;
@@ -66,7 +67,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, clap::ValueEnum, Serialize, Deserialize)]
 pub enum Difficulty {
     Easy,
     Medium,

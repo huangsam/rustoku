@@ -12,7 +12,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-bitflags = "2.9.1"
+bitflags = { version = "2.9.1", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
 rand = "0.10.0"
 thiserror = "2.0.12"
 rayon = "1.11"
@@ -20,6 +21,7 @@ clap = { version = "4.5.60", features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.8.2", features = ["html_reports"] }
+serde_json = "1.0"
 
 [[bench]]
 name = "rustoku_benchmark"

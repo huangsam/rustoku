@@ -1,4 +1,5 @@
 use crate::error::RustokuError;
+use serde::{Serialize, Deserialize};
 
 /// Raw 9x9 board with some useful helpers.
 ///
@@ -6,7 +7,7 @@ use crate::error::RustokuError;
 /// - Using a 2D array of `u8` with dimensions 9x9
 /// - Using a 1D array of `u8` with length 81
 /// - Using a string representation with length 81
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Board {
     /// Each cell can contain a number from 1 to 9, or be empty (is 0).
     pub(crate) cells: [[u8; 9]; 9],
@@ -150,5 +151,20 @@ mod tests {
         let s = "53007000060019500009800006080006000340080300170002000606000028000041900500008007X"; // 'X'
         let rustoku = Board::try_from(s);
         assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
+    }
+}
+
+#[cfg(test)]
+mod serde_tests {
+    use super::*;
+    use serde_json;
+
+    #[test]
+    fn test_serde_board_roundtrip() {
+        let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+        let board = Board::try_from(puzzle).unwrap();
+        let json = serde_json::to_string(&board).expect("Failed to serialize board");
+        let deserialized: Board = serde_json::from_str(&json).expect("Failed to deserialize board");
+        assert_eq!(board, deserialized);
     }
 }
