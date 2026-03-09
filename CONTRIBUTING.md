@@ -4,11 +4,11 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **Profile-Guided Optimization**: Boost performance by 10-20% using real-world execution profiles to optimize machine code.
+- **Profile-Guided Optimization**: Use real-world execution profiles to optimize machine code.
 - **WebAssembly**: Enable zero-latency Sudoku analysis directly in the browser for web-based tools.
 - **Python Bindings**: Provide high-performance generation and solving for the Python AI community.
-- **Serde Serialization**: Support efficient persistence and JSON exchange for boards and solve paths.
-- **Property-based Testing**: Mathematically verify correctness against millions of randomized inputs.
+- **Serde Serialization**: Support efficient persistence and exchange for boards and solve paths.
+- **Property-based Testing**: Mathematically verify correctness against millions of random inputs.
 - **Fuzz Testing**: Identify obscure panics by stress-testing the solver with mutated inputs.
 - **Export Formats**: Support saving puzzles and solutions as JSON, PNG, or SVG.
 
