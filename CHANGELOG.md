@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced hardcoded library tests with dataset-wide CSV validation
 - Standardized puzzle strings to use `0` instead of `.`
 - Enhanced `CONTRIBUTING.md` with technical architecture details
+- Shortened `AGENTS.md` to be focused on LLM guidance
 
 ### Fixed
 - Typo in embedded test data that caused puzzle validation failure
