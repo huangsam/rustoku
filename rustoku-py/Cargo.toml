@@ -18,4 +18,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustoku-lib = { path = "../rustoku-lib" }
-pyo3 = { version = "0.25", features = ["extension-module"] }
+pyo3 = { version = "0.28", features = ["extension-module"] }
