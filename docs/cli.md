@@ -49,11 +49,13 @@ Validate if a board is a completed, valid Sudoku solution.
 Display an 81-character string in a pretty 9x9 grid format.
 
 ## Input Formats
+
 Puzzles are accepted as 81-character strings where:
 - `1`-`9` are clues.
 - `0`, `.`, or `_` are empty cells.
 
 ## Technique Flags (for `--human`)
+
 When using `--human`, the solver employs various Sudoku techniques:
 - **Easy**: Naked/Hidden Singles.
 - **Medium**: Naked/Hidden Pairs, Locked Candidates, Naked/Hidden Triples.

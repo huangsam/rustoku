@@ -64,5 +64,6 @@ Validates a solved Sudoku board.
    ```
 
 ## Integration Tips
+
 - **Vite Plugin**: For even easier integration, consider `vite-plugin-wasm`.
 - **Panic Hook**: The module automatically sets up a `console_error_panic_hook` on start, so any Rust-side panics will be logged clearly to the browser console.
