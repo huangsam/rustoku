@@ -4,7 +4,6 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **WebAssembly**: Enable zero-latency Sudoku analysis directly in the browser for web-based tools.
 - **Python Bindings**: Provide high-performance generation and solving for the Python AI community.
 - **Property-based Testing**: Mathematically verify correctness against millions of random inputs.
 - **Export Formats**: Support saving puzzles and solutions as JSON, PNG, or SVG.

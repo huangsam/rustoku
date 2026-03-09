@@ -1,0 +1,21 @@
+[package]
+name = "rustoku-wasm"
+description = "WebAssembly bindings for Rustoku"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rustoku-lib = { path = "../rustoku-lib" }
+wasm-bindgen = "0.2.99"
+console_error_panic_hook = { version = "0.1.7", optional = true }
+getrandom = { version = "0.4.2", features = ["wasm_js"] }
