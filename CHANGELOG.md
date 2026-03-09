@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Skyscraper** for Turbot Fish-style patterns
     - **W-Wing** for bi-local/bi-value interactions
     - **XY-Wing** and **XYZ-Wing** for bent-wing eliminations
-    - **Hidden Quads**, **Hidden Triples**, and **Naked Quads**, **Naked Triples** for group-based pruning
-- Dynamic CSV-based integration testing in the CLI
+    - **Hidden/Naked Quads** and **Hidden/Naked Triples** for group-based pruning
 - Embedded CSV test data for portable and reliable validation
 - Hodoku reference links in technical documentation for all solving techniques
 
