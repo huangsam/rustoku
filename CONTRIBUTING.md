@@ -41,7 +41,7 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **Algorithms**: Swordfish, XY-Wing, X-Wing; dynamic MRV scoring; constraint learning
+- **Algorithms**: Dynamic MRV scoring; constraint learning
 - **Performance**: SIMD for bulk mask ops; memory pooling during backtracking; PGO
 - **API**: Async solving (tokio); serde serialization; WASM compilation; PyO3 bindings
 - **CLI**: Interactive TUI mode; progress indicators; export formats (JSON, images)
