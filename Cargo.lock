@@ -703,6 +703,7 @@ name = "rustoku-lib"
 version = "0.14.0"
 dependencies = [
  "bitflags",
+ "clap",
  "criterion",
  "rand",
  "rayon",

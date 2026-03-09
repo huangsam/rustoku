@@ -13,5 +13,7 @@ pub mod core;
 mod error;
 mod format;
 
-pub use core::{Rustoku, RustokuBuilder, Solutions, generate_board};
+pub use core::{
+    Difficulty, Rustoku, RustokuBuilder, Solutions, generate_board, generate_board_by_difficulty,
+};
 pub use error::RustokuError;

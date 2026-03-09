@@ -17,7 +17,7 @@ pub use board::Board;
 pub use candidates::Candidates;
 pub use masks::Masks;
 pub use solution::{Solution, SolvePath, SolveStep};
-pub use techniques::flags::TechniqueFlags;
+pub use techniques::flags::{Difficulty, TechniqueFlags};
 
 use crate::error::RustokuError;
 use rand::prelude::SliceRandom;
@@ -592,10 +592,78 @@ pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     Ok(board)
 }
 
+/// Generates a new Sudoku puzzle that matches a specific difficulty level.
+///
+/// This function repeatedly generates a valid puzzle with a random number of clues
+/// (between 24 and 32) until one is found that evaluates to the requested `Difficulty`.
+/// It will attempt up to `max_attempts` before returning a `GenerateFailure` error.
+pub fn generate_board_by_difficulty(
+    difficulty: crate::core::techniques::flags::Difficulty,
+    max_attempts: usize,
+) -> Result<Board, RustokuError> {
+    use rand::RngExt;
+
+    for _ in 0..max_attempts {
+        // Randomize the clue count around a typical human-solvable range
+        let target_clues = rand::rng().random_range(24..=32);
+
+        // Generate a uniquely solvable board
+        if let Ok(board) = generate_board(target_clues) {
+            let mut rustoku = Rustoku::builder()
+                .board(board)
+                .techniques(TechniqueFlags::all())
+                .build()?;
+
+            // Check if human techniques can fully solve the board
+            let solutions = rustoku.solve_all();
+            if solutions.len() == 1 {
+                let solution = &solutions[0];
+
+                // Inspect the solve path to find the highest difficulty technique used
+                let mut max_difficulty = crate::core::techniques::flags::Difficulty::Easy;
+                let mut required_guessing = false;
+
+                for step in &solution.solve_path.steps {
+                    match step {
+                        crate::core::solution::SolveStep::Placement { flags, .. } => {
+                            if flags.is_empty() {
+                                // DFS backtracking was used. This means pure logic stalled.
+                                required_guessing = true;
+                                break;
+                            }
+                            let step_diff = flags.difficulty();
+                            if step_diff > max_difficulty {
+                                max_difficulty = step_diff;
+                            }
+                        }
+                        crate::core::solution::SolveStep::CandidateElimination {
+                            flags, ..
+                        } => {
+                            if !flags.is_empty() {
+                                let step_diff = flags.difficulty();
+                                if step_diff > max_difficulty {
+                                    max_difficulty = step_diff;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !required_guessing && max_difficulty == difficulty {
+                    return Ok(board);
+                }
+            }
+        }
+    }
+
+    Err(RustokuError::GenerateFailure)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::core::board::Board;
+    use crate::core::techniques::flags::Difficulty;
     use crate::error::RustokuError;
     use crate::format::format_line;
 
@@ -806,5 +874,97 @@ mod tests {
         let s = UNIQUE_PUZZLE;
         let rustoku = Rustoku::new_from_str(s).expect("Rustoku creation failed for unsolved check");
         assert!(!rustoku.is_solved(), "The board should not be valid");
+    }
+
+    #[test]
+    fn test_generate_by_difficulty_easy() {
+        let board = generate_board_by_difficulty(Difficulty::Easy, 100)
+            .expect("Failed to generate an Easy puzzle within 100 attempts");
+
+        let mut rustoku = Rustoku::builder()
+            .board(board)
+            .techniques(TechniqueFlags::all())
+            .build()
+            .unwrap();
+
+        let solutions = rustoku.solve_all();
+        assert_eq!(solutions.len(), 1);
+
+        let mut required_guessing = false;
+        let mut max_difficulty = Difficulty::Easy;
+
+        for step in &solutions[0].solve_path.steps {
+            match step {
+                crate::core::solution::SolveStep::Placement { flags, .. } => {
+                    if flags.is_empty() {
+                        required_guessing = true;
+                    }
+                    if flags.difficulty() > max_difficulty {
+                        max_difficulty = flags.difficulty();
+                    }
+                }
+                crate::core::solution::SolveStep::CandidateElimination { flags, .. } => {
+                    if flags.difficulty() > max_difficulty {
+                        max_difficulty = flags.difficulty();
+                    }
+                }
+            }
+        }
+
+        assert!(
+            !required_guessing,
+            "Easy puzzle should not require guessing"
+        );
+        assert_eq!(
+            max_difficulty,
+            Difficulty::Easy,
+            "Puzzle exceeded target difficulty"
+        );
+    }
+
+    #[test]
+    fn test_generate_by_difficulty_hard() {
+        let board = generate_board_by_difficulty(Difficulty::Hard, 1000)
+            .expect("Failed to generate a Hard puzzle within 1000 attempts");
+
+        let mut rustoku = Rustoku::builder()
+            .board(board)
+            .techniques(TechniqueFlags::all())
+            .build()
+            .unwrap();
+
+        let solutions = rustoku.solve_all();
+        assert_eq!(solutions.len(), 1);
+
+        let mut required_guessing = false;
+        let mut max_difficulty = Difficulty::Easy;
+
+        for step in &solutions[0].solve_path.steps {
+            match step {
+                crate::core::solution::SolveStep::Placement { flags, .. } => {
+                    if flags.is_empty() {
+                        required_guessing = true;
+                    }
+                    if flags.difficulty() > max_difficulty {
+                        max_difficulty = flags.difficulty();
+                    }
+                }
+                crate::core::solution::SolveStep::CandidateElimination { flags, .. } => {
+                    if flags.difficulty() > max_difficulty {
+                        max_difficulty = flags.difficulty();
+                    }
+                }
+            }
+        }
+
+        assert!(
+            !required_guessing,
+            "Hard puzzle should not require guessing"
+        );
+        assert_eq!(
+            max_difficulty,
+            Difficulty::Hard,
+            "Puzzle exceeded target difficulty"
+        );
     }
 }

@@ -1,6 +1,6 @@
 use clap::{ColorChoice, Parser, Subcommand};
+use rustoku_lib::Rustoku;
 use rustoku_lib::core::TechniqueFlags;
-use rustoku_lib::{Rustoku, generate_board};
 
 mod csv;
 
@@ -23,8 +23,12 @@ pub enum Commands {
     /// 🎲 Generates a new Sudoku puzzle with a unique solution
     Generate {
         /// The desired number of initially filled cells (clues) for the puzzle
-        #[arg(short, long, default_value_t = 30)] // Default to 30 clues
-        clues: usize,
+        #[arg(short, long, group = "gen_mode")]
+        clues: Option<usize>,
+
+        /// The difficulty of the puzzle to generate
+        #[arg(short, long, group = "gen_mode")]
+        difficulty: Option<rustoku_lib::Difficulty>,
     },
     /// 🧩 Solves a given Sudoku puzzle
     Solve {
@@ -92,7 +96,7 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Commands::Generate { clues } => handle_generate(clues),
+        Commands::Generate { clues, difficulty } => handle_generate(clues, difficulty),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any {
                 puzzle,
@@ -122,11 +126,22 @@ fn main() {
     }
 }
 
-fn handle_generate(clues: usize) -> Result<(), rustoku_lib::RustokuError> {
-    generate_board(clues).map(|board| {
-        println!("🎲 Generated puzzle with {clues} clues:");
-        println!("{board}")
-    })
+fn handle_generate(
+    clues: Option<usize>,
+    difficulty: Option<rustoku_lib::Difficulty>,
+) -> Result<(), rustoku_lib::RustokuError> {
+    if let Some(diff) = difficulty {
+        rustoku_lib::generate_board_by_difficulty(diff, 1000).map(|board| {
+            println!("🎲 Generated {} puzzle:", diff);
+            println!("{board}")
+        })
+    } else {
+        let clues = clues.unwrap_or(30);
+        rustoku_lib::generate_board(clues).map(|board| {
+            println!("🎲 Generated puzzle with {clues} clues:");
+            println!("{board}")
+        })
+    }
 }
 
 fn handle_solve_any(
