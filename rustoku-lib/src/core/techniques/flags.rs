@@ -63,3 +63,116 @@ bitflags! {
         const EXPERT = 0xFF00_0000;
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Difficulty {
+    Easy,
+    Medium,
+    Hard,
+    Expert,
+}
+
+impl std::fmt::Display for Difficulty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Difficulty::Easy => write!(f, "Easy"),
+            Difficulty::Medium => write!(f, "Medium"),
+            Difficulty::Hard => write!(f, "Hard"),
+            Difficulty::Expert => write!(f, "Expert"),
+        }
+    }
+}
+
+impl From<TechniqueFlags> for Difficulty {
+    fn from(flags: TechniqueFlags) -> Self {
+        if !(flags & TechniqueFlags::EXPERT).is_empty() {
+            Difficulty::Expert
+        } else if !(flags & TechniqueFlags::HARD).is_empty() {
+            Difficulty::Hard
+        } else if !(flags & TechniqueFlags::MEDIUM).is_empty() {
+            Difficulty::Medium
+        } else {
+            Difficulty::Easy
+        }
+    }
+}
+
+impl TechniqueFlags {
+    /// Returns the highest difficulty level associated with the current flags.
+    pub fn difficulty(&self) -> Difficulty {
+        Difficulty::from(*self)
+    }
+
+    /// Returns the name of the highest difficulty level.
+    pub fn difficulty_name(&self) -> &'static str {
+        self.difficulty().difficulty_name()
+    }
+}
+
+impl Difficulty {
+    pub fn difficulty_name(&self) -> &'static str {
+        match self {
+            Difficulty::Easy => "Easy",
+            Difficulty::Medium => "Medium",
+            Difficulty::Hard => "Hard",
+            Difficulty::Expert => "Expert",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_difficulty_display() {
+        assert_eq!(format!("{}", Difficulty::Easy), "Easy");
+        assert_eq!(format!("{}", Difficulty::Medium), "Medium");
+        assert_eq!(format!("{}", Difficulty::Hard), "Hard");
+        assert_eq!(format!("{}", Difficulty::Expert), "Expert");
+    }
+
+    #[test]
+    fn test_difficulty_name() {
+        assert_eq!(Difficulty::Easy.difficulty_name(), "Easy");
+        assert_eq!(Difficulty::Medium.difficulty_name(), "Medium");
+        assert_eq!(Difficulty::Hard.difficulty_name(), "Hard");
+        assert_eq!(Difficulty::Expert.difficulty_name(), "Expert");
+    }
+
+    #[test]
+    fn test_technique_flags_difficulty() {
+        // Single flags
+        assert_eq!(TechniqueFlags::NAKED_SINGLES.difficulty(), Difficulty::Easy);
+        assert_eq!(TechniqueFlags::NAKED_PAIRS.difficulty(), Difficulty::Medium);
+        assert_eq!(TechniqueFlags::X_WING.difficulty(), Difficulty::Hard);
+        assert_eq!(TechniqueFlags::W_WING.difficulty(), Difficulty::Expert);
+
+        // Combined flags (should return highest difficulty)
+        let combined = TechniqueFlags::NAKED_SINGLES | TechniqueFlags::X_WING;
+        assert_eq!(combined.difficulty(), Difficulty::Hard);
+
+        let all = TechniqueFlags::all();
+        assert_eq!(all.difficulty(), Difficulty::Expert);
+    }
+
+    #[test]
+    fn test_from_technique_flags_for_difficulty() {
+        assert_eq!(
+            Difficulty::from(TechniqueFlags::HIDDEN_SINGLES),
+            Difficulty::Easy
+        );
+        assert_eq!(
+            Difficulty::from(TechniqueFlags::LOCKED_CANDIDATES),
+            Difficulty::Medium
+        );
+        assert_eq!(
+            Difficulty::from(TechniqueFlags::JELLYFISH),
+            Difficulty::Hard
+        );
+        assert_eq!(
+            Difficulty::from(TechniqueFlags::XYZ_WING),
+            Difficulty::Expert
+        );
+    }
+}

@@ -72,6 +72,18 @@ impl fmt::Display for TechniqueFlags {
         if self.contains(TechniqueFlags::HIDDEN_TRIPLES) {
             techniques.push("Hidden Triples");
         }
+        if self.contains(TechniqueFlags::NAKED_QUADS) {
+            techniques.push("Naked Quads");
+        }
+        if self.contains(TechniqueFlags::HIDDEN_QUADS) {
+            techniques.push("Hidden Quads");
+        }
+        if self.contains(TechniqueFlags::JELLYFISH) {
+            techniques.push("Jellyfish");
+        }
+        if self.contains(TechniqueFlags::SKYSCRAPER) {
+            techniques.push("Skyscraper");
+        }
 
         write!(f, "{}", techniques.join(", "))
     }
@@ -201,7 +213,8 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, _chunk_size: usize) -> V
             }
         };
 
-        let technique_name = format!("{flags}");
+        let difficulty = flags.difficulty_name();
+        let technique_name = format!("{} ({})", flags, difficulty);
 
         if current_technique.as_ref() != Some(&technique_name) {
             // Flush previous technique's moves
@@ -211,7 +224,7 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, _chunk_size: usize) -> V
                 for chunk in current_moves.chunks(1) {
                     // Format with padding: each step gets 5 chars width for neat alignment
                     let formatted_chunk: Vec<String> =
-                        chunk.iter().map(|s| format!("{:<5}", s)).collect();
+                        chunk.iter().map(|s| format!("{:<7}", s)).collect();
                     result.push(format!("  {}", formatted_chunk.join("")));
                 }
                 current_moves.clear();
@@ -273,7 +286,7 @@ pub(crate) fn format_solve_path(solve_path: &SolvePath, _chunk_size: usize) -> V
     if let Some(tech) = current_technique {
         result.push(format!("{tech}:"));
         for chunk in current_moves.chunks(1) {
-            let formatted_chunk: Vec<String> = chunk.iter().map(|s| format!("{:<5}", s)).collect();
+            let formatted_chunk: Vec<String> = chunk.iter().map(|s| format!("{:<7}", s)).collect();
             result.push(format!("  {}", formatted_chunk.join("")));
         }
     }
@@ -452,7 +465,7 @@ mod tests {
         let solve_path = SolvePath { steps };
 
         let formatted = format_solve_path(&solve_path, 3);
-        assert_eq!(formatted[0], "Naked Singles:");
+        assert_eq!(formatted[0], "Naked Singles (Easy):");
         // Each step should be on its own line
         assert!(formatted[1].contains("#1 R1C1=1"));
         assert!(formatted[2].contains("#2 R1C2=2"));
@@ -497,11 +510,55 @@ mod tests {
         let solve_path = SolvePath { steps };
 
         let formatted = format_solve_path(&solve_path, 3);
-        assert_eq!(formatted[0], "Naked Singles:");
+        assert_eq!(formatted[0], "Naked Singles (Easy):");
         assert!(formatted[1].contains("#1 R1C1=1"));
-        assert_eq!(formatted[2], "Hidden Singles:");
+        assert_eq!(formatted[2], "Hidden Singles (Easy):");
         assert!(formatted[3].contains("#2 R2C1=3"));
-        assert_eq!(formatted[4], "Hidden Pairs:");
+        assert_eq!(formatted[4], "Hidden Pairs (Medium):");
         assert!(formatted[5].contains("#3 -6@R3C1"));
+    }
+
+    #[test]
+    fn test_all_techniques_formatted() {
+        let all_flags = vec![
+            (TechniqueFlags::NAKED_SINGLES, "Naked Singles", "Easy"),
+            (TechniqueFlags::HIDDEN_SINGLES, "Hidden Singles", "Easy"),
+            (TechniqueFlags::NAKED_PAIRS, "Naked Pairs", "Medium"),
+            (TechniqueFlags::HIDDEN_PAIRS, "Hidden Pairs", "Medium"),
+            (
+                TechniqueFlags::LOCKED_CANDIDATES,
+                "Locked Candidates",
+                "Medium",
+            ),
+            (TechniqueFlags::NAKED_TRIPLES, "Naked Triples", "Medium"),
+            (TechniqueFlags::HIDDEN_TRIPLES, "Hidden Triples", "Medium"),
+            (TechniqueFlags::X_WING, "X-Wing", "Hard"),
+            (TechniqueFlags::NAKED_QUADS, "Naked Quads", "Hard"),
+            (TechniqueFlags::HIDDEN_QUADS, "Hidden Quads", "Hard"),
+            (TechniqueFlags::SWORDFISH, "Swordfish", "Hard"),
+            (TechniqueFlags::JELLYFISH, "Jellyfish", "Hard"),
+            (TechniqueFlags::SKYSCRAPER, "Skyscraper", "Hard"),
+            (TechniqueFlags::W_WING, "W-Wing", "Expert"),
+            (TechniqueFlags::XY_WING, "XY-Wing", "Expert"),
+            (TechniqueFlags::XYZ_WING, "XYZ-Wing", "Expert"),
+        ];
+
+        for (flag, name, diff) in all_flags {
+            let formatted_name = format!("{}", flag);
+            assert!(
+                formatted_name.contains(name),
+                "Flag {:?} should contain name {}, but got {}",
+                flag,
+                name,
+                formatted_name
+            );
+
+            let difficulty_name = flag.difficulty_name();
+            assert_eq!(
+                difficulty_name, diff,
+                "Flag {:?} should have difficulty {}, but got {}",
+                flag, diff, difficulty_name
+            );
+        }
     }
 }
