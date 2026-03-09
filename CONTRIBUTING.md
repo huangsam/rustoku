@@ -41,11 +41,10 @@ Thank you for your interest in contributing to Rustoku! This document covers dev
 
 ## Potential Improvements
 
-- **Performance**: PGO for machine code
-- **API**: Async solving (tokio); serde serialization; WASM compilation; PyO3 bindings
-- **CLI**: Interactive TUI mode; progress indicators; export formats (JSON, images)
-- **Testing**: Property-based testing (proptest); cargo-fuzz; performance regression tests; >95% coverage target
-- **Ecosystem**: Plugin system for techniques; database integration; benchmark suite
+- **Performance**: Profile-Guided Optimization (PGO)
+- **API**: WebAssembly (WASM) support; Python bindings (PyO3); Serde serialization
+- **Testing**: Property-based testing (`proptest`); fuzz testing (`cargo-fuzz`)
+- **CLI**: Export formats (JSON, images)
 
 ## Build & Quality Checks
 
