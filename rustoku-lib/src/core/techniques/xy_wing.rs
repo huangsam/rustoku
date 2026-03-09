@@ -188,3 +188,49 @@ impl TechniqueRule for XYWing {
         crate::core::TechniqueFlags::XY_WING
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_xy_wing_eliminates_z_from_peers() {
+        // Hodoku XY-Wing example
+        let s = "000060000000010863003009000904000000300000704570820000000006580690007000000040030";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::XY_WING,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::XY_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "XY-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by XY-Wing"
+            );
+        }
+    }
+}

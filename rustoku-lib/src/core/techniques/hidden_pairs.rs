@@ -150,3 +150,50 @@ impl TechniqueRule for HiddenPairs {
         crate::core::TechniqueFlags::HIDDEN_PAIRS
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_hidden_pairs_eliminates_non_pair_candidates() {
+        // Hodoku hidden pair example – needs EASY techniques to simplify first
+        let s = "000032000000000000007600914096000800005008000030040005050200000700000560904010000";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::HIDDEN_PAIRS);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::HIDDEN_PAIRS) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Hidden pairs should produce at least one candidate elimination"
+        );
+
+        // Verify eliminated candidates are no longer present
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by hidden pair"
+            );
+        }
+    }
+}

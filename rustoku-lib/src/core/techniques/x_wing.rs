@@ -190,3 +190,49 @@ impl TechniqueRule for XWing {
         crate::core::TechniqueFlags::X_WING
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_xwing_eliminates_from_correct_lines() {
+        // Hodoku X-Wing example
+        let s = "000000000760003002002640009403900070000004903005000020010560000370090041000000060";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::X_WING);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::X_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "X-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by X-Wing"
+            );
+        }
+    }
+}

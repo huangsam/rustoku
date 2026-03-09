@@ -40,3 +40,37 @@ impl TechniqueRule for NakedSingles {
         crate::core::TechniqueFlags::NAKED_SINGLES
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_naked_singles_places_correct_value() {
+        // Board with a single empty cell at (8,8) – only candidate is 6
+        let s = "385421967194756328627983145571892634839645271246137589462579813918364752753218490";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::NAKED_SINGLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        // Expect exactly one placement at (8,8) = 6
+        let placements: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::Placement {
+                    row, col, value, ..
+                } => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            placements.contains(&(8, 8, 6)),
+            "Expected placement of 6 at (8,8), got {:?}",
+            placements
+        );
+    }
+}

@@ -178,3 +178,49 @@ impl TechniqueRule for Swordfish {
         crate::core::TechniqueFlags::SWORDFISH
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_swordfish_eliminates_from_correct_lines() {
+        // Hodoku Swordfish example
+        let s = "160540070008001030030800000700050069600902057000000000000030040000000016000164500";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::SWORDFISH,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::SWORDFISH) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Swordfish should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by Swordfish"
+            );
+        }
+    }
+}

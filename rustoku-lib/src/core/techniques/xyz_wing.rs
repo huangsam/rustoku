@@ -122,3 +122,39 @@ impl TechniqueRule for XyzWing {
         crate::core::TechniqueFlags::XYZ_WING
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_xyz_wing_eliminates_z_from_peers() {
+        // Hodoku XYZ-Wing example
+        let s = "069000000000021000000800400001530080007600050000000100000000003902080010000340205";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::XYZ_WING);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::XYZ_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "XYZ-Wing should produce at least one candidate elimination"
+        );
+    }
+}

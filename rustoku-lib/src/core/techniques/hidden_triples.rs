@@ -134,3 +134,49 @@ impl TechniqueRule for HiddenTriples {
         crate::core::TechniqueFlags::HIDDEN_TRIPLES
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_hidden_triples_eliminates_candidates() {
+        // Hodoku Hidden Triples example
+        let s = "200000400500000006001034080000500040000000000060790000090200600003009001000080037";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY | TechniqueFlags::HIDDEN_TRIPLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::HIDDEN_TRIPLES) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Hidden Triples should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by Hidden Triples"
+            );
+        }
+    }
+}

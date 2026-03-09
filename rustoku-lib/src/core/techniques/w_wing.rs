@@ -222,3 +222,49 @@ impl TechniqueRule for WWing {
         TechniqueFlags::W_WING
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_w_wing_eliminates_candidates() {
+        // Hodoku W-Wing example
+        let s = "025100000000009030400708900040000800150400000000060004000000008263040000080390106";
+        let mut rustoku = Rustoku::new_from_str(s).unwrap().with_techniques(
+            TechniqueFlags::EASY | TechniqueFlags::MEDIUM | TechniqueFlags::W_WING,
+        );
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::W_WING) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "W-Wing should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by W-Wing"
+            );
+        }
+    }
+}

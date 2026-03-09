@@ -88,3 +88,49 @@ impl TechniqueRule for HiddenSingles {
         crate::core::TechniqueFlags::HIDDEN_SINGLES
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, TechniqueFlags};
+
+    #[test]
+    fn test_hidden_singles_places_in_correct_cell() {
+        // Hodoku hidden single example
+        let s = "008007000016083000000000051107290000000000000000046307290000000000860140000300700";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::HIDDEN_SINGLES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let placements: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                crate::core::SolveStep::Placement {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::HIDDEN_SINGLES) => Some((*row, *col, *value)),
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !placements.is_empty(),
+            "Hidden singles should produce at least one placement"
+        );
+
+        // Verify each placement is valid in the final board
+        for &(r, c, v) in &placements {
+            assert!((1..=9).contains(&v), "Placed value must be 1-9, got {v}");
+            assert_eq!(
+                rustoku.board.get(r, c),
+                v,
+                "Board cell ({r},{c}) should be {v} after hidden single"
+            );
+        }
+    }
+}

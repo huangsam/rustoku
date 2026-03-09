@@ -248,3 +248,51 @@ impl TechniqueRule for LockedCandidates {
         crate::core::TechniqueFlags::LOCKED_CANDIDATES
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::{Rustoku, SolvePath, SolveStep, TechniqueFlags};
+
+    #[test]
+    fn test_locked_candidates_eliminates_outside_box() {
+        // Hodoku locked candidates (pointing) example
+        let s = "984000000000500040000000002006097200003002000000000010005060003407051890030009700";
+        let mut rustoku = Rustoku::new_from_str(s)
+            .unwrap()
+            .with_techniques(TechniqueFlags::LOCKED_CANDIDATES);
+        let mut path = SolvePath::default();
+        rustoku.techniques_make_valid_changes(&mut path);
+
+        let eliminations: Vec<_> = path
+            .steps
+            .iter()
+            .filter_map(|step| match step {
+                SolveStep::CandidateElimination {
+                    row,
+                    col,
+                    value,
+                    flags,
+                    ..
+                } if flags.contains(TechniqueFlags::LOCKED_CANDIDATES) => {
+                    Some((*row, *col, *value))
+                }
+                _ => None,
+            })
+            .collect();
+
+        assert!(
+            !eliminations.is_empty(),
+            "Locked candidates should produce at least one candidate elimination"
+        );
+
+        for &(r, c, v) in &eliminations {
+            let cand_bit = 1u16 << (v - 1);
+            let remaining = rustoku.candidates.get(r, c);
+            assert_eq!(
+                remaining & cand_bit,
+                0,
+                "Candidate {v} should be eliminated from ({r},{c}) by locked candidates"
+            );
+        }
+    }
+}
