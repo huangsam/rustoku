@@ -9,7 +9,7 @@ bitflags! {
     /// - Hard techniques from bits 16-23
     /// - Expert techniques from bits 24-31
     ///
-    /// Composite groups (EASY, MEDIUM, HARD) are also provided for convenience.
+    /// Composite groups (EASY, MEDIUM, HARD, EXPERT) are here for convenience.
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub struct TechniqueFlags: u32 {
