@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 bitflags! {
     /// Bitflags indicating which human techniques are active/enabled.
@@ -67,7 +67,19 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, clap::ValueEnum, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    clap::ValueEnum,
+    Serialize,
+    Deserialize,
+)]
 pub enum Difficulty {
     Easy,
     Medium,

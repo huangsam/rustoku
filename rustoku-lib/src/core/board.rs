@@ -1,5 +1,5 @@
 use crate::error::RustokuError;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Raw 9x9 board with some useful helpers.
 ///
@@ -161,7 +161,8 @@ mod serde_tests {
 
     #[test]
     fn test_serde_board_roundtrip() {
-        let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+        let puzzle =
+            "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
         let board = Board::try_from(puzzle).unwrap();
         let json = serde_json::to_string(&board).expect("Failed to serialize board");
         let deserialized: Board = serde_json::from_str(&json).expect("Failed to deserialize board");

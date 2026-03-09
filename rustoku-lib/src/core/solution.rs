@@ -1,5 +1,5 @@
 use crate::core::TechniqueFlags;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::board::Board;
 
