@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --write *.{ts,js,html,css} package.json"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

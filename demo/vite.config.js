@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
-import wasm from 'vite-plugin-wasm';
-import checker from 'vite-plugin-checker';
+import { defineConfig } from "vite";
+import wasm from "vite-plugin-wasm";
+import checker from "vite-plugin-checker";
 
 export default defineConfig({
   plugins: [
@@ -10,6 +10,6 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    exclude: ['rustoku-wasm']
-  }
+    exclude: ["rustoku-wasm"],
+  },
 });
