@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rustoku - Sudoku Solver & Generator</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <!-- SEO & Meta Description -->
+  <meta name="description" content="A fast, interactive Sudoku solver and generator powered by Rust and WebAssembly. Solve puzzles, generate new ones with controllable difficulty, and edit boards in real-time." />
+  <meta name="keywords" content="sudoku, solver, generator, rust, wasm, interactive, puzzle" />
+  <meta name="author" content="Sam Huang" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Rustoku - Sudoku Solver & Generator" />
+  <meta property="og:description" content="A fast, interactive Sudoku solver and generator powered by Rust and WebAssembly." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/favicon.svg" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Rustoku - Sudoku Solver & Generator" />
+  <meta name="twitter:description" content="A fast, interactive Sudoku solver and generator powered by Rust and WebAssembly." />
+  <meta name="twitter:image" content="/favicon.svg" />
+
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add('preload');
+        var theme = localStorage.getItem('rustoku-theme');
+        var valid = ['midnight', 'paper', 'arcade', 'blueprint', 'ember', 'forest', 'mono'];
+        if (theme && valid.indexOf(theme) !== -1) {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      } catch (_e) {
+        // Ignore storage access issues and fall back to default theme.
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <div id="app">
+    <header>
+      <h1>Rustoku <span class="badge">WASM</span></h1>
+      <p>Lightning-fast Sudoku solved entirely in your browser.</p>
+      <div class="theme-switcher">
+        <label for="select-theme">Theme</label>
+        <select id="select-theme">
+          <option value="midnight" selected>Midnight Circuit</option>
+          <option value="paper">Paper Studio</option>
+          <option value="arcade">Arcade Pulse</option>
+          <option value="blueprint">Blueprint Lab</option>
+          <option value="ember">Ember Glow</option>
+          <option value="forest">Forest Grid</option>
+          <option value="mono">Mono Slate</option>
+        </select>
+      </div>
+    </header>
+
+    <main>
+      <div class="app-layout">
+        <aside class="control-panel">
+          <div class="controls">
+            <select id="select-gen-difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard" selected>Hard</option>
+              <option value="expert">Expert</option>
+            </select>
+            <button id="btn-generate" class="btn primary">Generate</button>
+            <div class="clue-input">
+              <input id="input-clues" type="number" min="17" max="81" value="30" />
+              <button id="btn-gen-clues" class="btn primary">By Clues</button>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="btn-solve" class="btn success">Solve</button>
+            <button id="btn-solve-steps" class="btn success">Solve Steps</button>
+          </div>
+
+          <div class="controls">
+            <button id="btn-candidates" class="btn info">Candidates</button>
+            <button id="btn-check" class="btn info">Validate</button>
+            <button id="btn-clear" class="btn danger">Clear</button>
+          </div>
+
+          <div class="board-io">
+            <label for="input-board">Board String</label>
+            <div class="board-io-row">
+              <input
+                id="input-board"
+                type="text"
+                placeholder="Paste 81 chars using 0 or . for blanks"
+                spellcheck="false"
+                autocomplete="off"
+              />
+              <button id="btn-load-board" class="btn primary">Load</button>
+              <select id="select-export-format">
+                <option value="zero" selected>Copy as 0</option>
+                <option value="dot">Copy as .</option>
+              </select>
+              <button id="btn-copy-board" class="btn info">Copy</button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="board-panel">
+          <div class="board-container">
+            <div id="sudoku-grid" class="sudoku-grid">
+              <!-- JavaScript will populate 81 cells here -->
+            </div>
+          </div>
+
+          <div id="info-panel" class="info-panel" style="display: none;">
+            <div class="info-header">
+              <h3 id="info-title"></h3>
+              <button id="btn-close-info" class="btn danger">✕</button>
+            </div>
+            <pre id="info-content"></pre>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('rustoku-theme');
+        var validThemes = ['midnight', 'paper', 'arcade', 'blueprint', 'ember', 'forest', 'mono'];
+        if (!theme || validThemes.indexOf(theme) === -1) {
+          theme = 'midnight';
+        }
+
+        var selectTheme = document.getElementById('select-theme');
+        if (selectTheme) {
+          selectTheme.value = theme;
+        }
+
+        var board = localStorage.getItem('rustoku-board');
+        var givens = localStorage.getItem('rustoku-givens');
+
+        if (!board || !/^[0-9]{81}$/.test(board)) {
+          board = '0'.repeat(81);
+        }
+
+        if (!givens || !/^[01]{81}$/.test(givens)) {
+          givens = board.replace(/0/g, '0').replace(/[1-9]/g, '1');
+        }
+
+        var input = document.getElementById('input-board');
+        if (input) {
+          input.value = board;
+        }
+
+        var grid = document.getElementById('sudoku-grid');
+        if (grid) {
+          grid.innerHTML = '';
+          for (var i = 0; i < 81; i++) {
+            var cell = document.createElement('div');
+            cell.className = 'cell';
+            if (board[i] !== '0') {
+              cell.innerHTML = '<span>' + board[i] + '</span>';
+              if (givens[i] === '1') {
+                cell.classList.add('clue');
+              }
+            }
+            grid.appendChild(cell);
+          }
+        }
+      } catch (_e) {
+        // Ignore hydration errors and let main.ts render fallback state.
+      } finally {
+        document.documentElement.classList.remove('preload');
+      }
+    })();
+  </script>
+
+  <!-- We will inject our WASM initialization here in main.ts -->
+  <script type="module" src="/main.ts"></script>
+</body>
+
+</html>
