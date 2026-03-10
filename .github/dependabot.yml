@@ -10,8 +10,14 @@ updates:
     schedule:
       interval: "weekly"
 
-  # Keeps maturin (build-system requirement in pyproject.toml) up to date.
+  # Keeps maturin for python builds up to date.
   - package-ecosystem: "pip"
     directory: "/rustoku-py"
+    schedule:
+      interval: "weekly"
+
+  # Keeps npm packages for demo up to date.
+  - package-ecosystem: "npm"
+    directory: "/demo"
     schedule:
       interval: "weekly"
