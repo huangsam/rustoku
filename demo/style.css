@@ -208,16 +208,18 @@ p {
   margin-bottom: 1rem;
 }
 
-.header-links {
+.footer-links {
   display: flex;
   justify-content: center;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--grid-line);
 }
 
-.header-links a,
-.header-links button {
+.footer-links a,
+.footer-links button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -232,14 +234,14 @@ p {
   padding: 0;
 }
 
-.header-links a:hover,
-.header-links button:hover {
+.footer-links a:hover,
+.footer-links button:hover {
   border-color: var(--accent);
   color: var(--accent);
   background-color: rgba(139, 92, 246, 0.1);
 }
 
-.header-links svg {
+.footer-links svg {
   width: 24px;
   height: 24px;
 }
@@ -515,6 +517,12 @@ select {
 
   .btn {
     width: 100%;
+  }
+
+  .info-header .btn,
+  .modal-header .btn {
+    width: auto;
+    padding: 0.3rem 0.6rem;
   }
 
   .board-io-row {
