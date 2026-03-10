@@ -3,7 +3,6 @@ import init, {
   solve_steps,
   candidates,
   generate,
-  generate_clues,
   check,
 } from "./pkg/rustoku_wasm.js";
 
@@ -26,10 +25,6 @@ const selectGenDifficulty = document.getElementById(
 const btnGenerate = document.getElementById(
   "btn-generate",
 ) as HTMLButtonElement;
-const btnGenClues = document.getElementById(
-  "btn-gen-clues",
-) as HTMLButtonElement;
-const inputClues = document.getElementById("input-clues") as HTMLInputElement;
 const btnSolve = document.getElementById("btn-solve") as HTMLButtonElement;
 const btnSolveSteps = document.getElementById(
   "btn-solve-steps",
@@ -354,26 +349,6 @@ if (btnGenerate)
   btnGenerate.onclick = () => {
     const difficulty = selectGenDifficulty.value;
     generateAndRender(difficulty);
-  };
-
-if (btnGenClues)
-  btnGenClues.onclick = () => {
-    if (!isWasmLoaded) return;
-    const numClues = parseInt(inputClues.value);
-    if (numClues < 17 || numClues > 81) {
-      alert("Clues must be between 17 and 81.");
-      return;
-    }
-    const boardStr = generate_clues(numClues);
-    if (boardStr && boardStr.length === 81) {
-      setBoard(boardStr, {
-        setAsGiven: true,
-        highlightMode: "clue",
-        clearSelection: true,
-      });
-    } else {
-      alert("Failed to generate puzzle.");
-    }
   };
 
 // Event Listeners — Solve
