@@ -1,3 +1,21 @@
+//! WebAssembly bindings for Rustoku — lightning-fast Sudoku solving and generation.
+//!
+//! ## Error Handling
+//!
+//! Functions degrade gracefully following JavaScript conventions:
+//! - Invalid inputs return empty strings, empty arrays, or `null`
+//! - No exceptions are thrown; check return values to detect failures
+//! - Returns `null` if input is malformed, unsolvable, or otherwise invalid
+//!
+//! ## Example
+//!
+//! ```js
+//! const solution = solve_steps(puzzle, "invalid_difficulty");
+//! if (!solution) {
+//!   console.log("Failed to solve or invalid difficulty");
+//! }
+//! ```
+
 use rustoku_lib::bind::{
     candidates_grid, generate_clues_str, generate_str, is_valid_solution, solve_all_str,
     solve_any_str, solve_with_steps, technique_flags_from_str,

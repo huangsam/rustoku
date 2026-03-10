@@ -1,3 +1,15 @@
+//! Python bindings for Rustoku — lightning-fast Sudoku solving and generation.
+//!
+//! ## Error Handling
+//!
+//! Functions validate inputs strictly and raise `ValueError` for:
+//! - Malformed puzzle strings (invalid length, non-digit characters)
+//! - Unknown difficulty levels (e.g., `"invalid_difficulty"`)
+//! - Out-of-range generation parameters
+//!
+//! A puzzle that cannot be solved returns an empty string or empty list (not an error),
+//! as unsolvability is a normal result, not an exceptional condition.
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
