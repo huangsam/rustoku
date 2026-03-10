@@ -1,4 +1,4 @@
-# Rustoku Web UI
+# Rustoku UI
 
 A web interface for Rustoku, powered by Rust + WebAssembly.
 
