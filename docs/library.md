@@ -2,6 +2,10 @@
 
 `rustoku-lib` is the core engine of the Rustoku project, designed for maximum performance and ease of use in other Rust projects.
 
+## About This Library
+
+The same core API is exposed via [`rustoku-wasm`](wasm.md) for the browser and [`rustoku-py`](python.md) for Python. All three implementations share identical function signatures and behavior — the solver engine is identical across all platforms.
+
 ## Installation
 
 Add to your `Cargo.toml`:
@@ -27,7 +31,7 @@ use rustoku_lib::Rustoku;
 fn main() {
     let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
     let mut solver = Rustoku::new_from_str(puzzle).unwrap();
-    
+
     if let Some(solution) = solver.solve_any() {
         println!("Solved board:\n{}", solution.board);
     }

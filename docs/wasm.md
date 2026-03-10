@@ -2,6 +2,10 @@
 
 `rustoku-wasm` allows you to run the Rustoku Sudoku engine directly in the browser with near-native performance.
 
+## About This Binding
+
+The WASM binding exposes the **same core API** as [`rustoku-py`](python.md) and the [Rust library](library.md). All three share identical function signatures and behavior — only the language syntax differs. See the [demo](https://sambyte.net/rustoku/) for a live working example.
+
 ## Getting Started
 
 ### Prerequisites
@@ -55,33 +59,33 @@ Validates a solved Sudoku board.
 - **Input**: 81-character string.
 - **Output**: `true` if valid and complete, `false` otherwise.
 
-## Web Integration Example (Vite)
+## Web Integration Example (Vite + TypeScript)
 
 1. **Build the pkg**:
     ```bash
     wasm-pack build --target web --out-dir brainstorm/web/pkg
     ```
 
-2. **Use in `main.js`**:
-    ```javascript
+2. **Use in `main.ts`**:
+    ```typescript
     import init, { solve, solve_all, solve_steps, candidates, generate, check } from './pkg/rustoku_wasm.js';
 
-    async function run() {
+    async function run(): Promise<void> {
       await init();
 
       // Generate and solve
-      const puzzle = generate("hard");
-      const solution = solve(puzzle);
+      const puzzle: string = generate("hard");
+      const solution: string = solve(puzzle);
       console.log("Solved:", solution);
 
       // All solutions (uniqueness check)
-      const all = solve_all(puzzle);
+      const all: string[] = solve_all(puzzle);
       console.log("Solution count:", all.length);
 
       // Step-by-step trace
       const trace = solve_steps(puzzle, "hard");
       if (trace) {
-        trace.steps.slice(0, 3).forEach(s =>
+        trace.steps.slice(0, 3).forEach((s) =>
           console.log(`R${s.row}C${s.col} = ${s.value} via ${s.technique}`)
         );
       }
@@ -89,11 +93,31 @@ Validates a solved Sudoku board.
       // Pencil-mark candidates
       const grid = candidates(puzzle);
       console.log("Candidates at R0C2:", grid[0][2]);
-
     }
 
     run();
     ```
+
+## Error Handling
+
+WASM functions return `null` or empty results on invalid input:
+
+```javascript
+const solution = solve(puzzle);
+if (!solution || solution.length === 0) {
+  console.error("Invalid puzzle or unsolvable");
+}
+
+const steps = solve_steps(puzzle, "hard");
+if (!steps) {
+  console.error("Puzzle is unsolvable or malformed");
+}
+
+const grid = candidates(puzzle);
+if (!grid) {
+  console.error("Invalid puzzle string");
+}
+```
 
 ## Integration Tips
 

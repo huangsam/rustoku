@@ -2,6 +2,10 @@
 
 The `rustoku` Python module provides high-performance Sudoku solving and generation, powered by the core Rust engine.
 
+## About This Binding
+
+The Python binding exposes the **same core API** as [`rustoku-wasm`](wasm.md) and the [Rust library](library.md). All three share identical function signatures and behavior — only the language syntax differs.
+
 ## Installation
 
 Currently, Python bindings are built from source using `maturin`.
@@ -94,8 +98,33 @@ if result:
 # 6. Pencil-mark candidates
 grid = rustoku.candidates(puzzle)
 print(f"Candidates at R0C2: {grid[0][2]}")
+```
 
+## Error Handling
 
+All functions raise `ValueError` on invalid input:
+
+```python
+import rustoku
+
+try:
+    solution = rustoku.solve("invalid_puzzle")
+except ValueError as e:
+    print(f"Invalid puzzle: {e}")
+
+try:
+    puzzle = rustoku.generate("impossible")
+except ValueError as e:
+    print(f"Invalid difficulty: {e}")
+
+# Check for unsolvable puzzles
+if not rustoku.solve(puzzle):
+    print("Puzzle has no solution")
+
+# Check for multiple solutions
+all_sols = rustoku.solve_all(puzzle)
+if len(all_sols) != 1:
+    print(f"Warning: puzzle has {len(all_sols)} solutions")
 ```
 
 ## Performance
