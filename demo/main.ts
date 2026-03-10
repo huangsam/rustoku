@@ -384,7 +384,7 @@ if (btnSolveSteps)
     // Use all techniques unconditionally
     const result = solve_steps(currentBoard, "expert");
     if (result) {
-      let content = `Solved using all available techniques:\n\n`;
+      let content = "";
       if (result.steps && result.steps.length > 0) {
         result.steps.forEach(
           (
