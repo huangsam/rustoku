@@ -98,7 +98,7 @@ pub struct SolveOutput {
 ///
 /// Each level includes all techniques from lower levels:
 /// `"easy"` ⊂ `"medium"` ⊂ `"hard"` ⊂ `"expert"`.
-pub fn technique_flags_from_str(s: &str) -> Result<TechniqueFlags, RustokuError> {
+fn technique_flags_from_str(s: &str) -> Result<TechniqueFlags, RustokuError> {
     match s.to_lowercase().as_str() {
         "easy" => Ok(TechniqueFlags::EASY),
         "medium" => Ok(TechniqueFlags::EASY | TechniqueFlags::MEDIUM),
@@ -124,11 +124,15 @@ pub fn solve_all_str(puzzle: &str) -> Result<Vec<String>, RustokuError> {
         .collect())
 }
 
-/// Solves `puzzle` using `flags` and returns a full step trace, or `None` if unsolvable.
+/// Solves `puzzle` using human techniques for the given `difficulty` and returns a full
+/// step trace, or `None` if unsolvable.
+///
+/// `difficulty` is one of `"easy"`, `"medium"`, `"hard"`, `"expert"`.
 pub fn solve_with_steps(
     puzzle: &str,
-    flags: TechniqueFlags,
+    difficulty: &str,
 ) -> Result<Option<SolveOutput>, RustokuError> {
+    let flags = technique_flags_from_str(difficulty)?;
     let mut rustoku = Rustoku::new_from_str(puzzle)?.with_techniques(flags);
     Ok(rustoku.solve_any().map(|solution| SolveOutput {
         board: format_line(&solution.board),
@@ -233,8 +237,7 @@ mod tests {
     fn test_solve_with_steps() {
         let puzzle =
             "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
-        let flags = technique_flags_from_str("expert").unwrap();
-        let result = solve_with_steps(puzzle, flags);
+        let result = solve_with_steps(puzzle, "expert");
         assert!(result.is_ok());
         let output = result.unwrap().unwrap();
         assert_eq!(output.board.len(), 81);
@@ -270,8 +273,6 @@ mod tests {
     fn test_generate_str_invalid() {
         assert!(generate_str("invalid").is_err());
     }
-
-
 
     #[test]
     fn test_is_valid_solution_valid() {

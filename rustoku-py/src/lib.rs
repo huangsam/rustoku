@@ -15,8 +15,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use rustoku_lib::RustokuError;
 use rustoku_lib::bind::{
-    SolveOutput, candidates_grid, generate_str, is_valid_solution,
-    solve_all_str, solve_any_str, solve_with_steps, technique_flags_from_str,
+    SolveOutput, candidates_grid, generate_str, is_valid_solution, solve_all_str, solve_any_str,
+    solve_with_steps,
 };
 
 // ── internal helpers ──────────────────────────────────────────────────────────
@@ -89,8 +89,7 @@ fn solve_steps<'py>(
     puzzle: &str,
     difficulty: &str,
 ) -> PyResult<Option<Bound<'py, PyDict>>> {
-    let flags = technique_flags_from_str(difficulty).map_err(to_py_err)?;
-    let output = solve_with_steps(puzzle, flags).map_err(to_py_err)?;
+    let output = solve_with_steps(puzzle, difficulty).map_err(to_py_err)?;
     output.map(|o| solve_output_to_dict(py, o)).transpose()
 }
 

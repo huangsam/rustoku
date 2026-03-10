@@ -17,8 +17,8 @@
 //! ```
 
 use rustoku_lib::bind::{
-    candidates_grid, generate_str, is_valid_solution, solve_all_str,
-    solve_any_str, solve_with_steps, technique_flags_from_str,
+    candidates_grid, generate_str, is_valid_solution, solve_all_str, solve_any_str,
+    solve_with_steps,
 };
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
@@ -52,11 +52,7 @@ pub fn solve_all(board_str: &str) -> JsValue {
 /// Returns `null` if the puzzle is unsolvable or the input is invalid.
 #[wasm_bindgen]
 pub fn solve_steps(board_str: &str, difficulty: &str) -> JsValue {
-    let flags = match technique_flags_from_str(difficulty) {
-        Ok(f) => f,
-        Err(_) => return JsValue::NULL,
-    };
-    match solve_with_steps(board_str, flags) {
+    match solve_with_steps(board_str, difficulty) {
         Ok(Some(output)) => serde_wasm_bindgen::to_value(&output).unwrap_or(JsValue::NULL),
         _ => JsValue::NULL,
     }
