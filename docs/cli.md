@@ -2,6 +2,10 @@
 
 The `rustoku-cli` provides a powerful command-line interface for generating, solving, and checking Sudoku puzzles.
 
+## About This Tool
+
+The CLI shares the **same core API** as [`rustoku-wasm`](wasm.md) and [`rustoku-py`](python.md). It wraps the solving/generation logic for convenient terminal use.
+
 ## Installation
 
 ```bash
@@ -13,7 +17,6 @@ cargo install rustoku-cli
 ### `generate`
 Create new Sudoku puzzles with a guaranteed unique solution.
 
-- `--clues <N>`: Specify the number of clues (17-81). Default is 25.
 - `--difficulty <LEVEL>`: Generate by difficulty (`easy`, `medium`, `hard`, `expert`).
 - `--verbose`: Show the solve path used to verify uniqueness.
 

@@ -128,4 +128,5 @@ if len(all_sols) != 1:
 ```
 
 ## Performance
+
 The Python module drops the GIL (Global Interpreter Lock) during heavy computation, allowing for true multi-core scale when combined with Python's `threading` or `multiprocessing` for batch processing.

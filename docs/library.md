@@ -63,7 +63,7 @@ let solution = solver.solve_any();
 ```
 
 ### Serializing with Serde
-If the `serde` feature is enabled (at your choice, if implemented), core structs support JSON/YAML serialization.
+Core structs support JSON/YAML serialization via the `serde` feature.
 
 ## Error Handling
 The library uses a custom `RustokuError` enum for granular error reporting (invalid board length, duplicate clues, etc.).
