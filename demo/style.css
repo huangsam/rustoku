@@ -495,7 +495,7 @@ select {
 }
 
 .cell.solved span {
-  color: var(--success);
+  color: var(--text-color);
 }
 
 .cell span {
