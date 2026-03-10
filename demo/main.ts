@@ -53,6 +53,13 @@ const btnCloseInfo = document.getElementById(
 const selectTheme = document.getElementById(
   "select-theme",
 ) as HTMLSelectElement;
+const btnInfoHeader = document.getElementById(
+  "btn-info-header",
+) as HTMLButtonElement;
+const projectModal = document.getElementById("project-modal") as HTMLDivElement;
+const btnModalClose = document.getElementById(
+  "btn-modal-close",
+) as HTMLButtonElement;
 
 type HighlightMode = "none" | "clue" | "solved";
 type ThemeName =
@@ -555,6 +562,28 @@ document.addEventListener("keydown", (event) => {
     renderGrid(currentBoard, "none");
   }
 });
+
+// Modal handlers
+if (btnInfoHeader) {
+  btnInfoHeader.onclick = () => {
+    projectModal.style.display = "flex";
+  };
+}
+
+if (btnModalClose) {
+  btnModalClose.onclick = () => {
+    projectModal.style.display = "none";
+  };
+}
+
+// Close modal when clicking outside
+if (projectModal) {
+  projectModal.onclick = (e) => {
+    if (e.target === projectModal) {
+      projectModal.style.display = "none";
+    }
+  };
+}
 
 // Boot up
 run();

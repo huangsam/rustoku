@@ -205,6 +205,43 @@ h1 {
 
 p {
   color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.header-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.header-links a,
+.header-links button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background-color: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.header-links a:hover,
+.header-links button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+.header-links svg {
+  width: 24px;
+  height: 24px;
 }
 
 .theme-switcher {
@@ -529,4 +566,102 @@ select {
   max-height: 400px;
   overflow-y: auto;
   white-space: pre-wrap;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay {
+  display: none;
+}
+
+.modal-content {
+  position: relative;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--grid-box);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 0;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--grid-box);
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--clue-color);
+  font-size: 1.5rem;
+}
+
+.modal-header .btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: var(--text-main);
+}
+
+.modal-body p {
+  margin-bottom: 1rem;
+}
+
+.modal-body h3 {
+  color: var(--clue-color);
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.modal-body h3:first-child {
+  margin-top: 0;
+}
+
+.modal-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1.5rem;
+}
+
+.modal-body li {
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.modal-body li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+.modal-body a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.modal-body a:hover {
+  text-decoration: underline;
 }
