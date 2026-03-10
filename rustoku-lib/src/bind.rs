@@ -12,7 +12,7 @@
 use crate::core::{Difficulty, SolveStep, TechniqueFlags};
 use crate::error::RustokuError;
 use crate::format::format_line;
-use crate::{Rustoku, generate_board, generate_board_by_difficulty};
+use crate::{Rustoku, generate_board_by_difficulty};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -169,11 +169,6 @@ pub fn generate_str(difficulty: &str) -> Result<String, RustokuError> {
     generate_board_by_difficulty(diff, 100).map(|b| format_line(&b))
 }
 
-/// Generates a puzzle with exactly `n` given clues (17–81) and returns it as an 81-char string.
-pub fn generate_clues_str(n: usize) -> Result<String, RustokuError> {
-    generate_board(n).map(|b| format_line(&b))
-}
-
 /// Returns `true` if `puzzle` is a fully-solved, valid Sudoku board.
 pub fn is_valid_solution(puzzle: &str) -> Result<bool, RustokuError> {
     Rustoku::new_from_str(puzzle).map(|r| r.is_solved())
@@ -276,26 +271,7 @@ mod tests {
         assert!(generate_str("invalid").is_err());
     }
 
-    #[test]
-    fn test_generate_clues_str_valid() {
-        let result = generate_clues_str(25);
-        assert!(result.is_ok());
-        let board = result.unwrap();
-        assert_eq!(board.len(), 81);
-        // Count clues
-        let clues = board
-            .chars()
-            .filter(|&c| c != '0' && c != '.' && c != '_')
-            .count();
-        // Generation may produce >= requested clues, not exactly the requested amount
-        assert!(clues >= 25);
-    }
 
-    #[test]
-    fn test_generate_clues_str_invalid() {
-        assert!(generate_clues_str(10).is_err()); // too few
-        assert!(generate_clues_str(90).is_err()); // too many
-    }
 
     #[test]
     fn test_is_valid_solution_valid() {

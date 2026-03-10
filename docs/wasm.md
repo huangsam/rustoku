@@ -50,10 +50,6 @@ Solves a puzzle and returns a full step-by-step trace.
 Returns the valid candidate digits for every cell.
 - **Output**: 9×9 array. Filled cells return `[]`. Returns `null` if the input is invalid.
 
-### `generate_clues(num_clues: number): string`
-Generates a puzzle with exactly `num_clues` given cells (17–81).
-- **Output**: 81-character puzzle string, or an empty string on failure.
-
 ### `check(board_str: string): boolean`
 Validates a solved Sudoku board.
 - **Input**: 81-character string.
@@ -68,7 +64,7 @@ Validates a solved Sudoku board.
 
 2. **Use in `main.js`**:
     ```javascript
-    import init, { solve, solve_all, solve_steps, candidates, generate, generate_clues, check } from './pkg/rustoku_wasm.js';
+    import init, { solve, solve_all, solve_steps, candidates, generate, check } from './pkg/rustoku_wasm.js';
 
     async function run() {
       await init();
@@ -94,9 +90,6 @@ Validates a solved Sudoku board.
       const grid = candidates(puzzle);
       console.log("Candidates at R0C2:", grid[0][2]);
 
-      // Generate by clue count
-      const sparse = generate_clues(22);
-      console.log("22-clue puzzle:", sparse);
     }
 
     run();

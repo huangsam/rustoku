@@ -57,11 +57,6 @@ Returns the valid candidate digits for every cell.
   possible for that cell; filled cells return `[]`.
 - **Raises**: `ValueError` if the input string is malformed.
 
-### `generate_clues(n: int) -> str`
-Generates a puzzle with exactly `n` given clues (17–81).
-- **Output**: 81-character puzzle string.
-- **Raises**: `ValueError` if `n` is out of range or generation fails.
-
 ### `check(board: str) -> bool`
 Validates if a board is a completed, valid Sudoku solution.
 - **Input**: 81-character string.
@@ -100,9 +95,7 @@ if result:
 grid = rustoku.candidates(puzzle)
 print(f"Candidates at R0C2: {grid[0][2]}")
 
-# 7. Generate by clue count
-sparse = rustoku.generate_clues(22)
-print(f"22-clue puzzle: {sparse}")
+
 ```
 
 ## Performance

@@ -15,7 +15,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use rustoku_lib::RustokuError;
 use rustoku_lib::bind::{
-    SolveOutput, candidates_grid, generate_clues_str, generate_str, is_valid_solution,
+    SolveOutput, candidates_grid, generate_str, is_valid_solution,
     solve_all_str, solve_any_str, solve_with_steps, technique_flags_from_str,
 };
 
@@ -116,16 +116,6 @@ fn generate(difficulty: &str) -> PyResult<String> {
     generate_str(difficulty).map_err(to_py_err)
 }
 
-/// Generates a Sudoku puzzle with exactly `n` given clues (17–81).
-///
-/// Returns the 81-character puzzle string.
-///
-/// Raises `ValueError` if `n` is out of range or generation fails.
-#[pyfunction]
-fn generate_clues(n: u32) -> PyResult<String> {
-    generate_clues_str(n as usize).map_err(to_py_err)
-}
-
 /// Checks if an 81-character Sudoku string is a valid, fully-solved board.
 ///
 /// Returns `True` if the board is complete and valid, `False` otherwise.
@@ -144,7 +134,6 @@ fn rustoku(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(solve_steps, m)?)?;
     m.add_function(wrap_pyfunction!(candidates, m)?)?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
-    m.add_function(wrap_pyfunction!(generate_clues, m)?)?;
     m.add_function(wrap_pyfunction!(check, m)?)?;
     Ok(())
 }

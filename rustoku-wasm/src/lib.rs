@@ -17,7 +17,7 @@
 //! ```
 
 use rustoku_lib::bind::{
-    candidates_grid, generate_clues_str, generate_str, is_valid_solution, solve_all_str,
+    candidates_grid, generate_str, is_valid_solution, solve_all_str,
     solve_any_str, solve_with_steps, technique_flags_from_str,
 };
 use wasm_bindgen::JsValue;
@@ -78,13 +78,6 @@ pub fn candidates(board_str: &str) -> JsValue {
 #[wasm_bindgen]
 pub fn generate(difficulty: &str) -> String {
     generate_str(difficulty).unwrap_or_default()
-}
-
-/// Generates a Sudoku puzzle with exactly `num_clues` given cells (17–81).
-/// Returns the 81-character string, or an empty string on failure.
-#[wasm_bindgen]
-pub fn generate_clues(num_clues: u32) -> String {
-    generate_clues_str(num_clues as usize).unwrap_or_default()
 }
 
 /// Checks if an 81-character Sudoku string is a valid solved board.
