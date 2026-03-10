@@ -21,3 +21,5 @@ updates:
     directory: "/demo"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "rustoku-wasm"
