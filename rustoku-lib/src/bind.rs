@@ -178,3 +178,141 @@ pub fn generate_clues_str(n: usize) -> Result<String, RustokuError> {
 pub fn is_valid_solution(puzzle: &str) -> Result<bool, RustokuError> {
     Rustoku::new_from_str(puzzle).map(|r| r.is_solved())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_technique_flags_from_str_valid() {
+        assert!(technique_flags_from_str("easy").is_ok());
+        assert!(technique_flags_from_str("medium").is_ok());
+        assert!(technique_flags_from_str("hard").is_ok());
+        assert!(technique_flags_from_str("expert").is_ok());
+        assert!(technique_flags_from_str("EASY").is_ok()); // case insensitive
+    }
+
+    #[test]
+    fn test_technique_flags_from_str_invalid() {
+        assert!(matches!(
+            technique_flags_from_str("invalid"),
+            Err(RustokuError::UnknownDifficulty(_))
+        ));
+    }
+
+    #[test]
+    fn test_solve_any_str_solvable() {
+        let puzzle =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        let result = solve_any_str(puzzle);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_some());
+    }
+
+    #[test]
+    fn test_solve_any_str_unsolvable() {
+        // Invalid puzzle with conflicts
+        let puzzle =
+            "111111111111111111111111111111111111111111111111111111111111111111111111111111";
+        let result = solve_any_str(puzzle);
+        // All 1s creates a conflict, so it's invalid and returns an error
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_solve_any_str_invalid_input() {
+        let puzzle = "invalid";
+        assert!(solve_any_str(puzzle).is_err());
+    }
+
+    #[test]
+    fn test_solve_all_str() {
+        let puzzle =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        let result = solve_all_str(puzzle);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_solve_with_steps() {
+        let puzzle =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        let flags = technique_flags_from_str("expert").unwrap();
+        let result = solve_with_steps(puzzle, flags);
+        assert!(result.is_ok());
+        let output = result.unwrap().unwrap();
+        assert_eq!(output.board.len(), 81);
+        assert!(!output.steps.is_empty());
+    }
+
+    #[test]
+    fn test_candidates_grid() {
+        let puzzle =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        let result = candidates_grid(puzzle);
+        assert!(result.is_ok());
+        let grid = result.unwrap();
+        assert_eq!(grid.len(), 9);
+        assert_eq!(grid[0].len(), 9);
+        // First cell is 4, so empty candidates
+        assert!(grid[0][0].is_empty());
+        // Some empty cell should have candidates
+        assert!(!grid[0][1].is_empty());
+    }
+
+    #[test]
+    fn test_generate_str_valid() {
+        let result = generate_str("easy");
+        assert!(result.is_ok());
+        let board = result.unwrap();
+        assert_eq!(board.len(), 81);
+        // Should be solvable
+        assert!(solve_any_str(&board).unwrap().is_some());
+    }
+
+    #[test]
+    fn test_generate_str_invalid() {
+        assert!(generate_str("invalid").is_err());
+    }
+
+    #[test]
+    fn test_generate_clues_str_valid() {
+        let result = generate_clues_str(25);
+        assert!(result.is_ok());
+        let board = result.unwrap();
+        assert_eq!(board.len(), 81);
+        // Count clues
+        let clues = board
+            .chars()
+            .filter(|&c| c != '0' && c != '.' && c != '_')
+            .count();
+        // Generation may produce >= requested clues, not exactly the requested amount
+        assert!(clues >= 25);
+    }
+
+    #[test]
+    fn test_generate_clues_str_invalid() {
+        assert!(generate_clues_str(10).is_err()); // too few
+        assert!(generate_clues_str(90).is_err()); // too many
+    }
+
+    #[test]
+    fn test_is_valid_solution_valid() {
+        let solved =
+            "417369825632158947958724316825437169791586432346912758289643571573291684164875293";
+        assert_eq!(is_valid_solution(solved).unwrap(), true);
+    }
+
+    #[test]
+    fn test_is_valid_solution_invalid() {
+        let unsolved =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        assert_eq!(is_valid_solution(unsolved).unwrap(), false);
+    }
+
+    #[test]
+    fn test_is_valid_solution_malformed() {
+        assert!(is_valid_solution("invalid").is_err());
+    }
+}
