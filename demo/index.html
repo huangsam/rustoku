@@ -92,7 +92,10 @@
         <div class="app-layout">
           <aside class="control-panel">
             <div class="controls">
-              <select id="select-gen-difficulty" aria-label="Sudoku generation difficulty">
+              <select
+                id="select-gen-difficulty"
+                aria-label="Sudoku generation difficulty"
+              >
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard" selected>Hard</option>
@@ -127,7 +130,10 @@
                 <button id="btn-load-board" class="btn primary">Load</button>
               </div>
               <div class="board-io-row">
-                <select id="select-export-format" aria-label="Sudoku export format">
+                <select
+                  id="select-export-format"
+                  aria-label="Sudoku export format"
+                >
                   <option value="zero" selected>Copy as 0</option>
                   <option value="dot">Copy as .</option>
                 </select>
@@ -146,7 +152,13 @@
             <div id="info-panel" class="info-panel" style="display: none">
               <div class="info-header">
                 <h3 id="info-title"></h3>
-                <button id="btn-close-info" class="btn danger" aria-label="Close info panel">✕</button>
+                <button
+                  id="btn-close-info"
+                  class="btn danger"
+                  aria-label="Close info panel"
+                >
+                  ✕
+                </button>
               </div>
               <pre id="info-content"></pre>
             </div>
@@ -159,7 +171,13 @@
         <div class="modal-content">
           <div class="modal-header">
             <h2>About Rustoku UI</h2>
-            <button id="btn-modal-close" class="btn danger" aria-label="Close modal">✕</button>
+            <button
+              id="btn-modal-close"
+              class="btn danger"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
           </div>
           <div class="modal-body">
             <p>
