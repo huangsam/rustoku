@@ -85,10 +85,9 @@ impl WWing {
                 other_bit,
                 flags,
                 path,
-            ) {
-                if elim {
-                    return true;
-                }
+            ) && elim
+            {
+                return true;
             }
             // Cols
             if let Some(elim) = Self::check_unit_strong_link(
@@ -100,10 +99,9 @@ impl WWing {
                 other_bit,
                 flags,
                 path,
-            ) {
-                if elim {
-                    return true;
-                }
+            ) && elim
+            {
+                return true;
             }
             // Boxes
             if let Some(elim) = Self::check_unit_strong_link(
@@ -115,10 +113,9 @@ impl WWing {
                 other_bit,
                 flags,
                 path,
-            ) {
-                if elim {
-                    return true;
-                }
+            ) && elim
+            {
+                return true;
             }
         }
 

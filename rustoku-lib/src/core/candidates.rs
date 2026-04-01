@@ -82,18 +82,18 @@ impl Candidates {
         for i in 0..9 {
             if board.is_empty(r, i) && i != c {
                 // Skip if we know the placed number and this cell didn't have it as a candidate
-                if let Some(bit) = num_bit {
-                    if self.cache[r][i] & bit == 0 {
-                        continue;
-                    }
+                if let Some(bit) = num_bit
+                    && self.cache[r][i] & bit == 0
+                {
+                    continue;
                 }
                 self.cache[r][i] = masks.compute_candidates_mask_for_cell(r, i);
             }
             if board.is_empty(i, c) && i != r {
-                if let Some(bit) = num_bit {
-                    if self.cache[i][c] & bit == 0 {
-                        continue;
-                    }
+                if let Some(bit) = num_bit
+                    && self.cache[i][c] & bit == 0
+                {
+                    continue;
                 }
                 self.cache[i][c] = masks.compute_candidates_mask_for_cell(i, c);
             }
@@ -112,10 +112,10 @@ impl Candidates {
                     continue;
                 }
                 if board.is_empty(cur_r, cur_c) {
-                    if let Some(bit) = num_bit {
-                        if self.cache[cur_r][cur_c] & bit == 0 {
-                            continue;
-                        }
+                    if let Some(bit) = num_bit
+                        && self.cache[cur_r][cur_c] & bit == 0
+                    {
+                        continue;
                     }
                     self.cache[cur_r][cur_c] = masks.compute_candidates_mask_for_cell(cur_r, cur_c);
                 }

@@ -49,13 +49,12 @@ impl TechniqueRule for HiddenSingles {
                         }
                     }
 
-                    if cand_occurrences == 1 {
-                        if let Some((r, c)) = potential_cell {
-                            if prop.board.is_empty(r, c) {
-                                prop.place_and_update(r, c, cand_val, self.flags(), path);
-                                unit_placement_made = true;
-                            }
-                        }
+                    if cand_occurrences == 1
+                        && let Some((r, c)) = potential_cell
+                        && prop.board.is_empty(r, c)
+                    {
+                        prop.place_and_update(r, c, cand_val, self.flags(), path);
+                        unit_placement_made = true;
                     }
                 }
                 unit_placement_made
