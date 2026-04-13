@@ -5,21 +5,26 @@
 
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
+  - package-ecosystem: 'cargo'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
 
   # Keeps maturin for python builds up to date.
-  - package-ecosystem: "pip"
-    directory: "/rustoku-py"
+  - package-ecosystem: 'pip'
+    directory: '/rustoku-py'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 
   # Keeps npm packages for demo up to date.
-  - package-ecosystem: "npm"
-    directory: "/demo"
+  - package-ecosystem: 'npm'
+    directory: '/demo'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     ignore:
-      - dependency-name: "rustoku-wasm"
+      - dependency-name: 'rustoku-wasm'
