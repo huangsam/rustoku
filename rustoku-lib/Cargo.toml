@@ -12,7 +12,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-bitflags = { version = "2.9.1", features = ["serde"] }
+bitflags = { version = "2.11.1", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 rand = "0.10.1"
 thiserror = "2.0.12"
