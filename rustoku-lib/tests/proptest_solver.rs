@@ -1,5 +1,5 @@
 use proptest::prelude::*;
-use rustoku_lib::core::{Board, Rustoku, generate_board};
+use rustoku_lib::core::{Board, BoardGenerator, Rustoku, Symmetry, generate_board};
 
 // Strategy for generating valid Sudoku clue counts (17-81)
 fn clue_count_strategy() -> impl Strategy<Value = usize> {
@@ -248,7 +248,7 @@ proptest! {
 
 #[cfg(test)]
 mod edge_case_tests {
-    use rustoku_lib::core::{Board, Rustoku, generate_board};
+    use rustoku_lib::core::{Board, BoardGenerator, Rustoku, Symmetry, generate_board};
 
     #[test]
     fn test_min_clues() {
@@ -310,6 +310,72 @@ mod edge_case_tests {
                     c,
                     val
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn test_rotational_180_symmetry() {
+        if let Ok(board) = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::Rotational180)
+            .generate()
+        {
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                let partner_val = board.get(8 - r, 8 - c);
+                if val != 0 {
+                    assert!(
+                        partner_val != 0,
+                        "Cell ({}, {}) has value but partner ({}, {}) is empty",
+                        r,
+                        c,
+                        8 - r,
+                        8 - c
+                    );
+                } else {
+                    assert!(
+                        partner_val == 0,
+                        "Cell ({}, {}) is empty but partner ({}, {}) has value",
+                        r,
+                        c,
+                        8 - r,
+                        8 - c
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_mirror_vertical_symmetry() {
+        if let Ok(board) = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::MirrorVertical)
+            .generate()
+        {
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                let partner_val = board.get(r, 8 - c);
+                if val != 0 {
+                    assert!(
+                        partner_val != 0,
+                        "Cell ({}, {}) has value but partner ({}, {}) is empty",
+                        r,
+                        c,
+                        r,
+                        8 - c
+                    );
+                } else {
+                    assert!(
+                        partner_val == 0,
+                        "Cell ({}, {}) is empty but partner ({}, {}) has value",
+                        r,
+                        c,
+                        r,
+                        8 - c
+                    );
+                }
             }
         }
     }

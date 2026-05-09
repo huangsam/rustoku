@@ -22,7 +22,278 @@ pub use techniques::flags::{Difficulty, TechniqueFlags};
 use crate::error::RustokuError;
 use rand::prelude::SliceRandom;
 use rand::rng;
+use std::collections::HashSet;
 use techniques::TechniquePropagator;
+
+/// Represents the type of symmetry to apply during board generation.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+pub enum Symmetry {
+    /// No symmetry (clues placed randomly).
+    #[default]
+    None,
+    /// 180-degree rotational (point) symmetry.
+    Rotational180,
+    /// 90-degree rotational symmetry.
+    Rotational90,
+    /// Mirror symmetry across the vertical center line.
+    MirrorVertical,
+    /// Mirror symmetry across the horizontal center line.
+    MirrorHorizontal,
+    /// Mirror symmetry across the main diagonal (top-left to bottom-right).
+    MirrorDiagonal,
+}
+
+impl Symmetry {
+    /// Returns the symmetric partners for a given cell (r, c).
+    pub fn get_partners(&self, r: usize, c: usize) -> Vec<(usize, usize)> {
+        let mut partners = HashSet::new();
+        partners.insert((r, c));
+
+        match self {
+            Symmetry::None => {}
+            Symmetry::Rotational180 => {
+                partners.insert((8 - r, 8 - c));
+            }
+            Symmetry::Rotational90 => {
+                partners.insert((c, 8 - r));
+                partners.insert((8 - r, 8 - c));
+                partners.insert((8 - c, r));
+            }
+            Symmetry::MirrorVertical => {
+                partners.insert((r, 8 - c));
+            }
+            Symmetry::MirrorHorizontal => {
+                partners.insert((8 - r, c));
+            }
+            Symmetry::MirrorDiagonal => {
+                partners.insert((c, r));
+            }
+        }
+
+        partners.into_iter().collect()
+    }
+}
+
+/// A builder for generating Sudoku puzzles with various constraints and properties.
+///
+/// `BoardGenerator` provides a unified interface for creating puzzles with specific
+/// clue counts, symmetry types, and difficulty levels.
+///
+/// # Example
+///
+/// ```
+/// use rustoku_lib::{BoardGenerator, Symmetry};
+///
+/// let board = BoardGenerator::new()
+///     .clues(25)
+///     .symmetry(Symmetry::Rotational180)
+///     .generate();
+///
+/// assert!(board.is_ok());
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct BoardGenerator {
+    num_clues: usize,
+    symmetry: Symmetry,
+    difficulty: Option<Difficulty>,
+    max_attempts: usize,
+}
+
+impl Default for BoardGenerator {
+    fn default() -> Self {
+        Self {
+            num_clues: 30,
+            symmetry: Symmetry::None,
+            difficulty: None,
+            max_attempts: 1,
+        }
+    }
+}
+
+impl BoardGenerator {
+    /// Creates a new `BoardGenerator` with default settings (30 clues, no symmetry).
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the target number of clues for the generated puzzle.
+    pub fn clues(mut self, num_clues: usize) -> Self {
+        self.num_clues = num_clues;
+        self
+    }
+
+    /// Sets the type of symmetry to apply to the generated puzzle.
+    pub fn symmetry(mut self, symmetry: Symmetry) -> Self {
+        self.symmetry = symmetry;
+        self
+    }
+
+    /// Sets the target difficulty for the generated puzzle.
+    ///
+    /// If a difficulty is set, the generator will attempt to find a puzzle
+    /// of that exact difficulty by repeatedly generating candidates.
+    pub fn difficulty(mut self, difficulty: Difficulty) -> Self {
+        self.difficulty = Some(difficulty);
+        self
+    }
+
+    /// Sets the maximum number of attempts when generating a puzzle with a specific difficulty.
+    pub fn max_attempts(mut self, max_attempts: usize) -> Self {
+        self.max_attempts = max_attempts;
+        self
+    }
+
+    /// Generates a new Sudoku puzzle based on the current configuration.
+    pub fn generate(&self) -> Result<Board, RustokuError> {
+        if let Some(target_difficulty) = self.difficulty {
+            self.generate_with_difficulty(target_difficulty)
+        } else {
+            self.generate_single()
+        }
+    }
+
+    fn generate_single(&self) -> Result<Board, RustokuError> {
+        if !(17..=81).contains(&self.num_clues) {
+            return Err(RustokuError::InvalidClueCount);
+        }
+
+        // Start with a fully solved board
+        let mut rustoku = Rustoku::new(Board::default())?;
+        let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
+        let mut board = solution.board;
+
+        // Collect all unique symmetric groups
+        let mut visited = [[false; 9]; 9];
+        let mut groups = Vec::new();
+
+        // Iterate in a deterministic but shuffled order to ensure variety
+        let mut cells: Vec<(usize, usize)> = board.iter_cells().collect();
+        cells.shuffle(&mut rng());
+
+        for (r, c) in cells {
+            if !visited[r][c] {
+                let partners = self.symmetry.get_partners(r, c);
+                for &(pr, pc) in &partners {
+                    visited[pr][pc] = true;
+                }
+                groups.push(partners);
+            }
+        }
+
+        // Re-shuffle groups to ensure we don't always try to remove the same regions first
+        groups.shuffle(&mut rng());
+
+        let mut clues = 81;
+
+        // Remove numbers while maintaining a unique solution
+        for group in groups {
+            if clues <= self.num_clues {
+                break;
+            }
+
+            // Potential clues to remove (only those currently filled)
+            let mut group_clues = Vec::new();
+            for &(r, c) in &group {
+                let val = board.cells[r][c];
+                if val != 0 {
+                    group_clues.push((r, c, val));
+                }
+            }
+
+            if group_clues.is_empty() {
+                continue;
+            }
+
+            // Temporarily remove the entire group
+            for &(r, c, _) in &group_clues {
+                board.cells[r][c] = 0;
+            }
+
+            if Rustoku::new(board)?.solve_until(2).len() != 1 {
+                // Restore if not unique
+                for &(r, c, val) in &group_clues {
+                    board.cells[r][c] = val;
+                }
+            } else {
+                clues -= group_clues.len();
+            }
+        }
+
+        // Final safety check
+        if Rustoku::new(board)?.solve_until(2).len() != 1 {
+            return Err(RustokuError::GenerateFailure);
+        }
+
+        Ok(board)
+    }
+
+    fn generate_with_difficulty(
+        &self,
+        target_difficulty: Difficulty,
+    ) -> Result<Board, RustokuError> {
+        use rand::RngExt;
+
+        for _ in 0..self.max_attempts {
+            // Randomize the clue count around a typical human-solvable range if not explicitly set
+            let clues = if self.num_clues == 30 {
+                rand::rng().random_range(24..=32)
+            } else {
+                self.num_clues
+            };
+
+            // Generate a uniquely solvable board with symmetry
+            let mut sub_generator = *self;
+            sub_generator.num_clues = clues;
+            sub_generator.difficulty = None; // Avoid recursion
+
+            if let Ok(board) = sub_generator.generate_single() {
+                let mut rustoku = Rustoku::builder()
+                    .board(board)
+                    .techniques(TechniqueFlags::all())
+                    .build()?;
+
+                // Check if human techniques can fully solve the board
+                let solutions = rustoku.solve_all();
+                if solutions.len() == 1 {
+                    let solution = &solutions[0];
+
+                    // Inspect the solve path to find the highest difficulty technique used
+                    let mut max_difficulty = Difficulty::Easy;
+                    let mut required_guessing = false;
+
+                    for step in &solution.solve_path.steps {
+                        match step {
+                            SolveStep::Placement { flags, .. } => {
+                                if flags.is_empty() {
+                                    required_guessing = true;
+                                    break;
+                                }
+                                let step_diff = flags.difficulty();
+                                if step_diff > max_difficulty {
+                                    max_difficulty = step_diff;
+                                }
+                            }
+                            SolveStep::CandidateElimination { flags, .. } => {
+                                if !flags.is_empty() {
+                                    let step_diff = flags.difficulty();
+                                    if step_diff > max_difficulty {
+                                        max_difficulty = step_diff;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if !required_guessing && max_difficulty == target_difficulty {
+                        return Ok(board);
+                    }
+                }
+            }
+        }
+
+        Err(RustokuError::GenerateFailure)
+    }
+}
 
 /// Solver primitive that uses backtracking and bitmasking for constraints.
 ///
@@ -538,7 +809,7 @@ impl Iterator for Solutions {
     }
 }
 
-/// Generates a new Sudoku puzzle with a unique solution.
+/// Generates a new Sudoku puzzle with a unique solution and specified symmetry.
 ///
 /// The `num_clues` parameter specifies the desired number of initially
 /// filled cells (clues) in the generated puzzle. Fewer clues generally
@@ -548,118 +819,29 @@ impl Iterator for Solutions {
 ///
 /// # Example
 ///
-/// Generate a puzzle with 30 clues:
 /// ```
 /// use rustoku_lib::generate_board;
 /// let puzzle = generate_board(30);
 /// assert!(puzzle.is_ok());
 /// ```
+/// Generates a new Sudoku puzzle with a unique solution.
+///
+/// This is a convenience shim for `BoardGenerator::new().clues(num_clues).generate()`.
 pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
-    if !(17..=81).contains(&num_clues) {
-        return Err(RustokuError::InvalidClueCount);
-    }
-
-    // Start with a fully solved board
-    let mut rustoku = Rustoku::new(Board::default())?;
-    let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
-    let mut board = solution.board;
-
-    // Shuffle all cell coordinates
-    let mut cells: Vec<(usize, usize)> = board.iter_cells().collect();
-    cells.shuffle(&mut rng());
-
-    let mut clues = 81;
-
-    // Remove numbers while maintaining a unique solution
-    for &(r, c) in &cells {
-        if clues <= num_clues {
-            break;
-        }
-
-        let original = board.cells[r][c];
-        board.cells[r][c] = 0;
-
-        if Rustoku::new(board)?.solve_until(2).len() != 1 {
-            board.cells[r][c] = original; // Restore if not unique
-        } else {
-            clues -= 1;
-        }
-    }
-
-    // Check if the generated puzzle has a unique solution
-    if Rustoku::new(board)?.solve_until(2).len() != 1 {
-        // If not unique, return an error
-        return Err(RustokuError::GenerateFailure);
-    }
-
-    Ok(board)
+    BoardGenerator::new().clues(num_clues).generate()
 }
 
 /// Generates a new Sudoku puzzle that matches a specific difficulty level.
 ///
-/// This function repeatedly generates a valid puzzle with a random number of clues
-/// (between 24 and 32) until one is found that evaluates to the requested `Difficulty`.
-/// It will attempt up to `max_attempts` before returning a `GenerateFailure` error.
+/// This is a convenience shim for `BoardGenerator::new().difficulty(difficulty).max_attempts(max_attempts).generate()`.
 pub fn generate_board_by_difficulty(
-    difficulty: crate::core::techniques::flags::Difficulty,
+    difficulty: Difficulty,
     max_attempts: usize,
 ) -> Result<Board, RustokuError> {
-    use rand::RngExt;
-
-    for _ in 0..max_attempts {
-        // Randomize the clue count around a typical human-solvable range
-        let target_clues = rand::rng().random_range(24..=32);
-
-        // Generate a uniquely solvable board
-        if let Ok(board) = generate_board(target_clues) {
-            let mut rustoku = Rustoku::builder()
-                .board(board)
-                .techniques(TechniqueFlags::all())
-                .build()?;
-
-            // Check if human techniques can fully solve the board
-            let solutions = rustoku.solve_all();
-            if solutions.len() == 1 {
-                let solution = &solutions[0];
-
-                // Inspect the solve path to find the highest difficulty technique used
-                let mut max_difficulty = crate::core::techniques::flags::Difficulty::Easy;
-                let mut required_guessing = false;
-
-                for step in &solution.solve_path.steps {
-                    match step {
-                        crate::core::solution::SolveStep::Placement { flags, .. } => {
-                            if flags.is_empty() {
-                                // DFS backtracking was used. This means pure logic stalled.
-                                required_guessing = true;
-                                break;
-                            }
-                            let step_diff = flags.difficulty();
-                            if step_diff > max_difficulty {
-                                max_difficulty = step_diff;
-                            }
-                        }
-                        crate::core::solution::SolveStep::CandidateElimination {
-                            flags, ..
-                        } => {
-                            if !flags.is_empty() {
-                                let step_diff = flags.difficulty();
-                                if step_diff > max_difficulty {
-                                    max_difficulty = step_diff;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if !required_guessing && max_difficulty == difficulty {
-                    return Ok(board);
-                }
-            }
-        }
-    }
-
-    Err(RustokuError::GenerateFailure)
+    BoardGenerator::new()
+        .difficulty(difficulty)
+        .max_attempts(max_attempts)
+        .generate()
 }
 
 #[cfg(test)]

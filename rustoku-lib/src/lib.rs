@@ -15,7 +15,8 @@ mod error;
 mod format;
 
 pub use core::{
-    Difficulty, Rustoku, RustokuBuilder, Solutions, generate_board, generate_board_by_difficulty,
+    BoardGenerator, Difficulty, Rustoku, RustokuBuilder, Solutions, Symmetry, generate_board,
+    generate_board_by_difficulty,
 };
 pub use error::RustokuError;
 pub use format::format_line;

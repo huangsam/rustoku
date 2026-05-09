@@ -1,6 +1,6 @@
 use clap::{ColorChoice, Parser, Subcommand};
-use rustoku_lib::Rustoku;
 use rustoku_lib::core::TechniqueFlags;
+use rustoku_lib::{BoardGenerator, Rustoku, Symmetry};
 
 mod csv;
 
@@ -29,6 +29,10 @@ pub enum Commands {
         /// The difficulty of the puzzle to generate
         #[arg(short, long, group = "gen_mode")]
         difficulty: Option<rustoku_lib::Difficulty>,
+
+        /// The type of symmetry to apply to the generated puzzle
+        #[arg(short, long, value_enum, default_value_t = SymmetryArg::None)]
+        symmetry: SymmetryArg,
     },
     /// 🧩 Solves a given Sudoku puzzle
     Solve {
@@ -96,7 +100,11 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Commands::Generate { clues, difficulty } => handle_generate(clues, difficulty),
+        Commands::Generate {
+            clues,
+            difficulty,
+            symmetry,
+        } => handle_generate(clues, difficulty, symmetry),
         Commands::Solve { solve_command } => match solve_command {
             SolveCommands::Any {
                 puzzle,
@@ -129,18 +137,55 @@ fn main() {
 fn handle_generate(
     clues: Option<usize>,
     difficulty: Option<rustoku_lib::Difficulty>,
+    symmetry_arg: SymmetryArg,
 ) -> Result<(), rustoku_lib::RustokuError> {
+    let symmetry = symmetry_arg.to_symmetry();
+    let mut generator = BoardGenerator::new().symmetry(symmetry);
+
     if let Some(diff) = difficulty {
-        rustoku_lib::generate_board_by_difficulty(diff, 1000).map(|board| {
-            println!("🎲 Generated {} puzzle:", diff);
+        generator = generator.difficulty(diff).max_attempts(1000);
+        if let Some(c) = clues {
+            generator = generator.clues(c);
+        }
+
+        generator.generate().map(|board| {
+            println!("🎲 Generated {} puzzle (Symmetry: {:?}):", diff, symmetry);
             println!("{board}")
         })
     } else {
         let clues = clues.unwrap_or(30);
-        rustoku_lib::generate_board(clues).map(|board| {
-            println!("🎲 Generated puzzle with {clues} clues:");
+        generator.clues(clues).generate().map(|board| {
+            println!(
+                "🎲 Generated puzzle with {clues} clues (Symmetry: {:?}):",
+                symmetry
+            );
             println!("{board}")
         })
+    }
+}
+
+/// Helper enum for CLI symmetry selection
+#[derive(Debug, Clone, Copy, clap::ValueEnum, Default)]
+pub enum SymmetryArg {
+    #[default]
+    None,
+    Rotational180,
+    Rotational90,
+    MirrorVertical,
+    MirrorHorizontal,
+    MirrorDiagonal,
+}
+
+impl SymmetryArg {
+    fn to_symmetry(self) -> Symmetry {
+        match self {
+            SymmetryArg::None => Symmetry::None,
+            SymmetryArg::Rotational180 => Symmetry::Rotational180,
+            SymmetryArg::Rotational90 => Symmetry::Rotational90,
+            SymmetryArg::MirrorVertical => Symmetry::MirrorVertical,
+            SymmetryArg::MirrorHorizontal => Symmetry::MirrorHorizontal,
+            SymmetryArg::MirrorDiagonal => Symmetry::MirrorDiagonal,
+        }
     }
 }
 
