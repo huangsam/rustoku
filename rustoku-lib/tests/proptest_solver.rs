@@ -1,5 +1,6 @@
+#![allow(clippy::collapsible_if)]
 use proptest::prelude::*;
-use rustoku_lib::core::{Board, BoardGenerator, Rustoku, Symmetry, generate_board};
+use rustoku_lib::core::{Board, Rustoku, generate_board};
 
 // Strategy for generating valid Sudoku clue counts (17-81)
 fn clue_count_strategy() -> impl Strategy<Value = usize> {

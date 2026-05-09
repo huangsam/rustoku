@@ -278,14 +278,14 @@ mod tests {
     fn test_is_valid_solution_valid() {
         let solved =
             "417369825632158947958724316825437169791586432346912758289643571573291684164875293";
-        assert_eq!(is_valid_solution(solved).unwrap(), true);
+        assert!(is_valid_solution(solved).unwrap());
     }
 
     #[test]
     fn test_is_valid_solution_invalid() {
         let unsolved =
             "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
-        assert_eq!(is_valid_solution(unsolved).unwrap(), false);
+        assert!(!is_valid_solution(unsolved).unwrap());
     }
 
     #[test]
