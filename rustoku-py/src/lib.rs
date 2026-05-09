@@ -15,8 +15,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use rustoku_lib::RustokuError;
 use rustoku_lib::bind::{
-    SolveOutput, candidates_grid, generate_str, is_valid_solution, solve_all_str, solve_any_str,
-    solve_with_steps,
+    SolveOutput, candidates_grid, generate_complex_str, generate_str, is_valid_solution,
+    solve_all_str, solve_any_str, solve_with_steps,
 };
 
 // ── internal helpers ──────────────────────────────────────────────────────────
@@ -115,6 +115,20 @@ fn generate(difficulty: &str) -> PyResult<String> {
     generate_str(difficulty).map_err(to_py_err)
 }
 
+/// Advanced generation with specific symmetry and difficulty.
+///
+/// `symmetry` can be `"none"`, `"rotational180"`, `"rotational90"`,
+/// `"mirrorvertical"`, `"mirrorhorizontal"`, or `"mirrordiagonal"`.
+///
+/// `difficulty` can be `"easy"`, `"medium"`, `"hard"`, `"expert"`, or `None`.
+///
+/// Raises `ValueError` if parameters are invalid or generation fails.
+#[pyfunction]
+#[pyo3(signature = (symmetry = "none", difficulty = None))]
+fn generate_advanced(symmetry: &str, difficulty: Option<&str>) -> PyResult<String> {
+    generate_complex_str(symmetry, difficulty).map_err(to_py_err)
+}
+
 /// Checks if an 81-character Sudoku string is a valid, fully-solved board.
 ///
 /// Returns `True` if the board is complete and valid, `False` otherwise.
@@ -133,6 +147,7 @@ fn rustoku(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(solve_steps, m)?)?;
     m.add_function(wrap_pyfunction!(candidates, m)?)?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
+    m.add_function(wrap_pyfunction!(generate_advanced, m)?)?;
     m.add_function(wrap_pyfunction!(check, m)?)?;
     Ok(())
 }

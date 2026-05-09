@@ -40,6 +40,13 @@ Generates a new Sudoku puzzle with a unique solution.
 - **Output**: 81-character puzzle string.
 - **Raises**: `ValueError` if the difficulty is invalid or generation fails.
 
+### `generate_advanced(symmetry: str = "none", difficulty: str = None) -> str`
+Generates a puzzle with specific symmetry and difficulty.
+- **`symmetry`**: `"none"`, `"rotational180"`, `"rotational90"`, `"mirrorvertical"`, `"mirrorhorizontal"`, or `"mirrordiagonal"`.
+- **`difficulty`**: `"easy"`, `"medium"`, `"hard"`, `"expert"`, or `None` (for purely random).
+- **Output**: 81-character puzzle string.
+- **Raises**: `ValueError` if parameters are invalid or generation fails.
+
 ### `solve_all(puzzle: str) -> list[str]`
 Finds every solution for a puzzle.
 - **Output**: List of 81-character solved strings (empty list if unsolvable).
@@ -75,6 +82,10 @@ import rustoku
 # 1. Generate a puzzle
 puzzle = rustoku.generate("medium")
 print(f"New Puzzle:  {puzzle}")
+
+# 1b. Generate with symmetry
+symmetric_puzzle = rustoku.generate_advanced(symmetry="rotational180", difficulty="hard")
+print(f"Symmetric:   {symmetric_puzzle}")
 
 # 2. Solve it
 solution = rustoku.solve(puzzle)
