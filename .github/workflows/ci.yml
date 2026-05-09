@@ -43,8 +43,10 @@ jobs:
           python-version: "3.x"
       - name: Install maturin
         run: pip install maturin
-      - name: Build Python extension
-        run: maturin build --release
+      - name: Build and Test Python extension
+        run: |
+          maturin develop
+          python3 tests/test_basic.py
         working-directory: rustoku-py
 
   wasm-build:

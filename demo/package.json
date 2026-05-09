@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "sync": "mkdir -p pkg && cp -r ../rustoku-wasm/pkg/* ./pkg/",
+    "dev": "npm run sync && vite",
+    "build": "npm run sync && vite build",
     "preview": "vite preview",
     "format": "prettier --write *.{ts,js,html,css} package.json"
   },

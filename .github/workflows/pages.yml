@@ -33,8 +33,6 @@ jobs:
         run: wasm-pack build --release --target web
         working-directory: rustoku-wasm
 
-      - name: Copy pkg into demo
-        run: cp -r rustoku-wasm/pkg/. demo/pkg/
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
