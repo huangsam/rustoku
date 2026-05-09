@@ -45,7 +45,7 @@ jobs:
         run: pip install maturin
       - name: Build and Test Python extension
         run: |
-          maturin develop
+          pip install .
           python3 tests/test_basic.py
         working-directory: rustoku-py
 
