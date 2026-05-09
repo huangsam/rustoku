@@ -234,11 +234,12 @@ impl BoardGenerator {
         use rand::RngExt;
 
         for _ in 0..self.max_attempts {
-            // Randomize the clue count around a typical human-solvable range if not explicitly set
-            let clues = if self.num_clues == 30 {
-                rand::rng().random_range(24..=32)
-            } else {
-                self.num_clues
+            // Ignore num_clues if difficulty is set, and use a range appropriate for the level
+            let clues = match target_difficulty {
+                Difficulty::Easy => rand::rng().random_range(34..=42),
+                Difficulty::Medium => rand::rng().random_range(28..=34),
+                Difficulty::Hard => rand::rng().random_range(22..=28),
+                Difficulty::Expert => rand::rng().random_range(17..=22),
             };
 
             // Generate a uniquely solvable board with symmetry

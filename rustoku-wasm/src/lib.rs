@@ -17,8 +17,8 @@
 //! ```
 
 use rustoku_lib::bind::{
-    candidates_grid, generate_str, is_valid_solution, solve_all_str, solve_any_str,
-    solve_with_steps,
+    candidates_grid, generate_complex_str, generate_str, is_valid_solution, solve_all_str,
+    solve_any_str, solve_with_steps,
 };
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
@@ -80,4 +80,10 @@ pub fn generate(difficulty: &str) -> String {
 #[wasm_bindgen]
 pub fn check(board_str: &str) -> bool {
     is_valid_solution(board_str).unwrap_or(false)
+}
+
+/// Advanced generation with specific clues and symmetry.
+#[wasm_bindgen]
+pub fn generate_advanced(symmetry: String, difficulty: Option<String>) -> String {
+    generate_complex_str(symmetry.as_str(), difficulty.as_deref()).unwrap_or_default()
 }

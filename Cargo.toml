@@ -1,7 +1,7 @@
 [workspace]
 members = ["rustoku-lib", "rustoku-cli", "rustoku-wasm", "rustoku-py"]
 default-members = ["rustoku-lib", "rustoku-cli"]
-resolver = "3"
+resolver = "2"
 
 [workspace.package]
 authors = ["Samuel Huang <samhuang91@gmail.com>"]

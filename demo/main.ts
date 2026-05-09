@@ -2,7 +2,7 @@ import init, {
   solve,
   solve_steps,
   candidates,
-  generate,
+  generate_advanced,
   check,
 } from "./pkg/rustoku_wasm.js";
 
@@ -57,6 +57,10 @@ const btnInfoHeader = document.getElementById(
   "btn-info-header",
 ) as HTMLButtonElement;
 const projectModal = document.getElementById("project-modal") as HTMLDivElement;
+const selectGenSymmetry = document.getElementById(
+  "select-gen-symmetry",
+) as HTMLSelectElement;
+
 const btnModalClose = document.getElementById(
   "btn-modal-close",
 ) as HTMLButtonElement;
@@ -339,6 +343,8 @@ function formatBoard(boardStr: string): string {
   return result;
 }
 
+/*
+// Legacy helper preserved for reference
 function generateAndRender(difficulty: string): void {
   if (!isWasmLoaded) return;
   const boardStr = generate(difficulty);
@@ -350,12 +356,29 @@ function generateAndRender(difficulty: string): void {
     });
   }
 }
+*/
 
 // Event Listeners — Generate
+
 if (btnGenerate)
   btnGenerate.onclick = () => {
+    if (!isWasmLoaded) return;
     const difficulty = selectGenDifficulty.value;
-    generateAndRender(difficulty);
+    const symmetry = selectGenSymmetry.value;
+
+    // Use advanced generation if available
+    const diffVal = difficulty === "random" ? null : difficulty;
+    const boardStr = generate_advanced(symmetry, diffVal as string);
+
+    if (boardStr && boardStr.length === 81) {
+      setBoard(boardStr, {
+        setAsGiven: true,
+        highlightMode: "clue",
+        clearSelection: true,
+      });
+    } else {
+      alert("Generation failed! Try reducing difficulty or changing symmetry.");
+    }
   };
 
 // Event Listeners — Solve

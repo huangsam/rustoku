@@ -9,7 +9,7 @@
 //! solving logic of their own – they only marshal results into the target language's
 //! type system.
 
-use crate::core::{Difficulty, SolveStep, TechniqueFlags};
+use crate::core::{BoardGenerator, Difficulty, SolveStep, Symmetry, TechniqueFlags};
 use crate::error::RustokuError;
 use crate::format::format_line;
 use crate::{Rustoku, generate_board_by_difficulty};
@@ -176,6 +176,34 @@ pub fn generate_str(difficulty: &str) -> Result<String, RustokuError> {
 /// Returns `true` if `puzzle` is a fully-solved, valid Sudoku board.
 pub fn is_valid_solution(puzzle: &str) -> Result<bool, RustokuError> {
     Rustoku::new_from_str(puzzle).map(|r| r.is_solved())
+}
+
+/// Advanced generation with specific clues and symmetry.
+pub fn generate_complex_str(
+    symmetry_str: &str,
+    difficulty_str: Option<&str>,
+) -> Result<String, RustokuError> {
+    let symmetry = match symmetry_str.to_lowercase().as_str() {
+        "none" => Symmetry::None,
+        "rotational180" => Symmetry::Rotational180,
+        "rotational90" => Symmetry::Rotational90,
+        "mirrorvertical" => Symmetry::MirrorVertical,
+        "mirrorhorizontal" => Symmetry::MirrorHorizontal,
+        "mirrordiagonal" => Symmetry::MirrorDiagonal,
+        _ => Symmetry::None,
+    };
+
+    let mut builder = BoardGenerator::new()
+        .symmetry(symmetry)
+        .max_attempts(250);
+
+    if let Some(diff_s) = difficulty_str {
+        let diff = Difficulty::from_str(diff_s)
+            .map_err(|_| RustokuError::UnknownDifficulty(diff_s.to_string()))?;
+        builder = builder.difficulty(diff);
+    }
+
+    builder.generate().map(|b| format_line(&b))
 }
 
 #[cfg(test)]

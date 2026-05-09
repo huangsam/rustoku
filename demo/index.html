@@ -100,7 +100,21 @@
                 <option value="medium">Medium</option>
                 <option value="hard" selected>Hard</option>
                 <option value="expert">Expert</option>
+                <option value="random">Random</option>
               </select>
+
+              <select
+                id="select-gen-symmetry"
+                aria-label="Sudoku generation symmetry"
+              >
+                <option value="none" selected>None</option>
+                <option value="rotational180">Rotational 180°</option>
+                <option value="rotational90">Rotational 90°</option>
+                <option value="mirrorvertical">Mirror Vertical</option>
+                <option value="mirrorhorizontal">Mirror Horizontal</option>
+                <option value="mirrordiagonal">Mirror Diagonal</option>
+              </select>
+
               <button id="btn-generate" class="btn primary">Generate</button>
             </div>
 

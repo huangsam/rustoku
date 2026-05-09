@@ -1,3 +1,11 @@
+html,
+body {
+  background-color: #0f172a;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
 :root {
   color-scheme: dark;
   --bg-color: #0f172a;
@@ -717,4 +725,64 @@ select option {
 
 .modal-body a:hover {
   text-decoration: underline;
+}
+
+/* --- Pro Cockpit Enhancements --- */
+.controls {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#select-gen-symmetry,
+.clue-slider-container {
+  margin-bottom: 0.75rem;
+}
+
+.clue-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clue-slider-container label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+#clues-value {
+  color: var(--clue-color);
+  font-family: ui-monospace, monospace;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+.sudoku-grid {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.cell {
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    outline 0.2s ease,
+    border-radius 0.2s ease;
+}
+
+.cell:hover {
+  background-color: var(--cell-hover);
+  transform: scale(1.05);
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.cell.selected {
+  outline: 3px solid var(--accent);
+  transform: scale(1.05);
+  z-index: 11;
+  border-radius: 4px;
 }
