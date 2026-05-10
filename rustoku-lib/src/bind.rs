@@ -193,9 +193,7 @@ pub fn generate_complex_str(
         _ => Symmetry::None,
     };
 
-    let mut builder = BoardGenerator::new()
-        .symmetry(symmetry)
-        .max_attempts(250);
+    let mut builder = BoardGenerator::new().symmetry(symmetry).max_attempts(250);
 
     if let Some(diff_s) = difficulty_str {
         let diff = Difficulty::from_str(diff_s)
