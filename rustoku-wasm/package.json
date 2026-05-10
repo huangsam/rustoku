@@ -1,0 +1,16 @@
+{
+  "name": "rustoku-wasm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wasm-pack build",
+    "test": "vitest run",
+    "sync": "mkdir -p ../demo/pkg && cp -r pkg/* ../demo/pkg/",
+    "all": "npm run build && npm run test && npm run sync"
+  },
+  "devDependencies": {
+    "vite": "^7.3.3",
+    "vite-plugin-wasm": "^3.6.0",
+    "vitest": "^3.0.0"
+  }
+}

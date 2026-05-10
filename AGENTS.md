@@ -77,6 +77,9 @@ cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --workspace
 cargo bench                    # criterion benchmarks in rustoku-lib/benches/
+
+# WASM-specific tests
+cd rustoku-wasm && wasm-pack build && npm test
 ```
 
 ### Performance expectations

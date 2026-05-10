@@ -1,4 +1,4 @@
-import init, {
+import {
   solve,
   solve_steps,
   candidates,
@@ -310,7 +310,7 @@ async function run(): Promise<void> {
     // Render hydrated board immediately to avoid flash while WASM initializes.
     setBoard(currentBoard, { clearSelection: true });
 
-    await init();
+    // WASM is initialized automatically by the bundler (vite-plugin-wasm)
     isWasmLoaded = true;
     renderGrid(currentBoard);
     console.log("Rustoku WASM loaded!");

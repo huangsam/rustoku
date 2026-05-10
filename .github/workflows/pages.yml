@@ -26,18 +26,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Build WASM module
-        run: wasm-pack build --release --target web
-        working-directory: rustoku-wasm
-
-
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build, Test and Sync WASM module
+        run: |
+          npm ci
+          npm run all
+        working-directory: rustoku-wasm
 
       - name: Install demo dependencies
         run: npm ci
