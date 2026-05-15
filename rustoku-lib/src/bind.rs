@@ -18,6 +18,16 @@ use std::str::FromStr;
 
 // ── Step / Solution types ─────────────────────────────────────────────────────
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CandidateChange {
+    pub row: usize,
+    pub col: usize,
+    pub before: Vec<u8>,
+    pub after: Vec<u8>,
+    pub removed: Vec<u8>,
+    pub added: Vec<u8>,
+}
+
 /// Flat, serialisable representation of a single solve step.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SolveStepInfo {
@@ -34,6 +44,8 @@ pub struct SolveStepInfo {
     pub related_cell_count: u8,
     /// Difficulty metric (0 = trivial, 10 = hardest).
     pub difficulty_point: u8,
+    #[serde(default)]
+    pub candidate_changes: Vec<CandidateChange>,
 }
 
 impl From<&SolveStep> for SolveStepInfo {
@@ -58,6 +70,7 @@ impl From<&SolveStep> for SolveStepInfo {
                 candidates_eliminated: *candidates_eliminated,
                 related_cell_count: *related_cell_count,
                 difficulty_point: *difficulty_point,
+                candidate_changes: Vec::new(),
             },
             SolveStep::CandidateElimination {
                 row,
@@ -78,6 +91,7 @@ impl From<&SolveStep> for SolveStepInfo {
                 candidates_eliminated: *candidates_eliminated,
                 related_cell_count: *related_cell_count,
                 difficulty_point: *difficulty_point,
+                candidate_changes: Vec::new(),
             },
         }
     }
@@ -90,6 +104,74 @@ pub struct SolveOutput {
     pub board: String,
     /// Ordered list of steps taken to reach the solution.
     pub steps: Vec<SolveStepInfo>,
+}
+
+fn diff_candidate_grids(
+    before: &[Vec<Vec<u8>>],
+    after: &[Vec<Vec<u8>>],
+) -> Vec<CandidateChange> {
+    let mut changes = Vec::new();
+
+    for row in 0..9 {
+        for col in 0..9 {
+            let before_candidates = before
+                .get(row)
+                .and_then(|grid_row| grid_row.get(col))
+                .cloned()
+                .unwrap_or_default();
+            let after_candidates = after
+                .get(row)
+                .and_then(|grid_row| grid_row.get(col))
+                .cloned()
+                .unwrap_or_default();
+
+            if before_candidates == after_candidates {
+                continue;
+            }
+
+            let removed = before_candidates
+                .iter()
+                .copied()
+                .filter(|candidate| !after_candidates.contains(candidate))
+                .collect();
+            let added = after_candidates
+                .iter()
+                .copied()
+                .filter(|candidate| !before_candidates.contains(candidate))
+                .collect();
+
+            changes.push(CandidateChange {
+                row,
+                col,
+                before: before_candidates,
+                after: after_candidates,
+                removed,
+                added,
+            });
+        }
+    }
+
+    changes
+}
+
+fn replay_step_infos_with_candidate_changes(
+    puzzle: &str,
+    steps: &[SolveStep],
+) -> Result<Vec<SolveStepInfo>, RustokuError> {
+    let mut replay = Rustoku::new_from_str(puzzle)?;
+    let mut infos = Vec::with_capacity(steps.len());
+
+    for step in steps {
+        let before = replay.candidate_grid_snapshot();
+        replay.apply_trace_step(step);
+        let after = replay.candidate_grid_snapshot();
+
+        let mut info = SolveStepInfo::from(step);
+        info.candidate_changes = diff_candidate_grids(&before, &after);
+        infos.push(info);
+    }
+
+    Ok(infos)
 }
 
 // ── Helper functions ──────────────────────────────────────────────────────────
@@ -134,15 +216,13 @@ pub fn solve_with_steps(
 ) -> Result<Option<SolveOutput>, RustokuError> {
     let flags = technique_flags_from_str(difficulty)?;
     let mut rustoku = Rustoku::new_from_str(puzzle)?.with_techniques(flags);
-    Ok(rustoku.solve_any().map(|solution| SolveOutput {
-        board: format_line(&solution.board),
-        steps: solution
-            .solve_path
-            .steps
-            .iter()
-            .map(SolveStepInfo::from)
-            .collect(),
-    }))
+    match rustoku.solve_any() {
+        Some(solution) => Ok(Some(SolveOutput {
+            board: format_line(&solution.board),
+            steps: replay_step_infos_with_candidate_changes(puzzle, &solution.solve_path.steps)?,
+        })),
+        None => Ok(None),
+    }
 }
 
 /// Returns the candidate digits for every cell as a 9×9 grid.
@@ -268,6 +348,12 @@ mod tests {
         let output = result.unwrap().unwrap();
         assert_eq!(output.board.len(), 81);
         assert!(!output.steps.is_empty());
+        assert!(output.steps.iter().any(|step| !step.candidate_changes.is_empty()));
+        assert!(output.steps.iter().all(|step| {
+            step.candidate_changes
+                .iter()
+                .all(|change| change.before != change.after)
+        }));
     }
 
     #[test]

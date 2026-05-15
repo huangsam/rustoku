@@ -395,6 +395,39 @@ impl Rustoku {
         self
     }
 
+    pub(crate) fn candidate_grid_snapshot(&self) -> Vec<Vec<Vec<u8>>> {
+        (0..9)
+            .map(|r| {
+                (0..9)
+                    .map(|c| {
+                        if self.board.get(r, c) != 0 {
+                            vec![]
+                        } else {
+                            self.candidates.get_candidates(r, c)
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
+    pub(crate) fn apply_trace_step(&mut self, step: &SolveStep) {
+        match *step {
+            SolveStep::Placement {
+                row, col, value, ..
+            } => {
+                self.place_number(row, col, value);
+            }
+            SolveStep::CandidateElimination {
+                row, col, value, ..
+            } => {
+                let initial_mask = self.candidates.get(row, col);
+                let refined_mask = initial_mask & !(1 << (value - 1));
+                self.candidates.set(row, col, refined_mask);
+            }
+        }
+    }
+
     /// Extracts candidate numbers (1-9) from a bitmask into a Vec.
     fn candidates_from_mask(mask: u16) -> Vec<u8> {
         let mut nums = Vec::with_capacity(mask.count_ones() as usize);

@@ -97,15 +97,31 @@ const btnModalClose = document.getElementById(
 ) as HTMLButtonElement;
 
 type HighlightMode = "none" | "clue" | "solved";
+type CandidateGrid = number[][][];
+type CandidateChange = {
+  row: number;
+  col: number;
+  before: number[];
+  after: number[];
+  removed: number[];
+  added: number[];
+};
 type SolveTraceStep = {
+  type?: "placement" | "elimination";
   technique: string;
   value: number;
   row?: number;
   col?: number;
   cell?: number;
+  step_number?: number;
+  candidates_eliminated?: number;
+  related_cell_count?: number;
+  difficulty_point?: number;
+  candidate_changes?: CandidateChange[];
 };
 type SolveTraceState = {
   initialBoard: string;
+  initialCandidateGrid: CandidateGrid;
   solvedBoard: string;
   steps: SolveTraceStep[];
   currentStep: number;
@@ -220,6 +236,36 @@ function titleCaseTechnique(technique: string): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function isPlacementStep(step: SolveTraceStep): boolean {
+  return step.type !== "elimination";
+}
+
+function createEmptyCandidateGrid(): CandidateGrid {
+  return Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
+}
+
+function normalizeCandidateGrid(raw: unknown): CandidateGrid {
+  if (!Array.isArray(raw) || raw.length !== 9) {
+    return createEmptyCandidateGrid();
+  }
+
+  return raw.map((row) => {
+    if (!Array.isArray(row) || row.length !== 9) {
+      return Array.from({ length: 9 }, () => []);
+    }
+
+    return row.map((cell) =>
+      Array.isArray(cell)
+        ? cell.filter((value): value is number => typeof value === "number")
+        : [],
+    );
+  });
+}
+
+function cloneCandidateGrid(grid: CandidateGrid): CandidateGrid {
+  return grid.map((row) => row.map((cell) => [...cell]));
+}
+
 function buildTraceBoard(
   initialBoard: string,
   steps: SolveTraceStep[],
@@ -233,6 +279,8 @@ function buildTraceBoard(
   const chars = initialBoard.split("");
   for (let i = 0; i <= currentStep; i++) {
     const step = steps[i];
+    if (!isPlacementStep(step)) continue;
+
     const index = getTraceCellIndex(step);
     const value = String(step.value);
 
@@ -241,6 +289,36 @@ function buildTraceBoard(
   }
 
   return chars.join("");
+}
+
+function buildTraceCandidateGrid(
+  initialCandidateGrid: CandidateGrid,
+  steps: SolveTraceStep[],
+  currentStep: number,
+): CandidateGrid {
+  const grid = cloneCandidateGrid(initialCandidateGrid);
+
+  if (currentStep < 0) {
+    return grid;
+  }
+
+  for (let i = 0; i <= currentStep; i++) {
+    const candidateChanges = steps[i]?.candidate_changes ?? [];
+    for (const change of candidateChanges) {
+      if (
+        change.row < 0 ||
+        change.row >= 9 ||
+        change.col < 0 ||
+        change.col >= 9
+      ) {
+        continue;
+      }
+
+      grid[change.row][change.col] = [...change.after];
+    }
+  }
+
+  return grid;
 }
 
 function getDisplayedBoard(): string {
@@ -303,6 +381,9 @@ function renderSolveTracePanel(): void {
   const currentCell = currentStep ? getTraceCellIndex(currentStep) : null;
   const stepNumber = solveTrace.currentStep + 1;
   const isComplete = solveTrace.currentStep >= totalSteps - 1;
+  const eliminated = currentStep.candidates_eliminated ?? 0;
+  const relatedCells = currentStep.related_cell_count ?? 0;
+  const isPlacement = isPlacementStep(currentStep);
 
   infoTitle.textContent = "Solve Steps";
   infoPanel.style.display = "block";
@@ -316,10 +397,14 @@ function renderSolveTracePanel(): void {
       ? "Auto-playing"
       : "Manual review";
   solveTraceTechnique.textContent = titleCaseTechnique(currentStep.technique);
-  solveTracePlacement.textContent = `${formatCellLabel(currentCell)} = ${currentStep.value}`;
+  solveTracePlacement.textContent = isPlacement
+    ? `${formatCellLabel(currentCell)} = ${currentStep.value}`
+    : `${formatCellLabel(currentCell)} eliminate ${currentStep.value}`;
   solveTraceDetail.textContent = isComplete
     ? "Final step reached. The board now matches the solved state."
-    : "Use Prev and Next to inspect each placement, or Play to animate the remaining steps.";
+    : isPlacement
+      ? "Placement step. Use Prev and Next to inspect each digit, or Play to animate the remaining trace."
+      : `Elimination step. Removed ${eliminated} candidate${eliminated === 1 ? "" : "s"} across ${relatedCells} related cell${relatedCells === 1 ? "" : "s"}. The board digits do not change on this step.`;
 
   btnTracePrev.disabled = solveTrace.currentStep <= 0;
   btnTraceNext.disabled = solveTrace.currentStep >= totalSteps - 1;
@@ -365,11 +450,13 @@ function toggleSolveTracePlayback(): void {
 
 function showSolveTrace(
   initialBoard: string,
+  initialCandidateGrid: CandidateGrid,
   solvedBoard: string,
   steps: SolveTraceStep[],
 ): void {
   solveTrace = {
     initialBoard,
+    initialCandidateGrid,
     solvedBoard,
     steps,
     currentStep: 0,
@@ -511,11 +598,21 @@ function renderGrid(
     solveTrace && solveTrace.currentStep >= 0
       ? getTraceCellIndex(solveTrace.steps[solveTrace.currentStep])
       : null;
+  const traceCandidateGrid =
+    solveTrace && solveTrace.currentStep >= 0
+      ? buildTraceCandidateGrid(
+          solveTrace.initialCandidateGrid,
+          solveTrace.steps,
+          solveTrace.currentStep,
+        )
+      : null;
 
-  if (showPencilMarks && isWasmLoaded) {
+  if (traceCandidateGrid) {
+    candidateGrid = traceCandidateGrid;
+  } else if (showPencilMarks && isWasmLoaded) {
     const rawCandidates = candidates(boardStr);
     if (Array.isArray(rawCandidates)) {
-      candidateGrid = rawCandidates as number[][][];
+      candidateGrid = normalizeCandidateGrid(rawCandidates);
     }
   }
 
@@ -595,7 +692,7 @@ function renderGrid(
         cell.classList.add("solved");
       }
     } else {
-      if (showPencilMarks && candidateGrid) {
+      if ((showPencilMarks || Boolean(solveTrace)) && candidateGrid) {
         const row = Math.floor(i / 9);
         const col = i % 9;
         const cellCandidates = Array.isArray(candidateGrid[row]?.[col])
@@ -747,9 +844,12 @@ if (btnSolveSteps)
       const steps = Array.isArray(result.steps)
         ? (result.steps as SolveTraceStep[])
         : [];
+      const initialCandidateGrid = normalizeCandidateGrid(
+        candidates(currentBoard),
+      );
 
       if (steps.length > 0) {
-        showSolveTrace(currentBoard, result.board, steps);
+        showSolveTrace(currentBoard, initialCandidateGrid, result.board, steps);
       } else {
         showInfo(
           "Solve Steps",
