@@ -68,6 +68,9 @@ const solveTracePlacement = document.getElementById(
 const solveTraceDetail = document.getElementById(
   "solve-trace-detail",
 ) as HTMLParagraphElement;
+const solveTraceChanges = document.getElementById(
+  "solve-trace-changes",
+) as HTMLDivElement;
 const btnTracePrev = document.getElementById(
   "btn-trace-prev",
 ) as HTMLButtonElement;
@@ -76,6 +79,12 @@ const btnTracePlay = document.getElementById(
 ) as HTMLButtonElement;
 const btnTraceNext = document.getElementById(
   "btn-trace-next",
+) as HTMLButtonElement;
+const btnTraceNextPlacement = document.getElementById(
+  "btn-trace-next-placement",
+) as HTMLButtonElement;
+const btnTraceNextElimination = document.getElementById(
+  "btn-trace-next-elimination",
 ) as HTMLButtonElement;
 const infoContent = document.getElementById("info-content") as HTMLPreElement;
 const btnCloseInfo = document.getElementById(
@@ -266,6 +275,99 @@ function cloneCandidateGrid(grid: CandidateGrid): CandidateGrid {
   return grid.map((row) => row.map((cell) => [...cell]));
 }
 
+function getCurrentTraceStep(): SolveTraceStep | null {
+  if (!solveTrace) {
+    return null;
+  }
+
+  return solveTrace.steps[solveTrace.currentStep] ?? null;
+}
+
+function formatDigitList(values: number[]): string {
+  return values.join(", ");
+}
+
+function findNextTraceStepIndex(
+  startIndex: number,
+  matcher: (step: SolveTraceStep) => boolean,
+): number | null {
+  if (!solveTrace) {
+    return null;
+  }
+
+  for (let index = startIndex + 1; index < solveTrace.steps.length; index++) {
+    if (matcher(solveTrace.steps[index])) {
+      return index;
+    }
+  }
+
+  return null;
+}
+
+function getTraceAffectedIndices(step: SolveTraceStep | null): Set<number> {
+  const indices = new Set<number>();
+  if (!step) {
+    return indices;
+  }
+
+  const currentCell = getTraceCellIndex(step);
+  if (currentCell !== null) {
+    indices.add(currentCell);
+  }
+
+  for (const change of step.candidate_changes ?? []) {
+    const index = change.row * 9 + change.col;
+    if (index >= 0 && index < 81) {
+      indices.add(index);
+    }
+  }
+
+  return indices;
+}
+
+function renderTraceChanges(step: SolveTraceStep | null): void {
+  if (!step) {
+    solveTraceChanges.innerHTML = "";
+    return;
+  }
+
+  const candidateChanges = step.candidate_changes ?? [];
+  if (candidateChanges.length === 0) {
+    solveTraceChanges.innerHTML =
+      '<div class="solve-trace-change"><span>No candidate changes recorded for this step.</span></div>';
+    return;
+  }
+
+  const items = candidateChanges
+    .slice(0, 5)
+    .map((change) => {
+      const cellLabel = formatCellLabel(change.row * 9 + change.col);
+      const removedText =
+        change.removed.length > 0
+          ? `removed ${formatDigitList(change.removed)}`
+          : null;
+      const remainingText =
+        change.after.length > 0 ? `now ${formatDigitList(change.after)}` : null;
+      const addedText =
+        change.added.length > 0
+          ? `added ${formatDigitList(change.added)}`
+          : null;
+      const parts = [removedText, addedText, remainingText].filter(
+        (part): part is string => Boolean(part),
+      );
+
+      return `<div class="solve-trace-change"><strong>${cellLabel}</strong><span>${parts.join(" • ")}</span></div>`;
+    })
+    .join("");
+
+  const overflow =
+    candidateChanges.length > 5
+      ? `<div class="solve-trace-change"><span>+${candidateChanges.length - 5} more affected cell${candidateChanges.length - 5 === 1 ? "" : "s"}</span></div>`
+      : "";
+
+  solveTraceChanges.innerHTML = items + overflow;
+}
+
 function buildTraceBoard(
   initialBoard: string,
   steps: SolveTraceStep[],
@@ -334,6 +436,23 @@ function getDisplayedBoard(): string {
   );
 }
 
+function syncCandidatesButton(): void {
+  if (!btnCandidates) {
+    return;
+  }
+
+  if (solveTrace) {
+    btnCandidates.textContent = "Trace Candidates";
+    btnCandidates.disabled = true;
+    return;
+  }
+
+  btnCandidates.disabled = false;
+  btnCandidates.textContent = showPencilMarks
+    ? "Hide Candidates"
+    : "Candidates";
+}
+
 function stopSolveTracePlayback(): void {
   const trace = solveTrace;
   if (!trace) return;
@@ -367,6 +486,7 @@ function clearSolveTrace(options?: { restoreBoard?: boolean }): void {
   solveTrace = null;
   solveTracePanel.hidden = true;
   infoContent.hidden = false;
+  syncCandidatesButton();
 
   if (options?.restoreBoard) {
     renderCurrentView();
@@ -377,13 +497,22 @@ function renderSolveTracePanel(): void {
   if (!solveTrace) return;
 
   const totalSteps = solveTrace.steps.length;
-  const currentStep = solveTrace.steps[solveTrace.currentStep];
+  const currentStep = getCurrentTraceStep();
+  if (!currentStep) return;
   const currentCell = currentStep ? getTraceCellIndex(currentStep) : null;
   const stepNumber = solveTrace.currentStep + 1;
   const isComplete = solveTrace.currentStep >= totalSteps - 1;
   const eliminated = currentStep.candidates_eliminated ?? 0;
   const relatedCells = currentStep.related_cell_count ?? 0;
   const isPlacement = isPlacementStep(currentStep);
+  const nextPlacementIndex = findNextTraceStepIndex(
+    solveTrace.currentStep,
+    isPlacementStep,
+  );
+  const nextEliminationIndex = findNextTraceStepIndex(
+    solveTrace.currentStep,
+    (step) => !isPlacementStep(step),
+  );
 
   infoTitle.textContent = "Solve Steps";
   infoPanel.style.display = "block";
@@ -405,10 +534,13 @@ function renderSolveTracePanel(): void {
     : isPlacement
       ? "Placement step. Use Prev and Next to inspect each digit, or Play to animate the remaining trace."
       : `Elimination step. Removed ${eliminated} candidate${eliminated === 1 ? "" : "s"} across ${relatedCells} related cell${relatedCells === 1 ? "" : "s"}. The board digits do not change on this step.`;
+  renderTraceChanges(currentStep);
 
   btnTracePrev.disabled = solveTrace.currentStep <= 0;
   btnTraceNext.disabled = solveTrace.currentStep >= totalSteps - 1;
   btnTracePlay.textContent = solveTrace.isPlaying ? "Pause" : "Play";
+  btnTraceNextPlacement.disabled = nextPlacementIndex === null;
+  btnTraceNextElimination.disabled = nextEliminationIndex === null;
 }
 
 function scheduleSolveTracePlayback(): void {
@@ -464,6 +596,7 @@ function showSolveTrace(
     playbackTimer: null,
   };
 
+  syncCandidatesButton();
   renderSolveTracePanel();
   renderCurrentView();
   infoPanel.scrollIntoView({ behavior: "smooth" });
@@ -598,6 +731,7 @@ function renderGrid(
     solveTrace && solveTrace.currentStep >= 0
       ? getTraceCellIndex(solveTrace.steps[solveTrace.currentStep])
       : null;
+  const traceAffectedIndices = getTraceAffectedIndices(getCurrentTraceStep());
   const traceCandidateGrid =
     solveTrace && solveTrace.currentStep >= 0
       ? buildTraceCandidateGrid(
@@ -644,6 +778,7 @@ function renderGrid(
       "invalid",
       "related",
       "same-digit",
+      "trace-affected",
       "trace-focus",
     );
 
@@ -677,6 +812,10 @@ function renderGrid(
     }
     if (invalidSet.has(i)) {
       cell.classList.add("invalid");
+    }
+
+    if (traceAffectedIndices.has(i)) {
+      cell.classList.add("trace-affected");
     }
 
     if (traceFocusIndex === i) {
@@ -728,6 +867,7 @@ async function run(): Promise<void> {
 
     // Render hydrated board immediately to avoid flash while WASM initializes.
     setBoard(currentBoard, { clearSelection: true });
+    syncCandidatesButton();
 
     // WASM is initialized automatically by the bundler (vite-plugin-wasm)
     isWasmLoaded = true;
@@ -867,9 +1007,7 @@ if (btnCandidates)
   btnCandidates.onclick = () => {
     if (!isWasmLoaded) return;
     showPencilMarks = !showPencilMarks;
-    btnCandidates.textContent = showPencilMarks
-      ? "Hide Candidates"
-      : "Candidates";
+    syncCandidatesButton();
     renderCurrentView();
   };
 
@@ -945,7 +1083,7 @@ if (btnErase)
   btnErase.onclick = () => {
     clearSolveTrace();
     showPencilMarks = false;
-    btnCandidates.textContent = "Candidates";
+    syncCandidatesButton();
     const chars = currentBoard.split("");
     for (let i = 0; i < 81; i++) {
       if (!givenMask[i]) {
@@ -960,7 +1098,7 @@ if (btnReset)
   btnReset.onclick = () => {
     clearSolveTrace();
     showPencilMarks = false;
-    btnCandidates.textContent = "Candidates";
+    syncCandidatesButton();
     givenMask = Array(81).fill(false);
     undoStack = [];
     redoStack = [];
@@ -970,7 +1108,10 @@ if (btnReset)
 
 if (btnCloseInfo)
   btnCloseInfo.onclick = () => {
-    clearSolveTrace({ restoreBoard: true });
+    stopSolveTracePlayback();
+    if (solveTrace) {
+      renderSolveTracePanel();
+    }
     infoPanel.style.display = "none";
   };
 
@@ -998,6 +1139,34 @@ if (btnTraceNext)
 if (btnTracePlay)
   btnTracePlay.onclick = () => {
     toggleSolveTracePlayback();
+  };
+
+if (btnTraceNextPlacement)
+  btnTraceNextPlacement.onclick = () => {
+    if (!solveTrace) return;
+    const nextIndex = findNextTraceStepIndex(
+      solveTrace.currentStep,
+      isPlacementStep,
+    );
+    if (nextIndex === null) return;
+    stopSolveTracePlayback();
+    solveTrace.currentStep = nextIndex;
+    renderSolveTracePanel();
+    renderCurrentView();
+  };
+
+if (btnTraceNextElimination)
+  btnTraceNextElimination.onclick = () => {
+    if (!solveTrace) return;
+    const nextIndex = findNextTraceStepIndex(
+      solveTrace.currentStep,
+      (step) => !isPlacementStep(step),
+    );
+    if (nextIndex === null) return;
+    stopSolveTracePlayback();
+    solveTrace.currentStep = nextIndex;
+    renderSolveTracePanel();
+    renderCurrentView();
   };
 
 document.addEventListener("keydown", (event) => {
