@@ -645,6 +645,15 @@ select option {
   .board-io-row select {
     width: 100%;
   }
+
+  .solve-trace-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .solve-trace-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Info panel */
@@ -685,6 +694,84 @@ select option {
   max-height: 400px;
   overflow-y: auto;
   white-space: pre-wrap;
+}
+
+.solve-trace-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.solve-trace-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.trace-kicker,
+.trace-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.trace-kicker {
+  background-color: color-mix(in srgb, var(--clue-color) 14%, transparent);
+  color: var(--clue-color);
+}
+
+.trace-status {
+  background-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-main);
+}
+
+.solve-trace-card {
+  padding: 1rem;
+  border: 1px solid var(--grid-line);
+  border-radius: 10px;
+  background: var(--cell-bg);
+}
+
+.solve-trace-technique {
+  margin-bottom: 0.35rem;
+  color: var(--clue-color);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.solve-trace-placement {
+  margin-bottom: 0.35rem;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.solve-trace-detail {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.solve-trace-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.solve-trace-controls .btn {
+  width: 100%;
+}
+
+.solve-trace-controls .btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* Modal */
@@ -837,5 +924,13 @@ input[type="range"] {
   outline: 3px solid var(--accent);
   transform: scale(1.05);
   z-index: 11;
+  border-radius: 4px;
+}
+
+.cell.trace-focus {
+  background-color: color-mix(in srgb, var(--accent) 18%, var(--cell-bg));
+  outline: 3px solid var(--accent);
+  transform: scale(1.05);
+  z-index: 12;
   border-radius: 4px;
 }

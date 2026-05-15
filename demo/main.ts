@@ -14,6 +14,7 @@ let showPencilMarks: boolean = false;
 let invalidCells: Set<number> = new Set();
 let undoStack: Array<{ board: string; givens: boolean[] }> = [];
 let redoStack: Array<{ board: string; givens: boolean[] }> = [];
+let currentHighlightMode: HighlightMode = "none";
 
 const STORAGE_KEYS = {
   board: "rustoku-board",
@@ -49,6 +50,33 @@ const selectExportFormat = document.getElementById(
 ) as HTMLSelectElement;
 const infoPanel = document.getElementById("info-panel") as HTMLDivElement;
 const infoTitle = document.getElementById("info-title") as HTMLHeadingElement;
+const solveTracePanel = document.getElementById(
+  "solve-trace-panel",
+) as HTMLDivElement;
+const solveTraceStepCount = document.getElementById(
+  "solve-trace-step-count",
+) as HTMLSpanElement;
+const solveTraceStatus = document.getElementById(
+  "solve-trace-status",
+) as HTMLSpanElement;
+const solveTraceTechnique = document.getElementById(
+  "solve-trace-technique",
+) as HTMLParagraphElement;
+const solveTracePlacement = document.getElementById(
+  "solve-trace-placement",
+) as HTMLParagraphElement;
+const solveTraceDetail = document.getElementById(
+  "solve-trace-detail",
+) as HTMLParagraphElement;
+const btnTracePrev = document.getElementById(
+  "btn-trace-prev",
+) as HTMLButtonElement;
+const btnTracePlay = document.getElementById(
+  "btn-trace-play",
+) as HTMLButtonElement;
+const btnTraceNext = document.getElementById(
+  "btn-trace-next",
+) as HTMLButtonElement;
 const infoContent = document.getElementById("info-content") as HTMLPreElement;
 const btnCloseInfo = document.getElementById(
   "btn-close-info",
@@ -69,6 +97,21 @@ const btnModalClose = document.getElementById(
 ) as HTMLButtonElement;
 
 type HighlightMode = "none" | "clue" | "solved";
+type SolveTraceStep = {
+  technique: string;
+  value: number;
+  row?: number;
+  col?: number;
+  cell?: number;
+};
+type SolveTraceState = {
+  initialBoard: string;
+  solvedBoard: string;
+  steps: SolveTraceStep[];
+  currentStep: number;
+  isPlaying: boolean;
+  playbackTimer: number | null;
+};
 type ThemeName =
   | "midnight"
   | "paper"
@@ -86,6 +129,7 @@ const validThemes: ThemeName[] = [
   "forest",
   "mono",
 ];
+let solveTrace: SolveTraceState | null = null;
 
 // Undo/redo helpers
 function pushUndo(): void {
@@ -96,24 +140,28 @@ function pushUndo(): void {
 
 function undo(): void {
   if (undoStack.length === 0) return;
+  clearSolveTrace();
   const snapshot = undoStack.pop()!;
   redoStack.push({ board: currentBoard, givens: [...givenMask] });
   currentBoard = snapshot.board;
   givenMask = snapshot.givens;
+  currentHighlightMode = "none";
   recomputeInvalidCells();
-  renderGrid(currentBoard, "none");
+  renderCurrentView();
   syncBoardInput(currentBoard);
   saveBoardState();
 }
 
 function redo(): void {
   if (redoStack.length === 0) return;
+  clearSolveTrace();
   const snapshot = redoStack.pop()!;
   undoStack.push({ board: currentBoard, givens: [...givenMask] });
   currentBoard = snapshot.board;
   givenMask = snapshot.givens;
+  currentHighlightMode = "none";
   recomputeInvalidCells();
-  renderGrid(currentBoard, "none");
+  renderCurrentView();
   syncBoardInput(currentBoard);
   saveBoardState();
 }
@@ -133,6 +181,205 @@ function normalizeBoardInput(raw: string): string | null {
   if (normalized.length !== 81) return null;
   if (!/^[0-9]{81}$/.test(normalized)) return null;
   return normalized;
+}
+
+function computeInvalidCells(boardStr: string): Set<number> {
+  const invalid = new Set<number>();
+  for (let i = 0; i < 81; i++) {
+    const value = boardStr[i];
+    if (value !== "0" && !isPlacementValid(boardStr, i, value)) {
+      invalid.add(i);
+    }
+  }
+  return invalid;
+}
+
+function getTraceCellIndex(step: SolveTraceStep): number | null {
+  if (typeof step.cell === "number") {
+    return step.cell >= 0 && step.cell < 81 ? step.cell : null;
+  }
+
+  if (typeof step.row === "number" && typeof step.col === "number") {
+    const index = step.row * 9 + step.col;
+    return index >= 0 && index < 81 ? index : null;
+  }
+
+  return null;
+}
+
+function formatCellLabel(index: number | null): string {
+  if (index === null) return "R?C?";
+  return `R${Math.floor(index / 9) + 1}C${(index % 9) + 1}`;
+}
+
+function titleCaseTechnique(technique: string): string {
+  return technique
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function buildTraceBoard(
+  initialBoard: string,
+  steps: SolveTraceStep[],
+  currentStep: number,
+  solvedBoard: string,
+): string {
+  if (steps.length === 0) return solvedBoard;
+  if (currentStep < 0) return initialBoard;
+  if (currentStep >= steps.length - 1) return solvedBoard;
+
+  const chars = initialBoard.split("");
+  for (let i = 0; i <= currentStep; i++) {
+    const step = steps[i];
+    const index = getTraceCellIndex(step);
+    const value = String(step.value);
+
+    if (index === null || !/^[1-9]$/.test(value)) continue;
+    chars[index] = value;
+  }
+
+  return chars.join("");
+}
+
+function getDisplayedBoard(): string {
+  if (!solveTrace) {
+    return currentBoard;
+  }
+
+  return buildTraceBoard(
+    solveTrace.initialBoard,
+    solveTrace.steps,
+    solveTrace.currentStep,
+    solveTrace.solvedBoard,
+  );
+}
+
+function stopSolveTracePlayback(): void {
+  const trace = solveTrace;
+  if (!trace) return;
+
+  if (trace.playbackTimer !== null) {
+    window.clearTimeout(trace.playbackTimer);
+    trace.playbackTimer = null;
+  }
+
+  trace.isPlaying = false;
+}
+
+function renderCurrentView(): void {
+  if (solveTrace) {
+    const replayBoard = getDisplayedBoard();
+    const mode: HighlightMode =
+      solveTrace.currentStep >= solveTrace.steps.length - 1 ? "solved" : "none";
+    renderGrid(replayBoard, mode);
+    syncBoardInput(replayBoard);
+    return;
+  }
+
+  renderGrid(currentBoard, currentHighlightMode);
+  syncBoardInput(currentBoard);
+}
+
+function clearSolveTrace(options?: { restoreBoard?: boolean }): void {
+  if (!solveTrace) return;
+
+  stopSolveTracePlayback();
+  solveTrace = null;
+  solveTracePanel.hidden = true;
+  infoContent.hidden = false;
+
+  if (options?.restoreBoard) {
+    renderCurrentView();
+  }
+}
+
+function renderSolveTracePanel(): void {
+  if (!solveTrace) return;
+
+  const totalSteps = solveTrace.steps.length;
+  const currentStep = solveTrace.steps[solveTrace.currentStep];
+  const currentCell = currentStep ? getTraceCellIndex(currentStep) : null;
+  const stepNumber = solveTrace.currentStep + 1;
+  const isComplete = solveTrace.currentStep >= totalSteps - 1;
+
+  infoTitle.textContent = "Solve Steps";
+  infoPanel.style.display = "block";
+  solveTracePanel.hidden = false;
+  infoContent.hidden = true;
+
+  solveTraceStepCount.textContent = `Step ${stepNumber} of ${totalSteps}`;
+  solveTraceStatus.textContent = isComplete
+    ? "Solved board"
+    : solveTrace.isPlaying
+      ? "Auto-playing"
+      : "Manual review";
+  solveTraceTechnique.textContent = titleCaseTechnique(currentStep.technique);
+  solveTracePlacement.textContent = `${formatCellLabel(currentCell)} = ${currentStep.value}`;
+  solveTraceDetail.textContent = isComplete
+    ? "Final step reached. The board now matches the solved state."
+    : "Use Prev and Next to inspect each placement, or Play to animate the remaining steps.";
+
+  btnTracePrev.disabled = solveTrace.currentStep <= 0;
+  btnTraceNext.disabled = solveTrace.currentStep >= totalSteps - 1;
+  btnTracePlay.textContent = solveTrace.isPlaying ? "Pause" : "Play";
+}
+
+function scheduleSolveTracePlayback(): void {
+  if (!solveTrace || !solveTrace.isPlaying) return;
+
+  if (solveTrace.currentStep >= solveTrace.steps.length - 1) {
+    stopSolveTracePlayback();
+    renderSolveTracePanel();
+    return;
+  }
+
+  solveTrace.playbackTimer = window.setTimeout(() => {
+    if (!solveTrace || !solveTrace.isPlaying) return;
+    solveTrace.currentStep += 1;
+    renderSolveTracePanel();
+    renderCurrentView();
+    scheduleSolveTracePlayback();
+  }, 700);
+}
+
+function toggleSolveTracePlayback(): void {
+  if (!solveTrace) return;
+
+  if (solveTrace.isPlaying) {
+    stopSolveTracePlayback();
+    renderSolveTracePanel();
+    return;
+  }
+
+  if (solveTrace.currentStep >= solveTrace.steps.length - 1) {
+    solveTrace.currentStep = 0;
+  }
+
+  solveTrace.isPlaying = true;
+  renderSolveTracePanel();
+  renderCurrentView();
+  scheduleSolveTracePlayback();
+}
+
+function showSolveTrace(
+  initialBoard: string,
+  solvedBoard: string,
+  steps: SolveTraceStep[],
+): void {
+  solveTrace = {
+    initialBoard,
+    solvedBoard,
+    steps,
+    currentStep: 0,
+    isPlaying: false,
+    playbackTimer: null,
+  };
+
+  renderSolveTracePanel();
+  renderCurrentView();
+  infoPanel.scrollIntoView({ behavior: "smooth" });
 }
 
 function boardForExport(boardStr: string, format: "zero" | "dot"): string {
@@ -209,14 +456,7 @@ function isPlacementValid(
 }
 
 function recomputeInvalidCells(): void {
-  const invalid = new Set<number>();
-  for (let i = 0; i < 81; i++) {
-    const value = currentBoard[i];
-    if (value !== "0" && !isPlacementValid(currentBoard, i, value)) {
-      invalid.add(i);
-    }
-  }
-  invalidCells = invalid;
+  invalidCells = computeInvalidCells(currentBoard);
 }
 
 function setBoard(
@@ -234,8 +474,9 @@ function setBoard(
   if (options?.clearSelection) {
     selectedCell = null;
   }
+  currentHighlightMode = options?.highlightMode ?? "none";
   recomputeInvalidCells();
-  renderGrid(currentBoard, options?.highlightMode ?? "none");
+  renderCurrentView();
   syncBoardInput(currentBoard);
   saveBoardState();
 }
@@ -244,6 +485,8 @@ function updateCell(index: number, value: string): void {
   if (index < 0 || index >= 81) return;
   if (givenMask[index]) return;
   if (!/^[0-9]$/.test(value)) return;
+
+  clearSolveTrace();
 
   pushUndo();
 
@@ -262,9 +505,15 @@ function renderGrid(
   const cells = grid.querySelectorAll(".cell");
   const needsCreate = cells.length === 0;
   let candidateGrid: number[][][] | null = null;
+  const invalidSet =
+    boardStr === currentBoard ? invalidCells : computeInvalidCells(boardStr);
+  const traceFocusIndex =
+    solveTrace && solveTrace.currentStep >= 0
+      ? getTraceCellIndex(solveTrace.steps[solveTrace.currentStep])
+      : null;
 
   if (showPencilMarks && isWasmLoaded) {
-    const rawCandidates = candidates(currentBoard);
+    const rawCandidates = candidates(boardStr);
     if (Array.isArray(rawCandidates)) {
       candidateGrid = rawCandidates as number[][][];
     }
@@ -285,7 +534,7 @@ function renderGrid(
       cell.tabIndex = 0;
       cell.addEventListener("click", () => {
         selectedCell = i;
-        renderGrid(currentBoard, "none");
+        renderCurrentView();
       });
       cell.dataset.bound = "1";
     }
@@ -298,6 +547,7 @@ function renderGrid(
       "invalid",
       "related",
       "same-digit",
+      "trace-focus",
     );
 
     if (selectedCell !== null) {
@@ -328,8 +578,12 @@ function renderGrid(
     if (selectedCell === i) {
       cell.classList.add("selected");
     }
-    if (invalidCells.has(i)) {
+    if (invalidSet.has(i)) {
       cell.classList.add("invalid");
+    }
+
+    if (traceFocusIndex === i) {
+      cell.classList.add("trace-focus");
     }
 
     if (val !== "0") {
@@ -380,7 +634,7 @@ async function run(): Promise<void> {
 
     // WASM is initialized automatically by the bundler (vite-plugin-wasm)
     isWasmLoaded = true;
-    renderGrid(currentBoard);
+    renderCurrentView();
     console.log("Rustoku WASM loaded!");
   } catch (err) {
     console.error("Failed to load WASM module", err);
@@ -391,9 +645,20 @@ async function run(): Promise<void> {
 }
 
 // Helpers
-function showInfo(title: string, content: string): void {
+function showInfo(
+  title: string,
+  content: string,
+  options?: { preserveTrace?: boolean },
+): void {
+  if (!options?.preserveTrace) {
+    clearSolveTrace({ restoreBoard: true });
+  }
   infoTitle.textContent = title;
   infoContent.textContent = content;
+  infoContent.hidden = false;
+  solveTracePanel.hidden = options?.preserveTrace
+    ? solveTracePanel.hidden
+    : true;
   infoPanel.style.display = "block";
   infoPanel.scrollIntoView({ behavior: "smooth" });
 }
@@ -431,6 +696,7 @@ function generateAndRender(difficulty: string): void {
 if (btnGenerate)
   btnGenerate.onclick = () => {
     if (!isWasmLoaded) return;
+    clearSolveTrace();
     const difficulty = selectGenDifficulty.value;
     const symmetry = selectGenSymmetry.value;
 
@@ -459,6 +725,7 @@ if (btnSolve)
       alert("Please generate a board first.");
       return;
     }
+    clearSolveTrace();
     const solvedBoard = solve(currentBoard);
     if (solvedBoard && solvedBoard.length === 81) {
       setBoard(solvedBoard, { highlightMode: "solved" });
@@ -474,43 +741,22 @@ if (btnSolveSteps)
       alert("Please generate a board first.");
       return;
     }
-    // Use all techniques unconditionally
+    clearSolveTrace();
     const result = solve_steps(currentBoard, "expert");
     if (result) {
-      let content = "";
-      if (result.steps && result.steps.length > 0) {
-        result.steps.forEach(
-          (
-            step: {
-              technique: string;
-              value: number;
-              row?: number;
-              col?: number;
-              cell?: number;
-            },
-            idx: number,
-          ) => {
-            let row = 0;
-            let col = 0;
+      const steps = Array.isArray(result.steps)
+        ? (result.steps as SolveTraceStep[])
+        : [];
 
-            if (typeof step.row === "number" && typeof step.col === "number") {
-              row = step.row + 1;
-              col = step.col + 1;
-            } else if (typeof step.cell === "number") {
-              row = Math.floor(step.cell / 9) + 1;
-              col = (step.cell % 9) + 1;
-            }
-
-            const cellLabel = row > 0 && col > 0 ? `R${row}C${col}` : "R?C?";
-            content += `${idx + 1}. [${step.technique}] ${cellLabel} = ${step.value}\n`;
-          },
-        );
+      if (steps.length > 0) {
+        showSolveTrace(currentBoard, result.board, steps);
       } else {
-        content += "(No human technique steps recorded)\n";
+        showInfo(
+          "Solve Steps",
+          `(No human technique steps recorded)\n\n── Final Board ──\n${formatBoard(result.board)}`,
+        );
+        setBoard(result.board, { highlightMode: "solved" });
       }
-      content += `\n── Final Board ──\n${formatBoard(result.board)}`;
-      showInfo(`Solve Steps`, content);
-      setBoard(result.board, { highlightMode: "solved" });
     } else {
       alert(`Could not solve with human techniques.`);
     }
@@ -524,19 +770,23 @@ if (btnCandidates)
     btnCandidates.textContent = showPencilMarks
       ? "Hide Candidates"
       : "Candidates";
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
   };
 
 if (btnCheck)
   btnCheck.onclick = () => {
     if (!isWasmLoaded) return;
-    const isValid = check(currentBoard);
+    const boardToCheck = getDisplayedBoard();
+    const isValid = check(boardToCheck);
     if (isValid) {
-      showInfo("Validation ✓", "This is a valid, complete Sudoku solution!");
+      showInfo("Validation ✓", "This is a valid, complete Sudoku solution!", {
+        preserveTrace: Boolean(solveTrace),
+      });
     } else {
       showInfo(
         "Validation ✗",
         "Not a valid solution. Make sure all 81 cells are filled with no duplicates in any row, column, or box.",
+        { preserveTrace: Boolean(solveTrace) },
       );
     }
   };
@@ -544,6 +794,7 @@ if (btnCheck)
 if (btnLoadBoard)
   btnLoadBoard.onclick = () => {
     if (!isWasmLoaded) return;
+    clearSolveTrace();
     const parsed = normalizeBoardInput(inputBoard.value);
     if (!parsed) {
       showInfo(
@@ -568,7 +819,7 @@ if (btnCopyBoard)
     const format = (selectExportFormat.value === "dot" ? "dot" : "zero") as
       | "zero"
       | "dot";
-    const output = boardForExport(currentBoard, format);
+    const output = boardForExport(getDisplayedBoard(), format);
 
     try {
       await navigator.clipboard.writeText(output);
@@ -586,12 +837,13 @@ if (btnCopyBoard)
 
 if (selectExportFormat) {
   selectExportFormat.onchange = () => {
-    syncBoardInput(currentBoard);
+    syncBoardInput(getDisplayedBoard());
   };
 }
 
 if (btnErase)
   btnErase.onclick = () => {
+    clearSolveTrace();
     showPencilMarks = false;
     btnCandidates.textContent = "Candidates";
     const chars = currentBoard.split("");
@@ -606,6 +858,7 @@ if (btnErase)
 
 if (btnReset)
   btnReset.onclick = () => {
+    clearSolveTrace();
     showPencilMarks = false;
     btnCandidates.textContent = "Candidates";
     givenMask = Array(81).fill(false);
@@ -617,7 +870,34 @@ if (btnReset)
 
 if (btnCloseInfo)
   btnCloseInfo.onclick = () => {
+    clearSolveTrace({ restoreBoard: true });
     infoPanel.style.display = "none";
+  };
+
+if (btnTracePrev)
+  btnTracePrev.onclick = () => {
+    if (!solveTrace) return;
+    stopSolveTracePlayback();
+    solveTrace.currentStep = Math.max(0, solveTrace.currentStep - 1);
+    renderSolveTracePanel();
+    renderCurrentView();
+  };
+
+if (btnTraceNext)
+  btnTraceNext.onclick = () => {
+    if (!solveTrace) return;
+    stopSolveTracePlayback();
+    solveTrace.currentStep = Math.min(
+      solveTrace.steps.length - 1,
+      solveTrace.currentStep + 1,
+    );
+    renderSolveTracePanel();
+    renderCurrentView();
+  };
+
+if (btnTracePlay)
+  btnTracePlay.onclick = () => {
+    toggleSolveTracePlayback();
   };
 
 document.addEventListener("keydown", (event) => {
@@ -656,7 +936,7 @@ document.addEventListener("keydown", (event) => {
   // Escape to deselect
   if (event.key === "Escape") {
     selectedCell = null;
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
     return;
   }
 
@@ -680,25 +960,25 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowUp") {
     event.preventDefault();
     selectedCell = selectedCell >= 9 ? selectedCell - 9 : selectedCell;
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
     return;
   }
   if (event.key === "ArrowDown") {
     event.preventDefault();
     selectedCell = selectedCell <= 71 ? selectedCell + 9 : selectedCell;
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
     return;
   }
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     selectedCell = selectedCell % 9 === 0 ? selectedCell : selectedCell - 1;
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
     return;
   }
   if (event.key === "ArrowRight") {
     event.preventDefault();
     selectedCell = selectedCell % 9 === 8 ? selectedCell : selectedCell + 1;
-    renderGrid(currentBoard, "none");
+    renderCurrentView();
   }
 });
 
