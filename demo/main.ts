@@ -12,6 +12,8 @@ let givenMask: boolean[] = Array(81).fill(false);
 let selectedCell: number | null = null;
 let showPencilMarks: boolean = false;
 let invalidCells: Set<number> = new Set();
+let undoStack: Array<{ board: string; givens: boolean[] }> = [];
+let redoStack: Array<{ board: string; givens: boolean[] }> = [];
 
 const STORAGE_KEYS = {
   board: "rustoku-board",
@@ -33,7 +35,8 @@ const btnCandidates = document.getElementById(
   "btn-candidates",
 ) as HTMLButtonElement;
 const btnCheck = document.getElementById("btn-check") as HTMLButtonElement;
-const btnClear = document.getElementById("btn-clear") as HTMLButtonElement;
+const btnErase = document.getElementById("btn-erase") as HTMLButtonElement;
+const btnReset = document.getElementById("btn-reset") as HTMLButtonElement;
 const inputBoard = document.getElementById("input-board") as HTMLInputElement;
 const btnLoadBoard = document.getElementById(
   "btn-load-board",
@@ -83,6 +86,37 @@ const validThemes: ThemeName[] = [
   "forest",
   "mono",
 ];
+
+// Undo/redo helpers
+function pushUndo(): void {
+  undoStack.push({ board: currentBoard, givens: [...givenMask] });
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+
+function undo(): void {
+  if (undoStack.length === 0) return;
+  const snapshot = undoStack.pop()!;
+  redoStack.push({ board: currentBoard, givens: [...givenMask] });
+  currentBoard = snapshot.board;
+  givenMask = snapshot.givens;
+  recomputeInvalidCells();
+  renderGrid(currentBoard, "none");
+  syncBoardInput(currentBoard);
+  saveBoardState();
+}
+
+function redo(): void {
+  if (redoStack.length === 0) return;
+  const snapshot = redoStack.pop()!;
+  undoStack.push({ board: currentBoard, givens: [...givenMask] });
+  currentBoard = snapshot.board;
+  givenMask = snapshot.givens;
+  recomputeInvalidCells();
+  renderGrid(currentBoard, "none");
+  syncBoardInput(currentBoard);
+  saveBoardState();
+}
 
 function applyTheme(theme: ThemeName): void {
   document.documentElement.setAttribute("data-theme", theme);
@@ -211,6 +245,8 @@ function updateCell(index: number, value: string): void {
   if (givenMask[index]) return;
   if (!/^[0-9]$/.test(value)) return;
 
+  pushUndo();
+
   const chars = currentBoard.split("");
   chars[index] = value;
   setBoard(chars.join(""), { highlightMode: "none" });
@@ -255,7 +291,39 @@ function renderGrid(
     }
 
     const val = boardStr[i];
-    cell.classList.remove("clue", "solved", "selected", "invalid");
+    cell.classList.remove(
+      "clue",
+      "solved",
+      "selected",
+      "invalid",
+      "related",
+      "same-digit",
+    );
+
+    if (selectedCell !== null) {
+      const selectedRow = Math.floor(selectedCell / 9);
+      const selectedCol = selectedCell % 9;
+      const selectedBox =
+        Math.floor(selectedRow / 3) * 3 + Math.floor(selectedCol / 3);
+
+      const cellRow = Math.floor(i / 9);
+      const cellCol = i % 9;
+      const cellBox = Math.floor(cellRow / 3) * 3 + Math.floor(cellCol / 3);
+
+      if (
+        i !== selectedCell &&
+        (cellRow === selectedRow ||
+          cellCol === selectedCol ||
+          cellBox === selectedBox)
+      ) {
+        cell.classList.add("related");
+      }
+
+      const selectedVal = boardStr[selectedCell];
+      if (selectedVal !== "0" && val === selectedVal && i !== selectedCell) {
+        cell.classList.add("same-digit");
+      }
+    }
 
     if (selectedCell === i) {
       cell.classList.add("selected");
@@ -371,6 +439,8 @@ if (btnGenerate)
     const boardStr = generate_advanced(symmetry, diffVal as string);
 
     if (boardStr && boardStr.length === 81) {
+      undoStack = [];
+      redoStack = [];
       setBoard(boardStr, {
         setAsGiven: true,
         highlightMode: "clue",
@@ -483,6 +553,8 @@ if (btnLoadBoard)
       return;
     }
 
+    undoStack = [];
+    redoStack = [];
     setBoard(parsed, {
       setAsGiven: true,
       highlightMode: "clue",
@@ -518,11 +590,27 @@ if (selectExportFormat) {
   };
 }
 
-if (btnClear)
-  btnClear.onclick = () => {
+if (btnErase)
+  btnErase.onclick = () => {
+    showPencilMarks = false;
+    btnCandidates.textContent = "Candidates";
+    const chars = currentBoard.split("");
+    for (let i = 0; i < 81; i++) {
+      if (!givenMask[i]) {
+        chars[i] = "0";
+      }
+    }
+    setBoard(chars.join(""), { clearSelection: true });
+    infoPanel.style.display = "none";
+  };
+
+if (btnReset)
+  btnReset.onclick = () => {
     showPencilMarks = false;
     btnCandidates.textContent = "Candidates";
     givenMask = Array(81).fill(false);
+    undoStack = [];
+    redoStack = [];
     setBoard("0".repeat(81), { clearSelection: true });
     infoPanel.style.display = "none";
   };
@@ -533,7 +621,6 @@ if (btnCloseInfo)
   };
 
 document.addEventListener("keydown", (event) => {
-  if (selectedCell === null) return;
   if (!isWasmLoaded) return;
 
   const target = event.target as HTMLElement | null;
@@ -545,6 +632,35 @@ document.addEventListener("keydown", (event) => {
   ) {
     return;
   }
+
+  // Undo/Redo shortcuts (work even without selectedCell)
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    event.key === "z" &&
+    !event.shiftKey
+  ) {
+    event.preventDefault();
+    undo();
+    return;
+  }
+  if (
+    ((event.ctrlKey || event.metaKey) &&
+      (event.key === "Z" || (event.shiftKey && event.key === "z"))) ||
+    (event.ctrlKey && event.key === "y")
+  ) {
+    event.preventDefault();
+    redo();
+    return;
+  }
+
+  // Escape to deselect
+  if (event.key === "Escape") {
+    selectedCell = null;
+    renderGrid(currentBoard, "none");
+    return;
+  }
+
+  if (selectedCell === null) return;
 
   if (/^[1-9]$/.test(event.key)) {
     updateCell(selectedCell, event.key);

@@ -16,6 +16,7 @@ body {
   --grid-box: #64748b;
   --cell-bg: #0f172a;
   --cell-hover: #1e293b;
+  --cell-highlight: #1e293b;
   --clue-color: #38bdf8;
   --accent: #8b5cf6;
   --accent-hover: #7c3aed;
@@ -36,6 +37,7 @@ body {
   --grid-box: #64748b;
   --cell-bg: #0f172a;
   --cell-hover: #1e293b;
+  --cell-highlight: #1e293b;
   --clue-color: #38bdf8;
   --accent: #8b5cf6;
   --accent-hover: #7c3aed;
@@ -56,6 +58,7 @@ body {
   --grid-box: #a8896d;
   --cell-bg: #fffaf1;
   --cell-hover: #f4eadf;
+  --cell-highlight: #f0ebe1;
   --clue-color: #a75f2a;
   --accent: #2f7a64;
   --accent-hover: #276a56;
@@ -76,6 +79,7 @@ body {
   --grid-box: #ff4d9a;
   --cell-bg: #17021a;
   --cell-hover: #2a0631;
+  --cell-highlight: #220428;
   --clue-color: #2ef2ff;
   --accent: #ff4d9a;
   --accent-hover: #e6408b;
@@ -96,6 +100,7 @@ body {
   --grid-box: #5f7ea6;
   --cell-bg: #10233a;
   --cell-hover: #1a3350;
+  --cell-highlight: #162c42;
   --clue-color: #72bae8;
   --accent: #42b6dc;
   --accent-hover: #359fbe;
@@ -116,6 +121,7 @@ body {
   --grid-box: #9a5a3a;
   --cell-bg: #24130f;
   --cell-hover: #3a1f18;
+  --cell-highlight: #301814;
   --clue-color: #ffb36a;
   --accent: #ff7a59;
   --accent-hover: #e86a4b;
@@ -136,6 +142,7 @@ body {
   --grid-box: #4f7e68;
   --cell-bg: #132317;
   --cell-hover: #1f3526;
+  --cell-highlight: #1a2c20;
   --clue-color: #9edfc5;
   --accent: #d7a65a;
   --accent-hover: #be924e;
@@ -156,6 +163,7 @@ body {
   --grid-box: #6b727d;
   --cell-bg: #20242a;
   --cell-hover: #2e333b;
+  --cell-highlight: #292e36;
   --clue-color: #d0d5dd;
   --accent: #9ca3af;
   --accent-hover: #8d95a2;
@@ -324,7 +332,8 @@ p {
 
 .controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.9rem;
   flex-wrap: wrap;
@@ -332,8 +341,18 @@ p {
 
 .controls select,
 .controls button {
+  height: 2.6rem;
+  box-sizing: border-box;
+}
+
+.controls select {
   flex: 1;
   min-width: 120px;
+}
+
+.controls button {
+  flex: 0 1 auto;
+  white-space: nowrap;
 }
 
 .board-io {
@@ -517,6 +536,15 @@ select option {
   opacity: 1;
 }
 
+.cell.related {
+  background-color: var(--cell-highlight);
+}
+
+.cell.same-digit {
+  background-color: var(--cell-highlight);
+  opacity: 0.7;
+}
+
 /* Thicker borders for the 3x3 subboxes using pseudo-elements to keep layout stable */
 .cell:nth-child(3n):not(:nth-child(9n))::after {
   content: "";
@@ -565,11 +593,18 @@ select option {
 
   .controls {
     flex-direction: column;
+    align-items: stretch;
     width: 100%;
   }
 
+  .controls select,
   .btn {
     width: 100%;
+  }
+
+  .controls select,
+  .controls button {
+    flex: none;
   }
 
   .info-header .btn,
@@ -728,12 +763,7 @@ select option {
 }
 
 /* --- Pro Cockpit Enhancements --- */
-.controls {
-  flex-direction: column;
-  align-items: stretch;
-}
 
-#select-gen-symmetry,
 .clue-slider-container {
   margin-bottom: 0.75rem;
 }

@@ -115,20 +115,58 @@
                 <option value="mirrordiagonal">Mirror Diagonal</option>
               </select>
 
-              <button id="btn-generate" class="btn primary">Generate</button>
-            </div>
-
-            <div class="controls">
-              <button id="btn-solve" class="btn success">Solve</button>
-              <button id="btn-solve-steps" class="btn success">
-                Solve Steps
+              <button
+                id="btn-generate"
+                class="btn primary"
+                title="Generate a new puzzle"
+              >
+                Generate
               </button>
             </div>
 
             <div class="controls">
-              <button id="btn-candidates" class="btn info">Candidates</button>
-              <button id="btn-check" class="btn info">Validate</button>
-              <button id="btn-clear" class="btn danger">Clear</button>
+              <button
+                id="btn-solve"
+                class="btn success"
+                title="Instantly solve the current puzzle"
+              >
+                Solve
+              </button>
+              <button
+                id="btn-solve-steps"
+                class="btn success"
+                title="Show human-style solve techniques step by step"
+              >
+                Solve Steps
+              </button>
+              <button
+                id="btn-candidates"
+                class="btn info"
+                title="Toggle pencil marks showing valid digits per cell"
+              >
+                Candidates
+              </button>
+              <button
+                id="btn-check"
+                class="btn info"
+                title="Validate whether the current board is a complete solution"
+              >
+                Validate
+              </button>
+              <button
+                id="btn-erase"
+                class="btn danger"
+                title="Clear all user-entered digits, keeping puzzle givens"
+              >
+                Erase
+              </button>
+              <button
+                id="btn-reset"
+                class="btn danger"
+                title="Start fresh with a completely blank board"
+              >
+                New
+              </button>
             </div>
 
             <div class="board-io">
@@ -141,7 +179,13 @@
                   spellcheck="false"
                   autocomplete="off"
                 />
-                <button id="btn-load-board" class="btn primary">Load</button>
+                <button
+                  id="btn-load-board"
+                  class="btn primary"
+                  title="Load the 81-char string as a new puzzle"
+                >
+                  Load
+                </button>
               </div>
               <div class="board-io-row">
                 <select
@@ -151,7 +195,13 @@
                   <option value="zero" selected>Copy as 0</option>
                   <option value="dot">Copy as .</option>
                 </select>
-                <button id="btn-copy-board" class="btn info">Copy</button>
+                <button
+                  id="btn-copy-board"
+                  class="btn info"
+                  title="Copy the board string to clipboard"
+                >
+                  Copy
+                </button>
               </div>
             </div>
           </aside>
