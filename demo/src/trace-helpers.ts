@@ -6,8 +6,10 @@ export function getTraceCellIndex(step: SolveTraceStep): number | null {
   }
 
   if (typeof step.row === "number" && typeof step.col === "number") {
-    const index = step.row * 9 + step.col;
-    return index >= 0 && index < 81 ? index : null;
+    if (step.row >= 0 && step.row < 9 && step.col >= 0 && step.col < 9) {
+      return step.row * 9 + step.col;
+    }
+    return null;
   }
 
   return null;
