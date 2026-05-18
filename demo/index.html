@@ -436,7 +436,7 @@
           }
 
           if (!givens || !/^[01]{81}$/.test(givens)) {
-            givens = board.replace(/0/g, "0").replace(/[1-9]/g, "1");
+            givens = board.replace(/[1-9]/g, "1");
           }
 
           var input = document.getElementById("input-board");
