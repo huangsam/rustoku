@@ -135,6 +135,25 @@ describe("trace-helpers.ts module", () => {
       expect(normalizeCandidateGrid([])).toHaveLength(9);
       expect(normalizeCandidateGrid({ foo: "bar" })).toHaveLength(9);
     });
+
+    it("should filter out non-number elements from candidate lists and handle non-array rows or cells", () => {
+      const grid = createEmptyCandidateGrid();
+      // Row 0 is an array, but cell [0][0] has mixed types
+      // @ts-expect-error: deliberately testing invalid input types
+      grid[0][0] = [1, "two", 3, null];
+      // Row 1 is completely replaced by a non-array value
+      // @ts-expect-error: deliberately testing invalid input types
+      grid[1] = "not-an-array-row";
+      // Row 2 cell [2][0] is replaced by a non-array value
+      // @ts-expect-error: deliberately testing invalid input types
+      grid[2][0] = { not: "array" };
+
+      const normalized = normalizeCandidateGrid(grid);
+      expect(normalized[0][0]).toEqual([1, 3]);
+      expect(normalized[1]).toHaveLength(9);
+      expect(normalized[1].every((cell) => cell.length === 0)).toBe(true);
+      expect(normalized[2][0]).toEqual([]);
+    });
   });
 
   describe("cloneCandidateGrid", () => {
@@ -360,6 +379,28 @@ describe("trace-helpers.ts module", () => {
       const res1 = buildTraceCandidateGrid(initial, steps, 1);
       expect(res1[0][0]).toEqual([9]);
       expect(res1[0][1]).toEqual([4, 5]);
+    });
+
+    it("should ignore out-of-bounds candidate changes gracefully", () => {
+      const initial = createEmptyCandidateGrid();
+      const steps: SolveTraceStep[] = [
+        {
+          technique: "A",
+          value: 1,
+          candidate_changes: [
+            { row: -1, col: 0, before: [], after: [9], removed: [], added: [] },
+            { row: 9, col: 0, before: [], after: [9], removed: [], added: [] },
+            { row: 0, col: -1, before: [], after: [9], removed: [], added: [] },
+            { row: 0, col: 9, before: [], after: [9], removed: [], added: [] },
+          ],
+        },
+      ];
+
+      const res = buildTraceCandidateGrid(initial, steps, 0);
+      // All cells should remain empty
+      expect(res.every((row) => row.every((cell) => cell.length === 0))).toBe(
+        true,
+      );
     });
   });
 

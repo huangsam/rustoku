@@ -64,6 +64,12 @@ describe("state.ts module", () => {
         ),
       ).toBeNull();
     });
+
+    it("should return null for empty string or strings with only whitespace", () => {
+      expect(normalizeBoardInput("")).toBeNull();
+      expect(normalizeBoardInput("   ")).toBeNull();
+      expect(normalizeBoardInput(" ".repeat(81))).toBeNull();
+    });
   });
 
   describe("isPlacementValid", () => {
@@ -95,6 +101,11 @@ describe("state.ts module", () => {
     it("should ignore checking the cell against itself", () => {
       // Cell index 0 has '5'. Placing '5' there should be considered valid (it matches itself)
       expect(isPlacementValid(board, 0, "5")).toBe(true);
+    });
+
+    it("should return false for out-of-bounds indices", () => {
+      expect(isPlacementValid(board, -1, "5")).toBe(false);
+      expect(isPlacementValid(board, 81, "5")).toBe(false);
     });
   });
 

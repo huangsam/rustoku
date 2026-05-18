@@ -71,6 +71,8 @@ export function isPlacementValid(
   index: number,
   value: string,
 ): boolean {
+  if (index < 0 || index >= 81) return false;
+
   const row = Math.floor(index / 9);
   const col = index % 9;
 
