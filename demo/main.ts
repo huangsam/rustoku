@@ -19,6 +19,7 @@ let currentHighlightMode: HighlightMode = "none";
 const STORAGE_KEYS = {
   board: "rustoku-board",
   givens: "rustoku-givens",
+  difficulty: "rustoku-difficulty",
 };
 
 const grid = document.getElementById("sudoku-grid") as HTMLDivElement;
@@ -104,6 +105,18 @@ const selectGenSymmetry = document.getElementById(
 const btnModalClose = document.getElementById(
   "btn-modal-close",
 ) as HTMLButtonElement;
+
+const toastContainer = document.getElementById(
+  "toast-container",
+) as HTMLDivElement;
+const statDifficulty = document.getElementById(
+  "stat-difficulty",
+) as HTMLSpanElement;
+const statGivens = document.getElementById("stat-givens") as HTMLSpanElement;
+const statProgress = document.getElementById(
+  "stat-progress",
+) as HTMLSpanElement;
+let currentDifficulty: string = "custom";
 
 type HighlightMode = "none" | "clue" | "solved";
 type CandidateGrid = number[][][];
@@ -194,6 +207,54 @@ function redo(): void {
 function applyTheme(theme: ThemeName): void {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("rustoku-theme", theme);
+}
+
+function showToast(
+  message: string,
+  type: "success" | "error" | "info" = "info",
+): void {
+  if (!toastContainer) return;
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${message}</span>`;
+  toastContainer.appendChild(toast);
+
+  // Force layout reflow to trigger CSS transition
+  toast.offsetHeight;
+  toast.classList.add("show");
+
+  // Slide out and remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove("show");
+    const removeToast = () => {
+      toast.remove();
+      toast.removeEventListener("transitionend", removeToast);
+    };
+    toast.addEventListener("transitionend", removeToast);
+  }, 3000);
+}
+
+function updateStats(): void {
+  if (!statDifficulty || !statGivens || !statProgress) return;
+
+  // 1. Difficulty
+  statDifficulty.textContent = currentDifficulty;
+  statDifficulty.className = "stat-value"; // Reset classes
+  if (
+    ["easy", "medium", "hard", "expert"].includes(
+      currentDifficulty.toLowerCase(),
+    )
+  ) {
+    statDifficulty.classList.add(currentDifficulty.toLowerCase());
+  }
+
+  // 2. Givens
+  const cluesCount = givenMask.filter(Boolean).length;
+  statGivens.textContent = String(cluesCount);
+
+  // 3. Progress
+  const filledCount = currentBoard.split("").filter((ch) => ch !== "0").length;
+  statProgress.textContent = `${filledCount}/81`;
 }
 
 function normalizeBoardInput(raw: string): string | null {
@@ -621,6 +682,7 @@ function saveBoardState(): void {
       STORAGE_KEYS.givens,
       givenMask.map((isGiven) => (isGiven ? "1" : "0")).join(""),
     );
+    localStorage.setItem(STORAGE_KEYS.difficulty, currentDifficulty);
   } catch (_err) {
     // Ignore storage write failures in restricted contexts.
   }
@@ -630,6 +692,7 @@ function hydrateBoardState(): void {
   try {
     const savedBoard = localStorage.getItem(STORAGE_KEYS.board);
     const savedGivens = localStorage.getItem(STORAGE_KEYS.givens);
+    const savedDifficulty = localStorage.getItem(STORAGE_KEYS.difficulty);
 
     if (savedBoard && /^[0-9]{81}$/.test(savedBoard)) {
       currentBoard = savedBoard;
@@ -639,6 +702,12 @@ function hydrateBoardState(): void {
       givenMask = savedGivens.split("").map((ch) => ch === "1");
     } else {
       givenMask = currentBoard.split("").map((ch) => ch !== "0");
+    }
+
+    if (savedDifficulty) {
+      currentDifficulty = savedDifficulty;
+    } else {
+      currentDifficulty = "custom";
     }
   } catch (_err) {
     // Ignore storage read failures and keep defaults.
@@ -721,6 +790,9 @@ function renderGrid(
   highlightMode: HighlightMode = "none",
 ): void {
   if (!grid) return;
+
+  // Dynamically update stats bar on every render
+  updateStats();
 
   const cells = grid.querySelectorAll(".cell");
   const needsCreate = cells.length === 0;
@@ -873,6 +945,22 @@ async function run(): Promise<void> {
     isWasmLoaded = true;
     renderCurrentView();
     console.log("Rustoku WASM loaded!");
+
+    // Bind Number Pad Buttons
+    document.querySelectorAll(".numpad-btn").forEach((btn) => {
+      const button = btn as HTMLButtonElement;
+      button.onclick = () => {
+        if (!isWasmLoaded) return;
+        if (selectedCell === null) {
+          showToast("Select a cell first to enter a number", "info");
+          return;
+        }
+        const val = button.getAttribute("data-val");
+        if (val) {
+          updateCell(selectedCell, val);
+        }
+      };
+    });
   } catch (err) {
     console.error("Failed to load WASM module", err);
     if (grid) {
@@ -944,13 +1032,18 @@ if (btnGenerate)
     if (boardStr && boardStr.length === 81) {
       undoStack = [];
       redoStack = [];
+      currentDifficulty = difficulty;
       setBoard(boardStr, {
         setAsGiven: true,
         highlightMode: "clue",
         clearSelection: true,
       });
+      showToast("Puzzle generated successfully!", "success");
     } else {
-      alert("Generation failed! Try reducing difficulty or changing symmetry.");
+      showToast(
+        "Generation failed! Try reducing difficulty or changing symmetry.",
+        "error",
+      );
     }
   };
 
@@ -959,15 +1052,16 @@ if (btnSolve)
   btnSolve.onclick = () => {
     if (!isWasmLoaded) return;
     if (currentBoard === "0".repeat(81)) {
-      alert("Please generate a board first.");
+      showToast("Please generate or load a board first.", "info");
       return;
     }
     clearSolveTrace();
     const solvedBoard = solve(currentBoard);
     if (solvedBoard && solvedBoard.length === 81) {
       setBoard(solvedBoard, { highlightMode: "solved" });
+      showToast("Sudoku board solved instantly!", "success");
     } else {
-      alert("Could not solve this board!");
+      showToast("Could not solve this board!", "error");
     }
   };
 
@@ -975,7 +1069,7 @@ if (btnSolveSteps)
   btnSolveSteps.onclick = () => {
     if (!isWasmLoaded) return;
     if (currentBoard === "0".repeat(81)) {
-      alert("Please generate a board first.");
+      showToast("Please generate or load a board first.", "info");
       return;
     }
     clearSolveTrace();
@@ -990,15 +1084,17 @@ if (btnSolveSteps)
 
       if (steps.length > 0) {
         showSolveTrace(currentBoard, initialCandidateGrid, result.board, steps);
+        showToast("Human-style solve steps loaded!", "success");
       } else {
         showInfo(
           "Solve Steps",
           `(No human technique steps recorded)\n\n── Final Board ──\n${formatBoard(result.board)}`,
         );
         setBoard(result.board, { highlightMode: "solved" });
+        showToast("Solved! (No steps recorded)", "info");
       }
     } else {
-      alert(`Could not solve with human techniques.`);
+      showToast("Could not solve with human techniques.", "error");
     }
   };
 
@@ -1020,12 +1116,14 @@ if (btnCheck)
       showInfo("Validation ✓", "This is a valid, complete Sudoku solution!", {
         preserveTrace: Boolean(solveTrace),
       });
+      showToast("Validation successful! You solved it!", "success");
     } else {
       showInfo(
         "Validation ✗",
         "Not a valid solution. Make sure all 81 cells are filled with no duplicates in any row, column, or box.",
         { preserveTrace: Boolean(solveTrace) },
       );
+      showToast("Not a valid complete solution yet!", "error");
     }
   };
 
@@ -1039,17 +1137,19 @@ if (btnLoadBoard)
         "Board Load Error",
         "Invalid board string. Use exactly 81 chars with digits 0-9, where 0, ., or _ mean empty cells.",
       );
+      showToast("Invalid board load string!", "error");
       return;
     }
 
     undoStack = [];
     redoStack = [];
+    currentDifficulty = "custom";
     setBoard(parsed, {
       setAsGiven: true,
       highlightMode: "clue",
       clearSelection: true,
     });
-    showInfo("Board Loaded", "Board loaded successfully.");
+    showToast("Sudoku board loaded successfully!", "success");
   };
 
 if (btnCopyBoard)
@@ -1061,15 +1161,13 @@ if (btnCopyBoard)
 
     try {
       await navigator.clipboard.writeText(output);
-      showInfo(
-        "Board Copied",
-        `Copied 81-char board as ${format === "dot" ? "dot" : "zero"} format.`,
-      );
+      showToast("Copied board string to clipboard!", "success");
     } catch (_err) {
       showInfo(
         "Copy Failed",
         "Clipboard write failed in this browser context. You can still copy directly from the Board String field.",
       );
+      showToast("Clipboard copy failed!", "error");
     }
   };
 
@@ -1092,6 +1190,7 @@ if (btnErase)
     }
     setBoard(chars.join(""), { clearSelection: true });
     infoPanel.style.display = "none";
+    showToast("Erased all user cell entries", "info");
   };
 
 if (btnReset)
@@ -1102,8 +1201,10 @@ if (btnReset)
     givenMask = Array(81).fill(false);
     undoStack = [];
     redoStack = [];
+    currentDifficulty = "custom";
     setBoard("0".repeat(81), { clearSelection: true });
     infoPanel.style.display = "none";
+    showToast("Cleared grid to a fresh blank slate", "info");
   };
 
 if (btnCloseInfo)

@@ -67,6 +67,7 @@
   </head>
 
   <body>
+    <div id="toast-container" class="toast-container"></div>
     <div id="app">
       <header>
         <h1>Rustoku UI</h1>
@@ -211,6 +212,36 @@
               <div id="sudoku-grid" class="sudoku-grid">
                 <!-- JavaScript will populate 81 cells here -->
               </div>
+            </div>
+
+            <div class="board-stats" id="board-stats">
+              <div class="stat-item">
+                <span class="stat-label">Difficulty</span>
+                <span id="stat-difficulty" class="stat-value">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Clues</span>
+                <span id="stat-givens" class="stat-value">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Progress</span>
+                <span id="stat-progress" class="stat-value">0/81</span>
+              </div>
+            </div>
+
+            <div id="number-pad" class="number-pad">
+              <button class="numpad-btn" data-val="1">1</button>
+              <button class="numpad-btn" data-val="2">2</button>
+              <button class="numpad-btn" data-val="3">3</button>
+              <button class="numpad-btn" data-val="4">4</button>
+              <button class="numpad-btn" data-val="5">5</button>
+              <button class="numpad-btn" data-val="6">6</button>
+              <button class="numpad-btn" data-val="7">7</button>
+              <button class="numpad-btn" data-val="8">8</button>
+              <button class="numpad-btn" data-val="9">9</button>
+              <button class="numpad-btn erase" data-val="0" title="Clear cell">
+                ⌫
+              </button>
             </div>
 
             <div id="info-panel" class="info-panel" style="display: none">
