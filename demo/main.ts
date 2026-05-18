@@ -116,7 +116,10 @@ const statGivens = document.getElementById("stat-givens") as HTMLSpanElement;
 const statProgress = document.getElementById(
   "stat-progress",
 ) as HTMLSpanElement;
+const gridLoader = document.getElementById("grid-loader") as HTMLDivElement;
 let currentDifficulty: string = "custom";
+let isGenerating: boolean = false;
+let isAnimatingSolve: boolean = false;
 
 type HighlightMode = "none" | "clue" | "solved";
 type CandidateGrid = number[][][];
@@ -177,6 +180,7 @@ function pushUndo(): void {
 }
 
 function undo(): void {
+  if (isGenerating || isAnimatingSolve) return;
   if (undoStack.length === 0) return;
   clearSolveTrace();
   const snapshot = undoStack.pop()!;
@@ -191,6 +195,7 @@ function undo(): void {
 }
 
 function redo(): void {
+  if (isGenerating || isAnimatingSolve) return;
   if (redoStack.length === 0) return;
   clearSolveTrace();
   const snapshot = redoStack.pop()!;
@@ -836,6 +841,7 @@ function renderGrid(
     if (cell.dataset.bound !== "1") {
       cell.tabIndex = 0;
       cell.addEventListener("click", () => {
+        if (isGenerating || isAnimatingSolve) return;
         selectedCell = i;
         renderCurrentView();
       });
@@ -895,7 +901,11 @@ function renderGrid(
     }
 
     if (val !== "0") {
-      cell.innerHTML = `<span>${val}</span>`;
+      const currentSpan = cell.querySelector("span");
+      const currentVal = currentSpan ? currentSpan.textContent : null;
+      if (currentVal !== val || cell.querySelector(".pencil-grid")) {
+        cell.innerHTML = `<span>${val}</span>`;
+      }
 
       if (givenMask[i]) {
         cell.classList.add("clue");
@@ -950,7 +960,7 @@ async function run(): Promise<void> {
     document.querySelectorAll(".numpad-btn").forEach((btn) => {
       const button = btn as HTMLButtonElement;
       button.onclick = () => {
-        if (!isWasmLoaded) return;
+        if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
         if (selectedCell === null) {
           showToast("Select a cell first to enter a number", "info");
           return;
@@ -1020,37 +1030,124 @@ function generateAndRender(difficulty: string): void {
 
 if (btnGenerate)
   btnGenerate.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
+
+    // Show loading overlay
+    isGenerating = true;
+    if (gridLoader) {
+      gridLoader.style.display = "flex";
+    }
+    btnGenerate.disabled = true;
+
     clearSolveTrace();
     const difficulty = selectGenDifficulty.value;
     const symmetry = selectGenSymmetry.value;
 
-    // Use advanced generation if available
-    const diffVal = difficulty === "random" ? null : difficulty;
-    const boardStr = generate_advanced(symmetry, diffVal as string);
+    // We defer the generation with setTimeout so the browser can layout/render the spinner before the synchronous WASM execution freezes the UI thread
+    setTimeout(() => {
+      try {
+        const diffVal = difficulty === "random" ? null : difficulty;
+        const boardStr = generate_advanced(symmetry, diffVal as string);
 
-    if (boardStr && boardStr.length === 81) {
-      undoStack = [];
-      redoStack = [];
-      currentDifficulty = difficulty;
-      setBoard(boardStr, {
-        setAsGiven: true,
-        highlightMode: "clue",
-        clearSelection: true,
-      });
-      showToast("Puzzle generated successfully!", "success");
-    } else {
-      showToast(
-        "Generation failed! Try reducing difficulty or changing symmetry.",
-        "error",
-      );
-    }
+        if (boardStr && boardStr.length === 81) {
+          undoStack = [];
+          redoStack = [];
+          currentDifficulty = difficulty;
+          setBoard(boardStr, {
+            setAsGiven: true,
+            highlightMode: "clue",
+            clearSelection: true,
+          });
+          showToast("Puzzle generated successfully!", "success");
+        } else {
+          showToast(
+            "Generation failed! Try reducing difficulty or changing symmetry.",
+            "error",
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Error during generation", "error");
+      } finally {
+        isGenerating = false;
+        if (gridLoader) {
+          gridLoader.style.display = "none";
+        }
+        btnGenerate.disabled = false;
+      }
+    }, 50);
   };
+
+function animateSolve(solvedBoard: string): void {
+  if (isAnimatingSolve || isGenerating) return;
+  isAnimatingSolve = true;
+
+  // Gather all empty indices that need to be solved
+  const indicesToSolve: number[] = [];
+  for (let i = 0; i < 81; i++) {
+    if (currentBoard[i] === "0" && solvedBoard[i] !== "0") {
+      indicesToSolve.push(i);
+    }
+  }
+
+  if (indicesToSolve.length === 0) {
+    // Already solved
+    setBoard(solvedBoard, { highlightMode: "solved" });
+    showToast("Sudoku board solved instantly!", "success");
+    isAnimatingSolve = false;
+    return;
+  }
+
+  // Shuffle empty indices to reveal them in a beautifully staggered, random order
+  for (let i = indicesToSolve.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indicesToSolve[i], indicesToSolve[j]] = [
+      indicesToSolve[j],
+      indicesToSolve[i],
+    ];
+  }
+
+  // Record starting point in undo stack once before animating
+  pushUndo();
+
+  const totalSteps = indicesToSolve.length;
+  let currentStepIndex = 0;
+
+  // We reveal a few cells per tick to complete in around 350-500ms
+  const cellsPerTick = Math.max(1, Math.round(totalSteps / 25));
+  const intervalTime = 20;
+
+  const timer = setInterval(() => {
+    if (currentStepIndex >= totalSteps) {
+      clearInterval(timer);
+      isAnimatingSolve = false;
+      // Guarantee final state matches solvedBoard completely
+      setBoard(solvedBoard, { highlightMode: "solved" });
+      showToast("Sudoku board solved!", "success");
+      return;
+    }
+
+    const boardChars = currentBoard.split("");
+    for (let c = 0; c < cellsPerTick && currentStepIndex < totalSteps; c++) {
+      const idx = indicesToSolve[currentStepIndex];
+      boardChars[idx] = solvedBoard[idx];
+      currentStepIndex++;
+    }
+
+    // Update board in-place step-by-step
+    currentBoard = boardChars.join("");
+    recomputeInvalidCells();
+    renderCurrentView();
+    // Render with "solved" highlightMode so the popIn styling is colored correctly
+    renderGrid(currentBoard, "solved");
+    syncBoardInput(currentBoard);
+  }, intervalTime);
+}
 
 // Event Listeners — Solve
 if (btnSolve)
   btnSolve.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
     if (currentBoard === "0".repeat(81)) {
       showToast("Please generate or load a board first.", "info");
       return;
@@ -1058,8 +1155,7 @@ if (btnSolve)
     clearSolveTrace();
     const solvedBoard = solve(currentBoard);
     if (solvedBoard && solvedBoard.length === 81) {
-      setBoard(solvedBoard, { highlightMode: "solved" });
-      showToast("Sudoku board solved instantly!", "success");
+      animateSolve(solvedBoard);
     } else {
       showToast("Could not solve this board!", "error");
     }
@@ -1067,7 +1163,7 @@ if (btnSolve)
 
 if (btnSolveSteps)
   btnSolveSteps.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
     if (currentBoard === "0".repeat(81)) {
       showToast("Please generate or load a board first.", "info");
       return;
@@ -1101,7 +1197,7 @@ if (btnSolveSteps)
 // Event Listeners — Tools
 if (btnCandidates)
   btnCandidates.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
     showPencilMarks = !showPencilMarks;
     syncCandidatesButton();
     renderCurrentView();
@@ -1109,7 +1205,7 @@ if (btnCandidates)
 
 if (btnCheck)
   btnCheck.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
     const boardToCheck = getDisplayedBoard();
     const isValid = check(boardToCheck);
     if (isValid) {
@@ -1129,7 +1225,7 @@ if (btnCheck)
 
 if (btnLoadBoard)
   btnLoadBoard.onclick = () => {
-    if (!isWasmLoaded) return;
+    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
     clearSolveTrace();
     const parsed = normalizeBoardInput(inputBoard.value);
     if (!parsed) {
@@ -1154,6 +1250,7 @@ if (btnLoadBoard)
 
 if (btnCopyBoard)
   btnCopyBoard.onclick = async () => {
+    if (isGenerating || isAnimatingSolve) return;
     const format = (selectExportFormat.value === "dot" ? "dot" : "zero") as
       | "zero"
       | "dot";
@@ -1179,6 +1276,7 @@ if (selectExportFormat) {
 
 if (btnErase)
   btnErase.onclick = () => {
+    if (isGenerating || isAnimatingSolve) return;
     clearSolveTrace();
     showPencilMarks = false;
     syncCandidatesButton();
@@ -1195,6 +1293,7 @@ if (btnErase)
 
 if (btnReset)
   btnReset.onclick = () => {
+    if (isGenerating || isAnimatingSolve) return;
     clearSolveTrace();
     showPencilMarks = false;
     syncCandidatesButton();
@@ -1271,7 +1370,7 @@ if (btnTraceNextElimination)
   };
 
 document.addEventListener("keydown", (event) => {
-  if (!isWasmLoaded) return;
+  if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
 
   const target = event.target as HTMLElement | null;
   if (

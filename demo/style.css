@@ -493,6 +493,7 @@ select option {
 .board-container {
   display: flex;
   justify-content: center;
+  position: relative;
 }
 
 .sudoku-grid {
@@ -1148,5 +1149,72 @@ input[type="range"] {
     height: 2.5rem;
     font-size: 1rem;
     border-radius: 6px;
+  }
+}
+
+/* Grid Loading Overlay & Solve Animations */
+.grid-loader {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  background-color: color-mix(in srgb, var(--bg-color) 80%, transparent);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 100;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.loader-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid color-mix(in srgb, var(--accent) 15%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loader-text {
+  font-size: 0.88rem;
+  font-weight: 750;
+  color: var(--text-main);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.cell.solved span {
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
