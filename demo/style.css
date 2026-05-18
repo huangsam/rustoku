@@ -780,18 +780,36 @@ select option {
 }
 
 .solve-trace-change {
-  padding: 0.65rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
   border: 1px solid color-mix(in srgb, var(--grid-line) 80%, transparent);
   border-radius: 8px;
   background-color: color-mix(in srgb, var(--panel-bg) 55%, transparent);
 }
 
 .solve-trace-change strong {
-  color: var(--text-main);
+  color: var(--clue-color);
+  background-color: color-mix(in srgb, var(--clue-color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--clue-color) 30%, transparent);
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .solve-trace-change span {
   color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
 }
 
 .solve-trace-controls {
