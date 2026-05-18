@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write *.{ts,js,html,css} package.json"
+    "format": "prettier --write \"*.{ts,js,html,css}\" \"src/**/*.{ts,css}\" package.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

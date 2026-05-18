@@ -1,1240 +1,66 @@
+import { check } from "./pkg/rustoku_wasm.js";
 import {
-  solve,
-  solve_steps,
-  candidates,
-  generate_advanced,
-  check,
-} from "./pkg/rustoku_wasm.js";
+  state,
+  subscribe,
+  hydrateBoardState,
+  setBoard,
+  undo,
+  redo,
+  updateCell,
+  normalizeBoardInput,
+  boardForExport,
+  syncBoardInput,
+} from "./src/state";
+import { validThemes, applyTheme } from "./src/theme";
+import {
+  btnCandidates,
+  btnCheck,
+  btnErase,
+  btnReset,
+  btnLoadBoard,
+  btnCopyBoard,
+  selectExportFormat,
+  selectTheme,
+  btnInfoHeader,
+  btnModalClose,
+  projectModal,
+  inputBoard,
+  infoPanel,
+  grid,
+} from "./src/elements";
+import { clearSolveTrace, getSolveTrace } from "./src/trace";
+import { getDisplayedBoard } from "./src/trace-helpers";
+import { renderCurrentView, syncCandidatesButton } from "./src/render";
+import { showToast } from "./src/toast";
+import { triggerConfetti } from "./src/confetti";
+import type { ThemeName } from "./src/types";
 
-let isWasmLoaded: boolean = false;
-let currentBoard: string = "0".repeat(81);
-let givenMask: boolean[] = Array(81).fill(false);
-let selectedCell: number | null = null;
-let lastPlacedCell: number | null = null;
-let showPencilMarks: boolean = false;
-let invalidCells: Set<number> = new Set();
-let undoStack: Array<{ board: string; givens: boolean[] }> = [];
-let redoStack: Array<{ board: string; givens: boolean[] }> = [];
-let currentHighlightMode: HighlightMode = "none";
+// Force bundler to include solving & generation modules
+import "./src/solver";
+import "./src/generator";
 
-const STORAGE_KEYS = {
-  board: "rustoku-board",
-  givens: "rustoku-givens",
-  difficulty: "rustoku-difficulty",
-};
-
-const grid = document.getElementById("sudoku-grid") as HTMLDivElement;
-const selectGenDifficulty = document.getElementById(
-  "select-gen-difficulty",
-) as HTMLSelectElement;
-const btnGenerate = document.getElementById(
-  "btn-generate",
-) as HTMLButtonElement;
-const btnSolve = document.getElementById("btn-solve") as HTMLButtonElement;
-const btnSolveSteps = document.getElementById(
-  "btn-solve-steps",
-) as HTMLButtonElement;
-const btnCandidates = document.getElementById(
-  "btn-candidates",
-) as HTMLButtonElement;
-const btnCheck = document.getElementById("btn-check") as HTMLButtonElement;
-const btnErase = document.getElementById("btn-erase") as HTMLButtonElement;
-const btnReset = document.getElementById("btn-reset") as HTMLButtonElement;
-const inputBoard = document.getElementById("input-board") as HTMLInputElement;
-const btnLoadBoard = document.getElementById(
-  "btn-load-board",
-) as HTMLButtonElement;
-const btnCopyBoard = document.getElementById(
-  "btn-copy-board",
-) as HTMLButtonElement;
-const selectExportFormat = document.getElementById(
-  "select-export-format",
-) as HTMLSelectElement;
-const infoPanel = document.getElementById("info-panel") as HTMLDivElement;
-const infoTitle = document.getElementById("info-title") as HTMLHeadingElement;
-const solveTracePanel = document.getElementById(
-  "solve-trace-panel",
-) as HTMLDivElement;
-const solveTraceStepCount = document.getElementById(
-  "solve-trace-step-count",
-) as HTMLSpanElement;
-const solveTraceStatus = document.getElementById(
-  "solve-trace-status",
-) as HTMLSpanElement;
-const solveTraceTechnique = document.getElementById(
-  "solve-trace-technique",
-) as HTMLParagraphElement;
-const solveTracePlacement = document.getElementById(
-  "solve-trace-placement",
-) as HTMLParagraphElement;
-const solveTraceDetail = document.getElementById(
-  "solve-trace-detail",
-) as HTMLParagraphElement;
-const solveTraceChanges = document.getElementById(
-  "solve-trace-changes",
-) as HTMLDivElement;
-const btnTracePrev = document.getElementById(
-  "btn-trace-prev",
-) as HTMLButtonElement;
-const btnTracePlay = document.getElementById(
-  "btn-trace-play",
-) as HTMLButtonElement;
-const btnTraceNext = document.getElementById(
-  "btn-trace-next",
-) as HTMLButtonElement;
-const btnTraceNextPlacement = document.getElementById(
-  "btn-trace-next-placement",
-) as HTMLButtonElement;
-const btnTraceNextElimination = document.getElementById(
-  "btn-trace-next-elimination",
-) as HTMLButtonElement;
-const btnCloseInfo = document.getElementById(
-  "btn-close-info",
-) as HTMLButtonElement;
-const selectTheme = document.getElementById(
-  "select-theme",
-) as HTMLSelectElement;
-const btnInfoHeader = document.getElementById(
-  "btn-info-header",
-) as HTMLButtonElement;
-const projectModal = document.getElementById("project-modal") as HTMLDivElement;
-const selectGenSymmetry = document.getElementById(
-  "select-gen-symmetry",
-) as HTMLSelectElement;
-
-const btnModalClose = document.getElementById(
-  "btn-modal-close",
-) as HTMLButtonElement;
-
-const toastContainer = document.getElementById(
-  "toast-container",
-) as HTMLDivElement;
-const statDifficulty = document.getElementById(
-  "stat-difficulty",
-) as HTMLSpanElement;
-const statGivens = document.getElementById("stat-givens") as HTMLSpanElement;
-const statProgress = document.getElementById(
-  "stat-progress",
-) as HTMLSpanElement;
-const gridLoader = document.getElementById("grid-loader") as HTMLDivElement;
-let currentDifficulty: string = "custom";
-let isGenerating: boolean = false;
-let isAnimatingSolve: boolean = false;
-
-type HighlightMode = "none" | "clue" | "solved";
-type CandidateGrid = number[][][];
-type CandidateChange = {
-  row: number;
-  col: number;
-  before: number[];
-  after: number[];
-  removed: number[];
-  added: number[];
-};
-type SolveTraceStep = {
-  type?: "placement" | "elimination";
-  technique: string;
-  value: number;
-  row?: number;
-  col?: number;
-  cell?: number;
-  step_number?: number;
-  candidates_eliminated?: number;
-  related_cell_count?: number;
-  difficulty_point?: number;
-  candidate_changes?: CandidateChange[];
-};
-type SolveTraceState = {
-  initialBoard: string;
-  initialCandidateGrid: CandidateGrid;
-  solvedBoard: string;
-  steps: SolveTraceStep[];
-  currentStep: number;
-  isPlaying: boolean;
-  playbackTimer: number | null;
-};
-type ThemeName =
-  | "midnight"
-  | "paper"
-  | "arcade"
-  | "blueprint"
-  | "ember"
-  | "forest"
-  | "mono";
-const validThemes: ThemeName[] = [
-  "midnight",
-  "paper",
-  "arcade",
-  "blueprint",
-  "ember",
-  "forest",
-  "mono",
-];
-let solveTrace: SolveTraceState | null = null;
-
-// Undo/redo helpers
-function pushUndo(): void {
-  undoStack.push({ board: currentBoard, givens: [...givenMask] });
-  if (undoStack.length > 50) undoStack.shift();
-  redoStack = [];
-}
-
-function undo(): void {
-  if (isGenerating || isAnimatingSolve) return;
-  if (undoStack.length === 0) return;
-  clearSolveTrace();
-  const snapshot = undoStack.pop()!;
-  redoStack.push({ board: currentBoard, givens: [...givenMask] });
-  currentBoard = snapshot.board;
-  givenMask = snapshot.givens;
-  currentHighlightMode = "none";
-  recomputeInvalidCells();
+// State synchronization loop
+subscribe(() => {
   renderCurrentView();
-  syncBoardInput(currentBoard);
-  saveBoardState();
-}
-
-function redo(): void {
-  if (isGenerating || isAnimatingSolve) return;
-  if (redoStack.length === 0) return;
-  clearSolveTrace();
-  const snapshot = redoStack.pop()!;
-  undoStack.push({ board: currentBoard, givens: [...givenMask] });
-  currentBoard = snapshot.board;
-  givenMask = snapshot.givens;
-  currentHighlightMode = "none";
-  recomputeInvalidCells();
-  renderCurrentView();
-  syncBoardInput(currentBoard);
-  saveBoardState();
-}
-
-function applyTheme(theme: ThemeName): void {
-  document.documentElement.classList.add("no-transition");
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("rustoku-theme", theme);
-
-  // Force layout reflow to apply the theme instantly without transitions
-  void document.documentElement.offsetHeight;
-
-  // Re-enable transitions on the next paint cycles
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.documentElement.classList.remove("no-transition");
-    });
-  });
-}
-
-function showToast(
-  message: string,
-  type: "success" | "error" | "info" = "info",
-): void {
-  if (!toastContainer) return;
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${message}</span>`;
-  toastContainer.appendChild(toast);
-
-  // Force layout reflow to trigger CSS transition
-  void toast.offsetHeight;
-  toast.classList.add("show");
-
-  // Slide out and remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.remove("show");
-    const removeToast = () => {
-      toast.remove();
-      toast.removeEventListener("transitionend", removeToast);
-    };
-    toast.addEventListener("transitionend", removeToast);
-  }, 3000);
-}
-
-function updateStats(): void {
-  if (!statDifficulty || !statGivens || !statProgress) return;
-
-  // 1. Difficulty
-  statDifficulty.textContent = currentDifficulty;
-  statDifficulty.className = "stat-value"; // Reset classes
-  if (
-    ["easy", "medium", "hard", "expert"].includes(
-      currentDifficulty.toLowerCase(),
-    )
-  ) {
-    statDifficulty.classList.add(currentDifficulty.toLowerCase());
-  }
-
-  // 2. Givens
-  const cluesCount = givenMask.filter(Boolean).length;
-  statGivens.textContent = String(cluesCount);
-
-  // 3. Progress
-  const filledCount = currentBoard.split("").filter((ch) => ch !== "0").length;
-  statProgress.textContent = `${filledCount}/81`;
-}
-
-function normalizeBoardInput(raw: string): string | null {
-  const normalized = raw
-    .trim()
-    .replace(/\s+/g, "")
-    .replace(/_/g, "0")
-    .replace(/\./g, "0");
-
-  if (normalized.length !== 81) return null;
-  if (!/^[0-9]{81}$/.test(normalized)) return null;
-  return normalized;
-}
-
-function computeInvalidCells(boardStr: string): Set<number> {
-  const invalid = new Set<number>();
-  for (let i = 0; i < 81; i++) {
-    const value = boardStr[i];
-    if (value !== "0" && !isPlacementValid(boardStr, i, value)) {
-      invalid.add(i);
-    }
-  }
-  return invalid;
-}
-
-function getTraceCellIndex(step: SolveTraceStep): number | null {
-  if (typeof step.cell === "number") {
-    return step.cell >= 0 && step.cell < 81 ? step.cell : null;
-  }
-
-  if (typeof step.row === "number" && typeof step.col === "number") {
-    const index = step.row * 9 + step.col;
-    return index >= 0 && index < 81 ? index : null;
-  }
-
-  return null;
-}
-
-function formatCellLabel(index: number | null): string {
-  if (index === null) return "R?C?";
-  return `R${Math.floor(index / 9) + 1}C${(index % 9) + 1}`;
-}
-
-function titleCaseTechnique(technique: string): string {
-  return technique
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function isPlacementStep(step: SolveTraceStep): boolean {
-  return step.type !== "elimination";
-}
-
-function createEmptyCandidateGrid(): CandidateGrid {
-  return Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
-}
-
-function normalizeCandidateGrid(raw: unknown): CandidateGrid {
-  if (!Array.isArray(raw) || raw.length !== 9) {
-    return createEmptyCandidateGrid();
-  }
-
-  return raw.map((row) => {
-    if (!Array.isArray(row) || row.length !== 9) {
-      return Array.from({ length: 9 }, () => []);
-    }
-
-    return row.map((cell) =>
-      Array.isArray(cell)
-        ? cell.filter((value): value is number => typeof value === "number")
-        : [],
-    );
-  });
-}
-
-function cloneCandidateGrid(grid: CandidateGrid): CandidateGrid {
-  return grid.map((row) => row.map((cell) => [...cell]));
-}
-
-function getCurrentTraceStep(): SolveTraceStep | null {
-  if (!solveTrace) {
-    return null;
-  }
-
-  return solveTrace.steps[solveTrace.currentStep] ?? null;
-}
-
-function formatDigitList(values: number[]): string {
-  return values.join(", ");
-}
-
-function findNextTraceStepIndex(
-  startIndex: number,
-  matcher: (step: SolveTraceStep) => boolean,
-): number | null {
-  if (!solveTrace) {
-    return null;
-  }
-
-  for (let index = startIndex + 1; index < solveTrace.steps.length; index++) {
-    if (matcher(solveTrace.steps[index])) {
-      return index;
-    }
-  }
-
-  return null;
-}
-
-function getTraceAffectedIndices(step: SolveTraceStep | null): Set<number> {
-  const indices = new Set<number>();
-  if (!step) {
-    return indices;
-  }
-
-  const currentCell = getTraceCellIndex(step);
-  if (currentCell !== null) {
-    indices.add(currentCell);
-  }
-
-  for (const change of step.candidate_changes ?? []) {
-    const index = change.row * 9 + change.col;
-    if (index >= 0 && index < 81) {
-      indices.add(index);
-    }
-  }
-
-  return indices;
-}
-
-function renderTraceChanges(step: SolveTraceStep | null): void {
-  if (!step) {
-    solveTraceChanges.innerHTML = "";
-    return;
-  }
-
-  const candidateChanges = step.candidate_changes ?? [];
-  if (candidateChanges.length === 0) {
-    solveTraceChanges.innerHTML =
-      '<div class="solve-trace-change"><span>No candidate changes recorded for this step.</span></div>';
-    return;
-  }
-
-  const items = candidateChanges
-    .slice(0, 5)
-    .map((change) => {
-      const cellLabel = formatCellLabel(change.row * 9 + change.col);
-      const removedText =
-        change.removed.length > 0
-          ? `removed ${formatDigitList(change.removed)}`
-          : null;
-      const remainingText =
-        change.after.length > 0 ? `now ${formatDigitList(change.after)}` : null;
-      const addedText =
-        change.added.length > 0
-          ? `added ${formatDigitList(change.added)}`
-          : null;
-      const parts = [removedText, addedText, remainingText].filter(
-        (part): part is string => Boolean(part),
-      );
-
-      return `<div class="solve-trace-change"><strong>${cellLabel}</strong><span>${parts.join(" • ")}</span></div>`;
-    })
-    .join("");
-
-  const overflow =
-    candidateChanges.length > 5
-      ? `<div class="solve-trace-change"><span>+${candidateChanges.length - 5} more affected cell${candidateChanges.length - 5 === 1 ? "" : "s"}</span></div>`
-      : "";
-
-  solveTraceChanges.innerHTML = items + overflow;
-}
-
-function buildTraceBoard(
-  initialBoard: string,
-  steps: SolveTraceStep[],
-  currentStep: number,
-  solvedBoard: string,
-): string {
-  if (steps.length === 0) return solvedBoard;
-  if (currentStep < 0) return initialBoard;
-  if (currentStep >= steps.length - 1) return solvedBoard;
-
-  const chars = initialBoard.split("");
-  for (let i = 0; i <= currentStep; i++) {
-    const step = steps[i];
-    if (!isPlacementStep(step)) continue;
-
-    const index = getTraceCellIndex(step);
-    const value = String(step.value);
-
-    if (index === null || !/^[1-9]$/.test(value)) continue;
-    chars[index] = value;
-  }
-
-  return chars.join("");
-}
-
-function buildTraceCandidateGrid(
-  initialCandidateGrid: CandidateGrid,
-  steps: SolveTraceStep[],
-  currentStep: number,
-): CandidateGrid {
-  const grid = cloneCandidateGrid(initialCandidateGrid);
-
-  if (currentStep < 0) {
-    return grid;
-  }
-
-  for (let i = 0; i <= currentStep; i++) {
-    const candidateChanges = steps[i]?.candidate_changes ?? [];
-    for (const change of candidateChanges) {
-      if (
-        change.row < 0 ||
-        change.row >= 9 ||
-        change.col < 0 ||
-        change.col >= 9
-      ) {
-        continue;
-      }
-
-      grid[change.row][change.col] = [...change.after];
-    }
-  }
-
-  return grid;
-}
-
-function getDisplayedBoard(): string {
-  if (!solveTrace) {
-    return currentBoard;
-  }
-
-  return buildTraceBoard(
-    solveTrace.initialBoard,
-    solveTrace.steps,
-    solveTrace.currentStep,
-    solveTrace.solvedBoard,
-  );
-}
-
-function syncCandidatesButton(): void {
-  if (!btnCandidates) {
-    return;
-  }
-
-  if (solveTrace) {
-    btnCandidates.textContent = "Trace Candidates";
-    btnCandidates.disabled = true;
-    return;
-  }
-
-  btnCandidates.disabled = false;
-  btnCandidates.textContent = showPencilMarks
-    ? "Hide Candidates"
-    : "Candidates";
-}
-
-function stopSolveTracePlayback(): void {
-  const trace = solveTrace;
-  if (!trace) return;
-
-  if (trace.playbackTimer !== null) {
-    window.clearTimeout(trace.playbackTimer);
-    trace.playbackTimer = null;
-  }
-
-  trace.isPlaying = false;
-}
-
-function renderCurrentView(): void {
-  if (solveTrace) {
-    const replayBoard = getDisplayedBoard();
-    const mode: HighlightMode =
-      solveTrace.currentStep >= solveTrace.steps.length - 1 ? "solved" : "none";
-    renderGrid(replayBoard, mode);
-    syncBoardInput(replayBoard);
-    return;
-  }
-
-  renderGrid(currentBoard, currentHighlightMode);
-  syncBoardInput(currentBoard);
-}
-
-function clearSolveTrace(options?: { restoreBoard?: boolean }): void {
-  if (!solveTrace) return;
-
-  stopSolveTracePlayback();
-  solveTrace = null;
-  solveTracePanel.hidden = true;
   syncCandidatesButton();
-
-  if (options?.restoreBoard) {
-    renderCurrentView();
-  }
-}
-
-function renderSolveTracePanel(): void {
-  if (!solveTrace) return;
-
-  const totalSteps = solveTrace.steps.length;
-  const currentStep = getCurrentTraceStep();
-  if (!currentStep) return;
-  const currentCell = currentStep ? getTraceCellIndex(currentStep) : null;
-  const stepNumber = solveTrace.currentStep + 1;
-  const isComplete = solveTrace.currentStep >= totalSteps - 1;
-  const eliminated = currentStep.candidates_eliminated ?? 0;
-  const relatedCells = currentStep.related_cell_count ?? 0;
-  const isPlacement = isPlacementStep(currentStep);
-  const nextPlacementIndex = findNextTraceStepIndex(
-    solveTrace.currentStep,
-    isPlacementStep,
-  );
-  const nextEliminationIndex = findNextTraceStepIndex(
-    solveTrace.currentStep,
-    (step) => !isPlacementStep(step),
-  );
-
-  infoTitle.textContent = "Solve Steps";
-  infoPanel.style.display = "block";
-  solveTracePanel.hidden = false;
-
-  solveTraceStepCount.textContent = `Step ${stepNumber} of ${totalSteps}`;
-  solveTraceStatus.textContent = isComplete
-    ? "Solved board"
-    : solveTrace.isPlaying
-      ? "Auto-playing"
-      : "Manual review";
-  solveTraceTechnique.textContent = titleCaseTechnique(currentStep.technique);
-  solveTracePlacement.textContent = isPlacement
-    ? `${formatCellLabel(currentCell)} = ${currentStep.value}`
-    : `${formatCellLabel(currentCell)} eliminate ${currentStep.value}`;
-  solveTraceDetail.textContent = isComplete
-    ? "Final step reached. The board now matches the solved state."
-    : isPlacement
-      ? "Placement step. Use Prev and Next to inspect each digit, or Play to animate the remaining trace."
-      : `Elimination step. Removed ${eliminated} candidate${eliminated === 1 ? "" : "s"} across ${relatedCells} related cell${relatedCells === 1 ? "" : "s"}. The board digits do not change on this step.`;
-  renderTraceChanges(currentStep);
-
-  btnTracePrev.disabled = solveTrace.currentStep <= 0;
-  btnTraceNext.disabled = solveTrace.currentStep >= totalSteps - 1;
-  btnTracePlay.textContent = solveTrace.isPlaying ? "Pause" : "Play";
-  btnTraceNextPlacement.disabled = nextPlacementIndex === null;
-  btnTraceNextElimination.disabled = nextEliminationIndex === null;
-}
-
-function scheduleSolveTracePlayback(): void {
-  if (!solveTrace || !solveTrace.isPlaying) return;
-
-  if (solveTrace.currentStep >= solveTrace.steps.length - 1) {
-    stopSolveTracePlayback();
-    renderSolveTracePanel();
-    return;
-  }
-
-  solveTrace.playbackTimer = window.setTimeout(() => {
-    if (!solveTrace || !solveTrace.isPlaying) return;
-    solveTrace.currentStep += 1;
-    renderSolveTracePanel();
-    renderCurrentView();
-    scheduleSolveTracePlayback();
-  }, 700);
-}
-
-function toggleSolveTracePlayback(): void {
-  if (!solveTrace) return;
-
-  if (solveTrace.isPlaying) {
-    stopSolveTracePlayback();
-    renderSolveTracePanel();
-    return;
-  }
-
-  if (solveTrace.currentStep >= solveTrace.steps.length - 1) {
-    solveTrace.currentStep = 0;
-  }
-
-  solveTrace.isPlaying = true;
-  renderSolveTracePanel();
-  renderCurrentView();
-  scheduleSolveTracePlayback();
-}
-
-function showSolveTrace(
-  initialBoard: string,
-  initialCandidateGrid: CandidateGrid,
-  solvedBoard: string,
-  steps: SolveTraceStep[],
-): void {
-  solveTrace = {
-    initialBoard,
-    initialCandidateGrid,
-    solvedBoard,
-    steps,
-    currentStep: 0,
-    isPlaying: false,
-    playbackTimer: null,
-  };
-
-  syncCandidatesButton();
-  renderSolveTracePanel();
-  renderCurrentView();
-  infoPanel.scrollIntoView({ behavior: "smooth" });
-}
-
-function boardForExport(boardStr: string, format: "zero" | "dot"): string {
-  return format === "dot" ? boardStr.replace(/0/g, ".") : boardStr;
-}
-
-function syncBoardInput(boardStr: string): void {
-  if (!inputBoard) return;
-  const format = (selectExportFormat?.value === "dot" ? "dot" : "zero") as
-    | "zero"
-    | "dot";
-  inputBoard.value = boardForExport(boardStr, format);
-}
-
-function saveBoardState(): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.board, currentBoard);
-    localStorage.setItem(
-      STORAGE_KEYS.givens,
-      givenMask.map((isGiven) => (isGiven ? "1" : "0")).join(""),
-    );
-    localStorage.setItem(STORAGE_KEYS.difficulty, currentDifficulty);
-  } catch (_err) {
-    // Ignore storage write failures in restricted contexts.
-  }
-}
-
-function hydrateBoardState(): void {
-  try {
-    const savedBoard = localStorage.getItem(STORAGE_KEYS.board);
-    const savedGivens = localStorage.getItem(STORAGE_KEYS.givens);
-    const savedDifficulty = localStorage.getItem(STORAGE_KEYS.difficulty);
-
-    if (savedBoard && /^[0-9]{81}$/.test(savedBoard)) {
-      currentBoard = savedBoard;
-    }
-
-    if (savedGivens && /^[01]{81}$/.test(savedGivens)) {
-      givenMask = savedGivens.split("").map((ch) => ch === "1");
-    } else {
-      givenMask = currentBoard.split("").map((ch) => ch !== "0");
-    }
-
-    if (savedDifficulty) {
-      currentDifficulty = savedDifficulty;
-    } else {
-      currentDifficulty = "custom";
-    }
-  } catch (_err) {
-    // Ignore storage read failures and keep defaults.
-  }
-}
-
-function isPlacementValid(
-  boardStr: string,
-  index: number,
-  value: string,
-): boolean {
-  const row = Math.floor(index / 9);
-  const col = index % 9;
-
-  for (let c = 0; c < 9; c++) {
-    const idx = row * 9 + c;
-    if (idx !== index && boardStr[idx] === value) return false;
-  }
-
-  for (let r = 0; r < 9; r++) {
-    const idx = r * 9 + col;
-    if (idx !== index && boardStr[idx] === value) return false;
-  }
-
-  const boxRowStart = Math.floor(row / 3) * 3;
-  const boxColStart = Math.floor(col / 3) * 3;
-  for (let r = boxRowStart; r < boxRowStart + 3; r++) {
-    for (let c = boxColStart; c < boxColStart + 3; c++) {
-      const idx = r * 9 + c;
-      if (idx !== index && boardStr[idx] === value) return false;
-    }
-  }
-
-  return true;
-}
-
-function recomputeInvalidCells(): void {
-  invalidCells = computeInvalidCells(currentBoard);
-}
-
-function setBoard(
-  boardStr: string,
-  options?: {
-    setAsGiven?: boolean;
-    highlightMode?: HighlightMode;
-    clearSelection?: boolean;
-  },
-): void {
-  currentBoard = boardStr;
-  if (options?.setAsGiven) {
-    givenMask = currentBoard.split("").map((ch) => ch !== "0");
-  }
-  if (options?.clearSelection) {
-    selectedCell = null;
-  }
-  currentHighlightMode = options?.highlightMode ?? "none";
-  recomputeInvalidCells();
-  renderCurrentView();
-  syncBoardInput(currentBoard);
-  saveBoardState();
-}
-
-function updateCell(index: number, value: string): void {
-  if (index < 0 || index >= 81) return;
-  if (givenMask[index]) return;
-  if (!/^[0-9]$/.test(value)) return;
-
-  clearSolveTrace();
-
-  pushUndo();
-
-  const chars = currentBoard.split("");
-  chars[index] = value;
-  lastPlacedCell = index;
-  setBoard(chars.join(""), { highlightMode: "none" });
-}
-
-// Dynamically calculate and update number pad counts, selection highlights, and completion checks
-function updateNumpadCounts(boardStr: string): void {
-  const counts = Array(10).fill(0);
-  for (let i = 0; i < 81; i++) {
-    const val = parseInt(boardStr[i], 10);
-    if (val >= 1 && val <= 9) {
-      counts[val]++;
-    }
-  }
-
-  const selectedVal =
-    selectedCell !== null ? parseInt(boardStr[selectedCell], 10) : 0;
-
-  for (let digit = 1; digit <= 9; digit++) {
-    const btn = document.querySelector(
-      `.numpad-btn[data-val="${digit}"]`,
-    ) as HTMLButtonElement;
-    if (!btn) continue;
-
-    const count = counts[digit];
-    const isCompleted = count === 9;
-    const isActive = selectedVal === digit;
-
-    if (isCompleted) {
-      btn.classList.add("completed");
-    } else {
-      btn.classList.remove("completed");
-    }
-
-    if (isActive) {
-      btn.classList.add("active");
-    } else {
-      btn.classList.remove("active");
-    }
-
-    const countDisplay = isCompleted ? "✓" : `${count}/9`;
-    btn.innerHTML = `
-      <div class="numpad-btn-inner">
-        <span class="num">${digit}</span>
-        <span class="count">${countDisplay}</span>
-      </div>
-    `;
-  }
-}
-
-// Initialize the grid UI
-function renderGrid(
-  boardStr: string,
-  highlightMode: HighlightMode = "none",
-): void {
-  if (!grid) return;
-
-  // Dynamically update stats bar on every render
-  updateStats();
-  updateNumpadCounts(boardStr);
-
-  const cells = grid.querySelectorAll(".cell");
-  const needsCreate = cells.length === 0;
-  let candidateGrid: number[][][] | null = null;
-  const invalidSet =
-    boardStr === currentBoard ? invalidCells : computeInvalidCells(boardStr);
-  const traceFocusIndex =
-    solveTrace && solveTrace.currentStep >= 0
-      ? getTraceCellIndex(solveTrace.steps[solveTrace.currentStep])
-      : null;
-  const traceAffectedIndices = getTraceAffectedIndices(getCurrentTraceStep());
-  const traceCandidateGrid =
-    solveTrace && solveTrace.currentStep >= 0
-      ? buildTraceCandidateGrid(
-          solveTrace.initialCandidateGrid,
-          solveTrace.steps,
-          solveTrace.currentStep,
-        )
-      : null;
-
-  if (traceCandidateGrid) {
-    candidateGrid = traceCandidateGrid;
-  } else if (showPencilMarks && isWasmLoaded) {
-    const rawCandidates = candidates(boardStr);
-    if (Array.isArray(rawCandidates)) {
-      candidateGrid = normalizeCandidateGrid(rawCandidates);
-    }
-  }
-
-  for (let i = 0; i < 81; i++) {
-    let cell: HTMLDivElement;
-    if (needsCreate) {
-      cell = document.createElement("div");
-      cell.className = "cell";
-      grid.appendChild(cell);
-    } else {
-      cell = cells[i] as HTMLDivElement;
-    }
-
-    cell.dataset.index = String(i);
-    if (cell.dataset.bound !== "1") {
-      cell.tabIndex = 0;
-      cell.addEventListener("click", () => {
-        if (isGenerating || isAnimatingSolve) return;
-        selectedCell = i;
-        renderCurrentView();
-      });
-      cell.dataset.bound = "1";
-    }
-
-    const val = boardStr[i];
-    cell.classList.remove(
-      "clue",
-      "solved",
-      "selected",
-      "invalid",
-      "related",
-      "same-digit",
-      "trace-affected",
-      "trace-focus",
-      "just-placed",
-    );
-
-    if (selectedCell !== null) {
-      const selectedRow = Math.floor(selectedCell / 9);
-      const selectedCol = selectedCell % 9;
-      const selectedBox =
-        Math.floor(selectedRow / 3) * 3 + Math.floor(selectedCol / 3);
-
-      const cellRow = Math.floor(i / 9);
-      const cellCol = i % 9;
-      const cellBox = Math.floor(cellRow / 3) * 3 + Math.floor(cellCol / 3);
-
-      if (
-        i !== selectedCell &&
-        (cellRow === selectedRow ||
-          cellCol === selectedCol ||
-          cellBox === selectedBox)
-      ) {
-        cell.classList.add("related");
-      }
-
-      const selectedVal = boardStr[selectedCell];
-      if (selectedVal !== "0" && val === selectedVal && i !== selectedCell) {
-        cell.classList.add("same-digit");
-      }
-    }
-
-    if (selectedCell === i) {
-      cell.classList.add("selected");
-    }
-    if (invalidSet.has(i)) {
-      cell.classList.add("invalid");
-    }
-
-    if (traceAffectedIndices.has(i)) {
-      cell.classList.add("trace-affected");
-    }
-
-    if (traceFocusIndex === i) {
-      cell.classList.add("trace-focus");
-    }
-
-    if (val !== "0") {
-      const currentSpan = cell.querySelector("span");
-      const currentVal = currentSpan ? currentSpan.textContent : null;
-      if (currentVal !== val || cell.querySelector(".pencil-grid")) {
-        cell.innerHTML = `<span>${val}</span>`;
-      }
-
-      if (givenMask[i]) {
-        cell.classList.add("clue");
-      } else if (highlightMode === "solved") {
-        cell.classList.add("solved");
-      } else if (lastPlacedCell === i) {
-        cell.classList.add("just-placed");
-      }
-    } else {
-      if ((showPencilMarks || Boolean(solveTrace)) && candidateGrid) {
-        const row = Math.floor(i / 9);
-        const col = i % 9;
-        const cellCandidates = Array.isArray(candidateGrid[row]?.[col])
-          ? candidateGrid[row][col]
-          : [];
-        const marks = Array.from({ length: 9 }, (_, n) => {
-          const digit = n + 1;
-          const visible = cellCandidates.includes(digit);
-          return `<span class="pmark${visible ? " visible" : ""}">${digit}</span>`;
-        }).join("");
-        cell.innerHTML = `<div class="pencil-grid">${marks}</div>`;
-      } else {
-        cell.innerHTML = "";
-      }
-    }
-  }
-
-  // Clear the transient lastPlacedCell so it doesn't re-animate on subsequent selection changes
-  lastPlacedCell = null;
-}
-
-async function run(): Promise<void> {
-  try {
-    hydrateBoardState();
-
-    const savedTheme = localStorage.getItem("rustoku-theme");
-    const initialTheme: ThemeName =
-      savedTheme && validThemes.includes(savedTheme as ThemeName)
-        ? (savedTheme as ThemeName)
-        : "midnight";
-    applyTheme(initialTheme);
-    if (selectTheme) {
-      selectTheme.value = initialTheme;
-      selectTheme.onchange = () => applyTheme(selectTheme.value as ThemeName);
-    }
-
-    // Render hydrated board immediately to avoid flash while WASM initializes.
-    setBoard(currentBoard, { clearSelection: true });
-    syncCandidatesButton();
-
-    // WASM is initialized automatically by the bundler (vite-plugin-wasm)
-    isWasmLoaded = true;
-    renderCurrentView();
-    console.log("Rustoku WASM loaded!");
-
-    // Bind Number Pad Buttons
-    document.querySelectorAll(".numpad-btn").forEach((btn) => {
-      const button = btn as HTMLButtonElement;
-      button.onclick = () => {
-        if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-        if (selectedCell === null) {
-          showToast("Select a cell first to enter a number", "info");
-          return;
-        }
-        const val = button.getAttribute("data-val");
-        if (val) {
-          updateCell(selectedCell, val);
-        }
-      };
-    });
-  } catch (err) {
-    console.error("Failed to load WASM module", err);
-    if (grid) {
-      grid.innerHTML = `<p style="color:red; grid-column:span 9; text-align:center; padding-top:50%;">Failed to load WASM</p>`;
-    }
-  }
-}
-
-// Helpers
-
-/*
-// Legacy helper preserved for reference
-function generateAndRender(difficulty: string): void {
-  if (!isWasmLoaded) return;
-  const boardStr = generate(difficulty);
-  if (boardStr && boardStr.length === 81) {
-    setBoard(boardStr, {
-      setAsGiven: true,
-      highlightMode: "clue",
-      clearSelection: true,
-    });
-  }
-}
-*/
-
-// Event Listeners — Generate
-
-if (btnGenerate)
-  btnGenerate.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-
-    // Show loading overlay
-    isGenerating = true;
-    if (gridLoader) {
-      gridLoader.style.display = "flex";
-    }
-    btnGenerate.disabled = true;
-
-    clearSolveTrace();
-    const difficulty = selectGenDifficulty.value;
-    const symmetry = selectGenSymmetry.value;
-
-    // We defer the generation with setTimeout so the browser can layout/render the spinner before the synchronous WASM execution freezes the UI thread
-    setTimeout(() => {
-      try {
-        const diffVal = difficulty === "random" ? null : difficulty;
-        const boardStr = generate_advanced(symmetry, diffVal as string);
-
-        if (boardStr && boardStr.length === 81) {
-          undoStack = [];
-          redoStack = [];
-          currentDifficulty = difficulty;
-          setBoard(boardStr, {
-            setAsGiven: true,
-            highlightMode: "clue",
-            clearSelection: true,
-          });
-          showToast("Puzzle generated successfully!", "success");
-        } else {
-          showToast(
-            "Generation failed! Try reducing difficulty or changing symmetry.",
-            "error",
-          );
-        }
-      } catch (err) {
-        console.error(err);
-        showToast("Error during generation", "error");
-      } finally {
-        isGenerating = false;
-        if (gridLoader) {
-          gridLoader.style.display = "none";
-        }
-        btnGenerate.disabled = false;
-      }
-    }, 50);
-  };
-
-function animateSolve(solvedBoard: string): void {
-  if (isAnimatingSolve || isGenerating) return;
-  isAnimatingSolve = true;
-
-  // Gather all empty indices that need to be solved
-  const indicesToSolve: number[] = [];
-  for (let i = 0; i < 81; i++) {
-    if (currentBoard[i] === "0" && solvedBoard[i] !== "0") {
-      indicesToSolve.push(i);
-    }
-  }
-
-  if (indicesToSolve.length === 0) {
-    // Already solved
-    setBoard(solvedBoard, { highlightMode: "solved" });
-    showToast("Sudoku board solved instantly!", "success");
-    isAnimatingSolve = false;
-    return;
-  }
-
-  // Shuffle empty indices to reveal them in a beautifully staggered, random order
-  for (let i = indicesToSolve.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indicesToSolve[i], indicesToSolve[j]] = [
-      indicesToSolve[j],
-      indicesToSolve[i],
-    ];
-  }
-
-  // Record starting point in undo stack once before animating
-  pushUndo();
-
-  const totalSteps = indicesToSolve.length;
-  let currentStepIndex = 0;
-
-  // We reveal a few cells per tick to complete in around 350-500ms
-  const cellsPerTick = Math.max(1, Math.round(totalSteps / 25));
-  const intervalTime = 20;
-
-  const timer = setInterval(() => {
-    if (currentStepIndex >= totalSteps) {
-      clearInterval(timer);
-      isAnimatingSolve = false;
-      // Guarantee final state matches solvedBoard completely
-      setBoard(solvedBoard, { highlightMode: "solved" });
-      showToast("Sudoku board solved!", "success");
-      return;
-    }
-
-    const boardChars = currentBoard.split("");
-    for (let c = 0; c < cellsPerTick && currentStepIndex < totalSteps; c++) {
-      const idx = indicesToSolve[currentStepIndex];
-      boardChars[idx] = solvedBoard[idx];
-      currentStepIndex++;
-    }
-
-    // Update board in-place step-by-step
-    currentBoard = boardChars.join("");
-    recomputeInvalidCells();
-    renderCurrentView();
-    // Render with "solved" highlightMode so the popIn styling is colored correctly
-    renderGrid(currentBoard, "solved");
-    syncBoardInput(currentBoard);
-  }, intervalTime);
-}
-
-// Event Listeners — Solve
-if (btnSolve)
-  btnSolve.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-    if (currentBoard === "0".repeat(81)) {
-      showToast("Please generate or load a board first.", "info");
-      return;
-    }
-    clearSolveTrace();
-    const solvedBoard = solve(currentBoard);
-    if (solvedBoard && solvedBoard.length === 81) {
-      animateSolve(solvedBoard);
-    } else {
-      showToast("Could not solve this board!", "error");
-    }
-  };
-
-if (btnSolveSteps)
-  btnSolveSteps.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-    if (currentBoard === "0".repeat(81)) {
-      showToast("Please generate or load a board first.", "info");
-      return;
-    }
-    clearSolveTrace();
-    const result = solve_steps(currentBoard, "expert");
-    if (result) {
-      const steps = Array.isArray(result.steps)
-        ? (result.steps as SolveTraceStep[])
-        : [];
-      const initialCandidateGrid = normalizeCandidateGrid(
-        candidates(currentBoard),
-      );
-
-      if (steps.length > 0) {
-        showSolveTrace(currentBoard, initialCandidateGrid, result.board, steps);
-        showToast("Human-style solve steps loaded!", "success");
-      } else {
-        setBoard(result.board, { highlightMode: "solved" });
-        showToast("Solved! (No human steps recorded)", "info");
-      }
-    } else {
-      showToast("Could not solve with human techniques.", "error");
-    }
-  };
+});
 
 // Event Listeners — Tools
-if (btnCandidates)
+if (btnCandidates) {
   btnCandidates.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-    showPencilMarks = !showPencilMarks;
-    syncCandidatesButton();
+    if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
+      return;
+    state.showPencilMarks = !state.showPencilMarks;
     renderCurrentView();
+    syncCandidatesButton();
   };
+}
 
-if (btnCheck)
+if (btnCheck) {
   btnCheck.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
-    const boardToCheck = getDisplayedBoard();
+    if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
+      return;
+    const boardToCheck = getDisplayedBoard(getSolveTrace(), state.currentBoard);
     const isValid = check(boardToCheck);
     if (isValid) {
       showToast("Validation successful! You solved it!", "success");
@@ -1243,10 +69,12 @@ if (btnCheck)
       showToast("Not a valid complete solution yet!", "error");
     }
   };
+}
 
-if (btnLoadBoard)
+if (btnLoadBoard) {
   btnLoadBoard.onclick = () => {
-    if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
+    if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
+      return;
     clearSolveTrace();
     const parsed = normalizeBoardInput(inputBoard.value);
     if (!parsed) {
@@ -1254,9 +82,9 @@ if (btnLoadBoard)
       return;
     }
 
-    undoStack = [];
-    redoStack = [];
-    currentDifficulty = "custom";
+    state.undoStack = [];
+    state.redoStack = [];
+    state.currentDifficulty = "custom";
     setBoard(parsed, {
       setAsGiven: true,
       highlightMode: "clue",
@@ -1264,14 +92,18 @@ if (btnLoadBoard)
     });
     showToast("Sudoku board loaded successfully!", "success");
   };
+}
 
-if (btnCopyBoard)
+if (btnCopyBoard) {
   btnCopyBoard.onclick = async () => {
-    if (isGenerating || isAnimatingSolve) return;
+    if (state.isGenerating || state.isAnimatingSolve) return;
     const format = (selectExportFormat.value === "dot" ? "dot" : "zero") as
       | "zero"
       | "dot";
-    const output = boardForExport(getDisplayedBoard(), format);
+    const output = boardForExport(
+      getDisplayedBoard(getSolveTrace(), state.currentBoard),
+      format,
+    );
 
     try {
       await navigator.clipboard.writeText(output);
@@ -1280,22 +112,23 @@ if (btnCopyBoard)
       showToast("Clipboard copy failed!", "error");
     }
   };
+}
 
 if (selectExportFormat) {
   selectExportFormat.onchange = () => {
-    syncBoardInput(getDisplayedBoard());
+    syncBoardInput(getDisplayedBoard(getSolveTrace(), state.currentBoard));
   };
 }
 
-if (btnErase)
+if (btnErase) {
   btnErase.onclick = () => {
-    if (isGenerating || isAnimatingSolve) return;
+    if (state.isGenerating || state.isAnimatingSolve) return;
     clearSolveTrace();
-    showPencilMarks = false;
+    state.showPencilMarks = false;
     syncCandidatesButton();
-    const chars = currentBoard.split("");
+    const chars = state.currentBoard.split("");
     for (let i = 0; i < 81; i++) {
-      if (!givenMask[i]) {
+      if (!state.givenMask[i]) {
         chars[i] = "0";
       }
     }
@@ -1303,87 +136,28 @@ if (btnErase)
     infoPanel.style.display = "none";
     showToast("Erased all user cell entries", "info");
   };
+}
 
-if (btnReset)
+if (btnReset) {
   btnReset.onclick = () => {
-    if (isGenerating || isAnimatingSolve) return;
+    if (state.isGenerating || state.isAnimatingSolve) return;
     clearSolveTrace();
-    showPencilMarks = false;
+    state.showPencilMarks = false;
     syncCandidatesButton();
-    givenMask = Array(81).fill(false);
-    undoStack = [];
-    redoStack = [];
-    currentDifficulty = "custom";
+    state.givenMask = Array(81).fill(false);
+    state.undoStack = [];
+    state.redoStack = [];
+    state.currentDifficulty = "custom";
     setBoard("0".repeat(81), { clearSelection: true });
     infoPanel.style.display = "none";
     showToast("Cleared grid to a fresh blank slate", "info");
   };
+}
 
-if (btnCloseInfo)
-  btnCloseInfo.onclick = () => {
-    stopSolveTracePlayback();
-    if (solveTrace) {
-      renderSolveTracePanel();
-    }
-    infoPanel.style.display = "none";
-  };
-
-if (btnTracePrev)
-  btnTracePrev.onclick = () => {
-    if (!solveTrace) return;
-    stopSolveTracePlayback();
-    solveTrace.currentStep = Math.max(0, solveTrace.currentStep - 1);
-    renderSolveTracePanel();
-    renderCurrentView();
-  };
-
-if (btnTraceNext)
-  btnTraceNext.onclick = () => {
-    if (!solveTrace) return;
-    stopSolveTracePlayback();
-    solveTrace.currentStep = Math.min(
-      solveTrace.steps.length - 1,
-      solveTrace.currentStep + 1,
-    );
-    renderSolveTracePanel();
-    renderCurrentView();
-  };
-
-if (btnTracePlay)
-  btnTracePlay.onclick = () => {
-    toggleSolveTracePlayback();
-  };
-
-if (btnTraceNextPlacement)
-  btnTraceNextPlacement.onclick = () => {
-    if (!solveTrace) return;
-    const nextIndex = findNextTraceStepIndex(
-      solveTrace.currentStep,
-      isPlacementStep,
-    );
-    if (nextIndex === null) return;
-    stopSolveTracePlayback();
-    solveTrace.currentStep = nextIndex;
-    renderSolveTracePanel();
-    renderCurrentView();
-  };
-
-if (btnTraceNextElimination)
-  btnTraceNextElimination.onclick = () => {
-    if (!solveTrace) return;
-    const nextIndex = findNextTraceStepIndex(
-      solveTrace.currentStep,
-      (step) => !isPlacementStep(step),
-    );
-    if (nextIndex === null) return;
-    stopSolveTracePlayback();
-    solveTrace.currentStep = nextIndex;
-    renderSolveTracePanel();
-    renderCurrentView();
-  };
-
+// Keyboard shortcuts & navigation handler
 document.addEventListener("keydown", (event) => {
-  if (!isWasmLoaded || isGenerating || isAnimatingSolve) return;
+  if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
+    return;
 
   const target = event.target as HTMLElement | null;
   if (
@@ -1395,7 +169,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  // Undo/Redo shortcuts (work even without selectedCell)
+  // Undo/Redo shortcuts
   if (
     (event.ctrlKey || event.metaKey) &&
     event.key === "z" &&
@@ -1417,15 +191,15 @@ document.addEventListener("keydown", (event) => {
 
   // Escape to deselect
   if (event.key === "Escape") {
-    selectedCell = null;
+    state.selectedCell = null;
     renderCurrentView();
     return;
   }
 
-  if (selectedCell === null) return;
+  if (state.selectedCell === null) return;
 
   if (/^[1-9]$/.test(event.key)) {
-    updateCell(selectedCell, event.key);
+    updateCell(state.selectedCell, event.key);
     return;
   }
 
@@ -1435,36 +209,44 @@ document.addEventListener("keydown", (event) => {
     event.key === "Backspace" ||
     event.key === "Delete"
   ) {
-    updateCell(selectedCell, "0");
+    updateCell(state.selectedCell, "0");
     return;
   }
 
   if (event.key === "ArrowUp") {
     event.preventDefault();
-    selectedCell = selectedCell >= 9 ? selectedCell - 9 : selectedCell;
+    state.selectedCell =
+      state.selectedCell >= 9 ? state.selectedCell - 9 : state.selectedCell;
     renderCurrentView();
     return;
   }
   if (event.key === "ArrowDown") {
     event.preventDefault();
-    selectedCell = selectedCell <= 71 ? selectedCell + 9 : selectedCell;
+    state.selectedCell =
+      state.selectedCell <= 71 ? state.selectedCell + 9 : state.selectedCell;
     renderCurrentView();
     return;
   }
   if (event.key === "ArrowLeft") {
     event.preventDefault();
-    selectedCell = selectedCell % 9 === 0 ? selectedCell : selectedCell - 1;
+    state.selectedCell =
+      state.selectedCell % 9 === 0
+        ? state.selectedCell
+        : state.selectedCell - 1;
     renderCurrentView();
     return;
   }
   if (event.key === "ArrowRight") {
     event.preventDefault();
-    selectedCell = selectedCell % 9 === 8 ? selectedCell : selectedCell + 1;
+    state.selectedCell =
+      state.selectedCell % 9 === 8
+        ? state.selectedCell
+        : state.selectedCell + 1;
     renderCurrentView();
   }
 });
 
-// Modal handlers
+// Info Modal controls
 if (btnInfoHeader) {
   btnInfoHeader.onclick = () => {
     projectModal.style.display = "flex";
@@ -1477,7 +259,6 @@ if (btnModalClose) {
   };
 }
 
-// Close modal when clicking outside
 if (projectModal) {
   projectModal.onclick = (e) => {
     if (e.target === projectModal) {
@@ -1486,62 +267,51 @@ if (projectModal) {
   };
 }
 
-// Confetti particle celebration effect for successful checks
-function triggerConfetti(): void {
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.width = "100%";
-  container.style.height = "100%";
-  container.style.pointerEvents = "none";
-  container.style.zIndex = "9999";
-  container.style.overflow = "hidden";
-  document.body.appendChild(container);
+// System Boot up
+async function run(): Promise<void> {
+  try {
+    hydrateBoardState();
 
-  const colors = [
-    "#ff5964",
-    "#35a7ff",
-    "#38b000",
-    "#ffc857",
-    "#e056fd",
-    "#ff7979",
-    "#22a6b3",
-  ];
-  const particleCount = 120;
+    const savedTheme = localStorage.getItem("rustoku-theme");
+    const initialTheme: ThemeName =
+      savedTheme && validThemes.includes(savedTheme as ThemeName)
+        ? (savedTheme as ThemeName)
+        : "midnight";
+    applyTheme(initialTheme);
+    if (selectTheme) {
+      selectTheme.value = initialTheme;
+      selectTheme.onchange = () => applyTheme(selectTheme.value as ThemeName);
+    }
 
-  for (let i = 0; i < particleCount; i++) {
-    const particle = document.createElement("div");
-    particle.style.position = "absolute";
-    particle.style.width = `${Math.random() * 8 + 6}px`;
-    particle.style.height = `${Math.random() * 8 + 6}px`;
-    particle.style.backgroundColor =
-      colors[Math.floor(Math.random() * colors.length)];
-    particle.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
-
-    const startX = Math.random() * window.innerWidth;
-    particle.style.left = `${startX}px`;
-    particle.style.top = "-20px";
-
-    const drift = (Math.random() - 0.5) * 300;
-    const duration = Math.random() * 2 + 1.5;
-    const delay = Math.random() * 0.4;
-
-    particle.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s, opacity ${duration}s ease ${delay}s`;
-    container.appendChild(particle);
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        particle.style.transform = `translate3d(${drift}px, ${window.innerHeight + 50}px, 0) rotate(${Math.random() * 720}deg)`;
-        particle.style.opacity = "0";
-      });
+    // Bind Number Pad Buttons
+    document.querySelectorAll(".numpad-btn").forEach((btn) => {
+      const button = btn as HTMLButtonElement;
+      button.onclick = () => {
+        if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
+          return;
+        if (state.selectedCell === null) {
+          showToast("Select a cell first to enter a number", "info");
+          return;
+        }
+        const val = button.getAttribute("data-val");
+        if (val) {
+          updateCell(state.selectedCell, val);
+        }
+      };
     });
-  }
 
-  setTimeout(() => {
-    container.remove();
-  }, 3000);
+    // WASM is initialized automatically by the bundler (vite-plugin-wasm)
+    state.isWasmLoaded = true;
+
+    // Render initial hydrated state once loaded
+    setBoard(state.currentBoard, { clearSelection: true });
+    console.log("Rustoku WASM successfully initialized!");
+  } catch (err) {
+    console.error("Failed to load WASM module", err);
+    if (grid) {
+      grid.innerHTML = `<p style="color:red; grid-column:span 9; text-align:center; padding-top:50%;">Failed to load WASM</p>`;
+    }
+  }
 }
 
-// Boot up
 run();
