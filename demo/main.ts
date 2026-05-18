@@ -10,6 +10,7 @@ let isWasmLoaded: boolean = false;
 let currentBoard: string = "0".repeat(81);
 let givenMask: boolean[] = Array(81).fill(false);
 let selectedCell: number | null = null;
+let lastPlacedCell: number | null = null;
 let showPencilMarks: boolean = false;
 let invalidCells: Set<number> = new Set();
 let undoStack: Array<{ board: string; givens: boolean[] }> = [];
@@ -224,7 +225,7 @@ function showToast(
   toastContainer.appendChild(toast);
 
   // Force layout reflow to trigger CSS transition
-  toast.offsetHeight;
+  void toast.offsetHeight;
   toast.classList.add("show");
 
   // Slide out and remove after 3 seconds
@@ -783,7 +784,53 @@ function updateCell(index: number, value: string): void {
 
   const chars = currentBoard.split("");
   chars[index] = value;
+  lastPlacedCell = index;
   setBoard(chars.join(""), { highlightMode: "none" });
+}
+
+// Dynamically calculate and update number pad counts, selection highlights, and completion checks
+function updateNumpadCounts(boardStr: string): void {
+  const counts = Array(10).fill(0);
+  for (let i = 0; i < 81; i++) {
+    const val = parseInt(boardStr[i], 10);
+    if (val >= 1 && val <= 9) {
+      counts[val]++;
+    }
+  }
+
+  const selectedVal =
+    selectedCell !== null ? parseInt(boardStr[selectedCell], 10) : 0;
+
+  for (let digit = 1; digit <= 9; digit++) {
+    const btn = document.querySelector(
+      `.numpad-btn[data-val="${digit}"]`,
+    ) as HTMLButtonElement;
+    if (!btn) continue;
+
+    const count = counts[digit];
+    const isCompleted = count === 9;
+    const isActive = selectedVal === digit;
+
+    if (isCompleted) {
+      btn.classList.add("completed");
+    } else {
+      btn.classList.remove("completed");
+    }
+
+    if (isActive) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+
+    const countDisplay = isCompleted ? "✓" : `${count}/9`;
+    btn.innerHTML = `
+      <div class="numpad-btn-inner">
+        <span class="num">${digit}</span>
+        <span class="count">${countDisplay}</span>
+      </div>
+    `;
+  }
 }
 
 // Initialize the grid UI
@@ -795,6 +842,7 @@ function renderGrid(
 
   // Dynamically update stats bar on every render
   updateStats();
+  updateNumpadCounts(boardStr);
 
   const cells = grid.querySelectorAll(".cell");
   const needsCreate = cells.length === 0;
@@ -855,6 +903,7 @@ function renderGrid(
       "same-digit",
       "trace-affected",
       "trace-focus",
+      "just-placed",
     );
 
     if (selectedCell !== null) {
@@ -908,6 +957,8 @@ function renderGrid(
         cell.classList.add("clue");
       } else if (highlightMode === "solved") {
         cell.classList.add("solved");
+      } else if (lastPlacedCell === i) {
+        cell.classList.add("just-placed");
       }
     } else {
       if ((showPencilMarks || Boolean(solveTrace)) && candidateGrid) {
@@ -927,6 +978,9 @@ function renderGrid(
       }
     }
   }
+
+  // Clear the transient lastPlacedCell so it doesn't re-animate on subsequent selection changes
+  lastPlacedCell = null;
 }
 
 async function run(): Promise<void> {
@@ -1173,6 +1227,7 @@ if (btnCheck)
     const isValid = check(boardToCheck);
     if (isValid) {
       showToast("Validation successful! You solved it!", "success");
+      triggerConfetti();
     } else {
       showToast("Not a valid complete solution yet!", "error");
     }
@@ -1418,6 +1473,63 @@ if (projectModal) {
       projectModal.style.display = "none";
     }
   };
+}
+
+// Confetti particle celebration effect for successful checks
+function triggerConfetti(): void {
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.top = "0";
+  container.style.left = "0";
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.pointerEvents = "none";
+  container.style.zIndex = "9999";
+  container.style.overflow = "hidden";
+  document.body.appendChild(container);
+
+  const colors = [
+    "#ff5964",
+    "#35a7ff",
+    "#38b000",
+    "#ffc857",
+    "#e056fd",
+    "#ff7979",
+    "#22a6b3",
+  ];
+  const particleCount = 120;
+
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement("div");
+    particle.style.position = "absolute";
+    particle.style.width = `${Math.random() * 8 + 6}px`;
+    particle.style.height = `${Math.random() * 8 + 6}px`;
+    particle.style.backgroundColor =
+      colors[Math.floor(Math.random() * colors.length)];
+    particle.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+
+    const startX = Math.random() * window.innerWidth;
+    particle.style.left = `${startX}px`;
+    particle.style.top = "-20px";
+
+    const drift = (Math.random() - 0.5) * 300;
+    const duration = Math.random() * 2 + 1.5;
+    const delay = Math.random() * 0.4;
+
+    particle.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s, opacity ${duration}s ease ${delay}s`;
+    container.appendChild(particle);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        particle.style.transform = `translate3d(${drift}px, ${window.innerHeight + 50}px, 0) rotate(${Math.random() * 720}deg)`;
+        particle.style.opacity = "0";
+      });
+    });
+  }
+
+  setTimeout(() => {
+    container.remove();
+  }, 3000);
 }
 
 // Boot up

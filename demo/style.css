@@ -906,6 +906,62 @@ select option {
   text-decoration: underline;
 }
 
+/* Shortcuts grid styling in modal */
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+@media (min-width: 600px) {
+  .shortcuts-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1.5rem;
+  }
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background-color: var(--cell-bg);
+  border: 1px solid var(--grid-line);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.shortcut-desc {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: right;
+  padding-left: 0.5rem;
+}
+
+/* Premium styled kbd element */
+kbd {
+  background-color: var(--body-bg, #0b0f19);
+  border: 1px solid var(--grid-line);
+  border-bottom: 2px solid var(--grid-line);
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1.5px 5px;
+  display: inline-block;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+  line-height: 1;
+}
+
 /* --- Pro Cockpit Enhancements --- */
 
 .clue-slider-container {
@@ -1129,6 +1185,47 @@ input[type="range"] {
   transform: translateY(0) scale(0.95);
 }
 
+.numpad-btn-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+}
+
+.numpad-btn .num {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.numpad-btn .count {
+  font-size: 0.62rem;
+  font-weight: 550;
+  color: var(--text-muted);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.numpad-btn.completed {
+  opacity: 0.65;
+  border-color: var(--success);
+  background-color: color-mix(in srgb, var(--success) 6%, var(--cell-bg));
+}
+
+.numpad-btn.completed .count {
+  color: var(--success);
+  font-weight: 750;
+}
+
+.numpad-btn.active {
+  border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 12%, var(--cell-bg));
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 .numpad-btn.erase {
   background-color: color-mix(in srgb, var(--danger) 10%, var(--cell-bg));
   border-color: color-mix(in srgb, var(--danger) 40%, var(--grid-line));
@@ -1191,6 +1288,10 @@ input[type="range"] {
 
 .cell.solved span {
   animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.cell.just-placed span {
+  animation: popIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 @keyframes fadeIn {
