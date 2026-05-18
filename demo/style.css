@@ -562,8 +562,17 @@ select option {
 }
 
 .cell.same-digit {
-  background-color: var(--cell-highlight);
-  opacity: 0.7;
+  background-color: color-mix(
+    in srgb,
+    var(--accent) 24%,
+    var(--cell-highlight)
+  );
+}
+
+.cell.same-digit,
+.cell.same-digit span {
+  color: var(--accent) !important;
+  font-weight: 800;
 }
 
 /* Thicker borders for the 3x3 subboxes using pseudo-elements to keep layout stable */
