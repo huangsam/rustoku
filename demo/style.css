@@ -1346,3 +1346,9 @@ input[type="range"] {
     opacity: 1;
   }
 }
+
+/* Utility to disable transitions during theme switches */
+.no-transition,
+.no-transition * {
+  transition: none !important;
+}
