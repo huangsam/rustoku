@@ -87,7 +87,6 @@ const btnTraceNextPlacement = document.getElementById(
 const btnTraceNextElimination = document.getElementById(
   "btn-trace-next-elimination",
 ) as HTMLButtonElement;
-const infoContent = document.getElementById("info-content") as HTMLPreElement;
 const btnCloseInfo = document.getElementById(
   "btn-close-info",
 ) as HTMLButtonElement;
@@ -551,7 +550,6 @@ function clearSolveTrace(options?: { restoreBoard?: boolean }): void {
   stopSolveTracePlayback();
   solveTrace = null;
   solveTracePanel.hidden = true;
-  infoContent.hidden = false;
   syncCandidatesButton();
 
   if (options?.restoreBoard) {
@@ -583,7 +581,6 @@ function renderSolveTracePanel(): void {
   infoTitle.textContent = "Solve Steps";
   infoPanel.style.display = "block";
   solveTracePanel.hidden = false;
-  infoContent.hidden = true;
 
   solveTraceStepCount.textContent = `Step ${stepNumber} of ${totalSteps}`;
   solveTraceStatus.textContent = isComplete
@@ -980,36 +977,6 @@ async function run(): Promise<void> {
 }
 
 // Helpers
-function showInfo(
-  title: string,
-  content: string,
-  options?: { preserveTrace?: boolean },
-): void {
-  if (!options?.preserveTrace) {
-    clearSolveTrace({ restoreBoard: true });
-  }
-  infoTitle.textContent = title;
-  infoContent.textContent = content;
-  infoContent.hidden = false;
-  solveTracePanel.hidden = options?.preserveTrace
-    ? solveTracePanel.hidden
-    : true;
-  infoPanel.style.display = "block";
-  infoPanel.scrollIntoView({ behavior: "smooth" });
-}
-
-function formatBoard(boardStr: string): string {
-  let result = "";
-  for (let i = 0; i < 9; i++) {
-    if (i % 3 === 0 && i !== 0) result += "------+-------+------\n";
-    for (let j = 0; j < 9; j++) {
-      if (j % 3 === 0 && j !== 0) result += "| ";
-      result += boardStr[i * 9 + j] + " ";
-    }
-    result += "\n";
-  }
-  return result;
-}
 
 /*
 // Legacy helper preserved for reference
@@ -1182,12 +1149,8 @@ if (btnSolveSteps)
         showSolveTrace(currentBoard, initialCandidateGrid, result.board, steps);
         showToast("Human-style solve steps loaded!", "success");
       } else {
-        showInfo(
-          "Solve Steps",
-          `(No human technique steps recorded)\n\n── Final Board ──\n${formatBoard(result.board)}`,
-        );
         setBoard(result.board, { highlightMode: "solved" });
-        showToast("Solved! (No steps recorded)", "info");
+        showToast("Solved! (No human steps recorded)", "info");
       }
     } else {
       showToast("Could not solve with human techniques.", "error");
@@ -1209,16 +1172,8 @@ if (btnCheck)
     const boardToCheck = getDisplayedBoard();
     const isValid = check(boardToCheck);
     if (isValid) {
-      showInfo("Validation ✓", "This is a valid, complete Sudoku solution!", {
-        preserveTrace: Boolean(solveTrace),
-      });
       showToast("Validation successful! You solved it!", "success");
     } else {
-      showInfo(
-        "Validation ✗",
-        "Not a valid solution. Make sure all 81 cells are filled with no duplicates in any row, column, or box.",
-        { preserveTrace: Boolean(solveTrace) },
-      );
       showToast("Not a valid complete solution yet!", "error");
     }
   };
@@ -1229,10 +1184,6 @@ if (btnLoadBoard)
     clearSolveTrace();
     const parsed = normalizeBoardInput(inputBoard.value);
     if (!parsed) {
-      showInfo(
-        "Board Load Error",
-        "Invalid board string. Use exactly 81 chars with digits 0-9, where 0, ., or _ mean empty cells.",
-      );
       showToast("Invalid board load string!", "error");
       return;
     }
@@ -1260,10 +1211,6 @@ if (btnCopyBoard)
       await navigator.clipboard.writeText(output);
       showToast("Copied board string to clipboard!", "success");
     } catch (_err) {
-      showInfo(
-        "Copy Failed",
-        "Clipboard write failed in this browser context. You can still copy directly from the Board String field.",
-      );
       showToast("Clipboard copy failed!", "error");
     }
   };
