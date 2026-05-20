@@ -206,6 +206,7 @@ export function renderGrid(
       "trace-affected",
       "trace-focus",
       "just-placed",
+      "pop-in",
     );
 
     if (state.selectedCell !== null) {
@@ -255,8 +256,13 @@ export function renderGrid(
     if (val !== "0") {
       const currentSpan = cell.querySelector("span");
       const currentVal = currentSpan ? currentSpan.textContent : null;
-      if (currentVal !== val || cell.querySelector(".pencil-grid")) {
+      const isNewValue =
+        currentVal !== val || cell.querySelector(".pencil-grid");
+      if (isNewValue) {
         cell.innerHTML = `<span>${val}</span>`;
+        if (!state.givenMask[i]) {
+          cell.classList.add("pop-in");
+        }
       }
 
       if (state.givenMask[i]) {
