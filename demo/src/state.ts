@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   board: "rustoku-board",
   givens: "rustoku-givens",
   difficulty: "rustoku-difficulty",
+  undoStack: "rustoku-undo-stack",
+  redoStack: "rustoku-redo-stack",
 };
 
 // Global reactive state object
@@ -136,6 +138,14 @@ export function saveBoardState(): void {
       state.givenMask.map((isGiven) => (isGiven ? "1" : "0")).join(""),
     );
     localStorage.setItem(STORAGE_KEYS.difficulty, state.currentDifficulty);
+    localStorage.setItem(
+      STORAGE_KEYS.undoStack,
+      JSON.stringify(state.undoStack),
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.redoStack,
+      JSON.stringify(state.redoStack),
+    );
   } catch (_err) {
     // Ignore storage failures
   }
@@ -161,6 +171,22 @@ export function hydrateBoardState(): void {
       state.currentDifficulty = savedDifficulty;
     } else {
       state.currentDifficulty = "custom";
+    }
+
+    const savedUndo = localStorage.getItem(STORAGE_KEYS.undoStack);
+    if (savedUndo) {
+      const parsed = JSON.parse(savedUndo);
+      if (Array.isArray(parsed)) {
+        state.undoStack = parsed;
+      }
+    }
+
+    const savedRedo = localStorage.getItem(STORAGE_KEYS.redoStack);
+    if (savedRedo) {
+      const parsed = JSON.parse(savedRedo);
+      if (Array.isArray(parsed)) {
+        state.redoStack = parsed;
+      }
     }
   } catch (_err) {
     // Keep defaults
