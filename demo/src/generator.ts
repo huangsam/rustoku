@@ -6,6 +6,7 @@ import {
   gridLoader,
   selectGenDifficulty,
   selectGenSymmetry,
+  newGameModal,
 } from "./elements";
 import { clearSolveTrace } from "./trace";
 
@@ -40,6 +41,9 @@ if (btnGenerate) {
             highlightMode: "clue",
             clearSelection: true,
           });
+          if (newGameModal) {
+            newGameModal.style.display = "none";
+          }
           showToast("Puzzle generated successfully!", "success");
         } else {
           showToast(

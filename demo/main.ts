@@ -29,6 +29,13 @@ import {
   inputBoard,
   infoPanel,
   grid,
+  newGameModal,
+  btnNewGameClose,
+  tabGenerate,
+  tabImportExport,
+  tabContentGenerate,
+  tabContentImportExport,
+  btnClearBlank,
 } from "./src/elements";
 import { clearSolveTrace, getSolveTrace } from "./src/trace";
 import { getDisplayedBoard } from "./src/trace-helpers";
@@ -92,6 +99,9 @@ if (btnLoadBoard) {
       highlightMode: "clue",
       clearSelection: true,
     });
+    if (newGameModal) {
+      newGameModal.style.display = "none";
+    }
     showToast("Sudoku board loaded successfully!", "success");
   };
 }
@@ -143,6 +153,41 @@ if (btnErase) {
 if (btnReset) {
   btnReset.onclick = () => {
     if (state.isGenerating || state.isAnimatingSolve) return;
+    if (newGameModal) {
+      newGameModal.style.display = "flex";
+    }
+  };
+}
+
+if (btnNewGameClose) {
+  btnNewGameClose.onclick = () => {
+    if (newGameModal) {
+      newGameModal.style.display = "none";
+    }
+  };
+}
+
+if (tabGenerate) {
+  tabGenerate.onclick = () => {
+    tabGenerate.classList.add("active");
+    if (tabImportExport) tabImportExport.classList.remove("active");
+    if (tabContentGenerate) tabContentGenerate.style.display = "block";
+    if (tabContentImportExport) tabContentImportExport.style.display = "none";
+  };
+}
+
+if (tabImportExport) {
+  tabImportExport.onclick = () => {
+    tabImportExport.classList.add("active");
+    if (tabGenerate) tabGenerate.classList.remove("active");
+    if (tabContentGenerate) tabContentGenerate.style.display = "none";
+    if (tabContentImportExport) tabContentImportExport.style.display = "block";
+  };
+}
+
+if (btnClearBlank) {
+  btnClearBlank.onclick = () => {
+    if (state.isGenerating || state.isAnimatingSolve) return;
     clearSolveTrace();
     state.showPencilMarks = false;
     syncCandidatesButton();
@@ -152,6 +197,9 @@ if (btnReset) {
     state.currentDifficulty = "custom";
     setBoard("0".repeat(81), { clearSelection: true });
     infoPanel.style.display = "none";
+    if (newGameModal) {
+      newGameModal.style.display = "none";
+    }
     showToast("Cleared grid to a fresh blank slate", "info");
   };
 }
@@ -284,6 +332,14 @@ if (projectModal) {
   projectModal.onclick = (e) => {
     if (e.target === projectModal) {
       projectModal.style.display = "none";
+    }
+  };
+}
+
+if (newGameModal) {
+  newGameModal.onclick = (e) => {
+    if (e.target === newGameModal) {
+      newGameModal.style.display = "none";
     }
   };
 }

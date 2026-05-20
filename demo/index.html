@@ -92,39 +92,6 @@
       <main>
         <div class="app-layout">
           <aside class="control-panel">
-            <div class="generator-settings">
-              <div class="setting-group">
-                <label for="select-gen-difficulty">Difficulty</label>
-                <select id="select-gen-difficulty">
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard" selected>Hard</option>
-                  <option value="expert">Expert</option>
-                  <option value="random">Random</option>
-                </select>
-              </div>
-
-              <div class="setting-group">
-                <label for="select-gen-symmetry">Symmetry</label>
-                <select id="select-gen-symmetry">
-                  <option value="none" selected>None</option>
-                  <option value="rotational180">Rotational 180°</option>
-                  <option value="rotational90">Rotational 90°</option>
-                  <option value="mirrorvertical">Mirror Vertical</option>
-                  <option value="mirrorhorizontal">Mirror Horizontal</option>
-                  <option value="mirrordiagonal">Mirror Diagonal</option>
-                </select>
-              </div>
-
-              <button
-                id="btn-generate"
-                class="btn primary"
-                title="Generate a new puzzle"
-              >
-                Generate
-              </button>
-            </div>
-
             <div class="controls">
               <button
                 id="btn-solve"
@@ -169,47 +136,11 @@
               </button>
               <button
                 id="btn-reset"
-                class="btn danger"
-                title="Start fresh with a completely blank board"
+                class="btn primary"
+                title="Open New Game & Import/Export settings"
               >
-                New
+                New Game
               </button>
-            </div>
-
-            <div class="board-io">
-              <label for="input-board">Board String</label>
-              <div class="board-io-row">
-                <input
-                  id="input-board"
-                  type="text"
-                  placeholder="Paste 81 chars using 0 or . for blanks"
-                  spellcheck="false"
-                  autocomplete="off"
-                />
-                <button
-                  id="btn-load-board"
-                  class="btn primary"
-                  title="Load the 81-char string as a new puzzle"
-                >
-                  Load
-                </button>
-              </div>
-              <div class="board-io-row">
-                <select
-                  id="select-export-format"
-                  aria-label="Sudoku export format"
-                >
-                  <option value="zero" selected>Copy as 0</option>
-                  <option value="dot">Copy as .</option>
-                </select>
-                <button
-                  id="btn-copy-board"
-                  class="btn info"
-                  title="Copy the board string to clipboard"
-                >
-                  Copy
-                </button>
-              </div>
             </div>
           </aside>
 
@@ -413,6 +344,134 @@
                 >
               </li>
             </ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="new-game-modal" class="modal" style="display: none">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Game Settings</h2>
+            <button id="btn-new-game-close" class="btn danger">Close</button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-tabs">
+              <button id="tab-generate" class="tab-btn active">Generate</button>
+              <button id="tab-import-export" class="tab-btn">
+                Import / Export
+              </button>
+            </div>
+
+            <div id="tab-content-generate" class="tab-content">
+              <div
+                class="generator-settings"
+                style="
+                  border: 0;
+                  padding: 0;
+                  background: transparent;
+                  margin-bottom: 0;
+                "
+              >
+                <div class="setting-group">
+                  <label for="select-gen-difficulty">Difficulty</label>
+                  <select id="select-gen-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard" selected>Hard</option>
+                    <option value="expert">Expert</option>
+                    <option value="random">Random</option>
+                  </select>
+                </div>
+
+                <div class="setting-group" style="margin-top: 1rem">
+                  <label for="select-gen-symmetry">Symmetry</label>
+                  <select id="select-gen-symmetry">
+                    <option value="none" selected>None</option>
+                    <option value="rotational180">Rotational 180°</option>
+                    <option value="rotational90">Rotational 90°</option>
+                    <option value="mirrorvertical">Mirror Vertical</option>
+                    <option value="mirrorhorizontal">Mirror Horizontal</option>
+                    <option value="mirrordiagonal">Mirror Diagonal</option>
+                  </select>
+                </div>
+
+                <button
+                  id="btn-generate"
+                  class="btn primary"
+                  title="Generate a new puzzle"
+                  style="margin-top: 1.5rem; width: 100%"
+                >
+                  Generate Puzzle
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="tab-content-import-export"
+              class="tab-content"
+              style="display: none"
+            >
+              <div
+                class="board-io"
+                style="
+                  border: 0;
+                  padding: 0;
+                  background: transparent;
+                  margin-top: 0;
+                "
+              >
+                <label for="input-board">Board String</label>
+                <div class="board-io-row">
+                  <input
+                    id="input-board"
+                    type="text"
+                    placeholder="Paste 81 chars using 0 or . for blanks"
+                    spellcheck="false"
+                    autocomplete="off"
+                  />
+                  <button
+                    id="btn-load-board"
+                    class="btn primary"
+                    title="Load the 81-char string as a new puzzle"
+                  >
+                    Load
+                  </button>
+                </div>
+                <div class="board-io-row" style="margin-top: 1rem">
+                  <select
+                    id="select-export-format"
+                    aria-label="Sudoku export format"
+                  >
+                    <option value="zero" selected>Copy as 0</option>
+                    <option value="dot">Copy as .</option>
+                  </select>
+                  <button
+                    id="btn-copy-board"
+                    class="btn info"
+                    title="Copy the board string to clipboard"
+                  >
+                    Copy String
+                  </button>
+                </div>
+                <div
+                  style="
+                    margin-top: 1.5rem;
+                    border-top: 1px solid var(--grid-box);
+                    padding-top: 1.25rem;
+                  "
+                >
+                  <button
+                    id="btn-clear-blank"
+                    class="btn danger"
+                    title="Start fresh with a completely blank board"
+                    style="width: 100%"
+                  >
+                    Clear Board to Blank
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

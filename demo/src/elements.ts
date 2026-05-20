@@ -114,3 +114,25 @@ export const statProgress = document.getElementById(
 export const gridLoader = document.getElementById(
   "grid-loader",
 ) as HTMLDivElement;
+
+export const newGameModal = document.getElementById(
+  "new-game-modal",
+) as HTMLDivElement;
+export const btnNewGameClose = document.getElementById(
+  "btn-new-game-close",
+) as HTMLButtonElement;
+export const tabGenerate = document.getElementById(
+  "tab-generate",
+) as HTMLButtonElement;
+export const tabImportExport = document.getElementById(
+  "tab-import-export",
+) as HTMLButtonElement;
+export const tabContentGenerate = document.getElementById(
+  "tab-content-generate",
+) as HTMLDivElement;
+export const tabContentImportExport = document.getElementById(
+  "tab-content-import-export",
+) as HTMLDivElement;
+export const btnClearBlank = document.getElementById(
+  "btn-clear-blank",
+) as HTMLButtonElement;

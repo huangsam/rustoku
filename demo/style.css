@@ -652,6 +652,17 @@ select option {
   display: block;
 }
 
+@media (max-width: 599px) {
+  #btn-solve-steps,
+  #btn-candidates,
+  #btn-check,
+  #btn-undo,
+  #btn-redo,
+  #btn-erase {
+    display: none;
+  }
+}
+
 @media (max-width: 500px) {
   .cell {
     font-size: 1.2rem;
@@ -921,6 +932,39 @@ select option {
 .modal-body {
   padding: 1.5rem;
   color: var(--text-main);
+}
+
+.modal-tabs {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 2px solid var(--grid-box);
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  padding: 0.6rem 1.2rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: -2px;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+}
+
+.tab-btn.active {
+  color: var(--text-main);
+  border-bottom-color: var(--accent-color);
+}
+
+.tab-content {
+  width: 100%;
 }
 
 .modal-body p {
@@ -1396,5 +1440,9 @@ input[type="range"] {
     grid-template-columns: 360px 1fr;
     gap: 2.5rem;
     align-items: start;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
   }
 }
