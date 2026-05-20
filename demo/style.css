@@ -1105,33 +1105,29 @@ input[type="range"] {
 }
 
 .cell {
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease,
-    outline 0.2s ease,
-    border-radius 0.2s ease;
+  transition: background-color 0.2s ease;
+}
+
+.cell:focus {
+  outline: none;
 }
 
 .cell:hover {
   background-color: var(--cell-hover);
-  transform: scale(1.05);
   z-index: 10;
-  border-radius: 4px;
 }
 
 .cell.selected {
   outline: 3px solid var(--accent);
-  transform: scale(1.05);
+  outline-offset: -3px;
   z-index: 11;
-  border-radius: 4px;
 }
 
 .cell.trace-focus {
   background-color: color-mix(in srgb, var(--accent) 18%, var(--cell-bg));
   outline: 3px solid var(--accent);
-  transform: scale(1.05);
+  outline-offset: -3px;
   z-index: 12;
-  border-radius: 4px;
 }
 
 .cell.trace-affected {
