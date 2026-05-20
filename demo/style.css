@@ -332,7 +332,7 @@ p {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   align-items: stretch;
   gap: 0.75rem;
   margin-bottom: 0.9rem;
@@ -650,6 +650,12 @@ select option {
 .cell span {
   line-height: 1;
   display: block;
+}
+
+@media (max-width: 749px) {
+  .controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 599px) {
