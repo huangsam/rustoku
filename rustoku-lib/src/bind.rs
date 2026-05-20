@@ -106,10 +106,7 @@ pub struct SolveOutput {
     pub steps: Vec<SolveStepInfo>,
 }
 
-fn diff_candidate_grids(
-    before: &[Vec<Vec<u8>>],
-    after: &[Vec<Vec<u8>>],
-) -> Vec<CandidateChange> {
+fn diff_candidate_grids(before: &[Vec<Vec<u8>>], after: &[Vec<Vec<u8>>]) -> Vec<CandidateChange> {
     let mut changes = Vec::new();
 
     for row in 0..9 {
@@ -348,7 +345,12 @@ mod tests {
         let output = result.unwrap().unwrap();
         assert_eq!(output.board.len(), 81);
         assert!(!output.steps.is_empty());
-        assert!(output.steps.iter().any(|step| !step.candidate_changes.is_empty()));
+        assert!(
+            output
+                .steps
+                .iter()
+                .any(|step| !step.candidate_changes.is_empty())
+        );
         assert!(output.steps.iter().all(|step| {
             step.candidate_changes
                 .iter()

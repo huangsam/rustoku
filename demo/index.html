@@ -92,29 +92,29 @@
       <main>
         <div class="app-layout">
           <aside class="control-panel">
-            <div class="controls">
-              <select
-                id="select-gen-difficulty"
-                aria-label="Sudoku generation difficulty"
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard" selected>Hard</option>
-                <option value="expert">Expert</option>
-                <option value="random">Random</option>
-              </select>
+            <div class="generator-settings">
+              <div class="setting-group">
+                <label for="select-gen-difficulty">Difficulty</label>
+                <select id="select-gen-difficulty">
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard" selected>Hard</option>
+                  <option value="expert">Expert</option>
+                  <option value="random">Random</option>
+                </select>
+              </div>
 
-              <select
-                id="select-gen-symmetry"
-                aria-label="Sudoku generation symmetry"
-              >
-                <option value="none" selected>None</option>
-                <option value="rotational180">Rotational 180°</option>
-                <option value="rotational90">Rotational 90°</option>
-                <option value="mirrorvertical">Mirror Vertical</option>
-                <option value="mirrorhorizontal">Mirror Horizontal</option>
-                <option value="mirrordiagonal">Mirror Diagonal</option>
-              </select>
+              <div class="setting-group">
+                <label for="select-gen-symmetry">Symmetry</label>
+                <select id="select-gen-symmetry">
+                  <option value="none" selected>None</option>
+                  <option value="rotational180">Rotational 180°</option>
+                  <option value="rotational90">Rotational 90°</option>
+                  <option value="mirrorvertical">Mirror Vertical</option>
+                  <option value="mirrorhorizontal">Mirror Horizontal</option>
+                  <option value="mirrordiagonal">Mirror Diagonal</option>
+                </select>
+              </div>
 
               <button
                 id="btn-generate"
@@ -153,6 +153,12 @@
                 title="Validate whether the current board is a complete solution"
               >
                 Validate
+              </button>
+              <button id="btn-undo" class="btn info" title="Undo last action">
+                Undo
+              </button>
+              <button id="btn-redo" class="btn info" title="Redo last action">
+                Redo
               </button>
               <button
                 id="btn-erase"
@@ -379,6 +385,10 @@
                   ><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Y</kbd></span
                 >
                 <span class="shortcut-desc">Redo action</span>
+              </div>
+              <div class="shortcut-item">
+                <span class="shortcut-keys"><kbd>C</kbd></span>
+                <span class="shortcut-desc">Toggle candidates</span>
               </div>
               <div class="shortcut-item">
                 <span class="shortcut-keys"><kbd>Esc</kbd></span>

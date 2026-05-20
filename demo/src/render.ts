@@ -5,6 +5,8 @@ import {
   statGivens,
   statProgress,
   btnCandidates,
+  btnUndo,
+  btnRedo,
 } from "./elements";
 import {
   getTraceCellIndex,
@@ -34,6 +36,19 @@ export function syncCandidatesButton(): void {
   btnCandidates.textContent = state.showPencilMarks
     ? "Hide Candidates"
     : "Candidates";
+}
+
+export function updateHistoryButtons(): void {
+  const solveTrace = getSolveTrace();
+  const isDisabled =
+    state.isGenerating || state.isAnimatingSolve || Boolean(solveTrace);
+
+  if (btnUndo) {
+    btnUndo.disabled = isDisabled || state.undoStack.length === 0;
+  }
+  if (btnRedo) {
+    btnRedo.disabled = isDisabled || state.redoStack.length === 0;
+  }
 }
 
 export function updateNumpadCounts(boardStr: string): void {
@@ -118,6 +133,7 @@ export function renderGrid(
   // Dynamically update stats bar on every render
   updateStats();
   updateNumpadCounts(boardStr);
+  updateHistoryButtons();
 
   const cells = grid.querySelectorAll(".cell");
   const needsCreate = cells.length === 0;
@@ -167,6 +183,11 @@ export function renderGrid(
     if (cell.dataset.bound !== "1") {
       cell.tabIndex = 0;
       cell.addEventListener("click", () => {
+        if (state.isGenerating || state.isAnimatingSolve) return;
+        state.selectedCell = i;
+        notify();
+      });
+      cell.addEventListener("focus", () => {
         if (state.isGenerating || state.isAnimatingSolve) return;
         state.selectedCell = i;
         notify();

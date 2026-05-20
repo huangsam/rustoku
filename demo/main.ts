@@ -17,6 +17,8 @@ import {
   btnCheck,
   btnErase,
   btnReset,
+  btnUndo,
+  btnRedo,
   btnLoadBoard,
   btnCopyBoard,
   selectExportFormat,
@@ -154,6 +156,18 @@ if (btnReset) {
   };
 }
 
+if (btnUndo) {
+  btnUndo.onclick = () => {
+    undo();
+  };
+}
+
+if (btnRedo) {
+  btnRedo.onclick = () => {
+    redo();
+  };
+}
+
 // Keyboard shortcuts & navigation handler
 document.addEventListener("keydown", (event) => {
   if (!state.isWasmLoaded || state.isGenerating || state.isAnimatingSolve)
@@ -166,6 +180,15 @@ document.addEventListener("keydown", (event) => {
       target.tagName === "TEXTAREA" ||
       target.tagName === "SELECT")
   ) {
+    return;
+  }
+
+  // Toggle Candidates Shortcut
+  if (event.key === "c" || event.key === "C") {
+    event.preventDefault();
+    if (btnCandidates && !btnCandidates.disabled) {
+      btnCandidates.click();
+    }
     return;
   }
 
@@ -215,15 +238,13 @@ document.addEventListener("keydown", (event) => {
 
   if (event.key === "ArrowUp") {
     event.preventDefault();
-    state.selectedCell =
-      state.selectedCell >= 9 ? state.selectedCell - 9 : state.selectedCell;
+    state.selectedCell = (state.selectedCell - 9 + 81) % 81;
     renderCurrentView();
     return;
   }
   if (event.key === "ArrowDown") {
     event.preventDefault();
-    state.selectedCell =
-      state.selectedCell <= 71 ? state.selectedCell + 9 : state.selectedCell;
+    state.selectedCell = (state.selectedCell + 9) % 81;
     renderCurrentView();
     return;
   }
@@ -231,7 +252,7 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     state.selectedCell =
       state.selectedCell % 9 === 0
-        ? state.selectedCell
+        ? state.selectedCell + 8
         : state.selectedCell - 1;
     renderCurrentView();
     return;
@@ -240,7 +261,7 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     state.selectedCell =
       state.selectedCell % 9 === 8
-        ? state.selectedCell
+        ? state.selectedCell - 8
         : state.selectedCell + 1;
     renderCurrentView();
   }

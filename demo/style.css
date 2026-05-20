@@ -1,6 +1,6 @@
 html,
 body {
-  background-color: #0f172a;
+  background-color: var(--bg-color);
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -342,10 +342,35 @@ p {
   min-width: 0;
 }
 
-.control-panel .controls:first-child {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+.generator-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 0.9rem;
+  padding: 0.8rem;
+  border: 1px solid var(--grid-box);
+  border-radius: 12px;
+  background: var(--cell-bg);
 }
 
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.setting-group label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+
+.generator-settings select,
+.generator-settings button,
 .controls select,
 .controls button {
   height: 2.6rem;
@@ -353,26 +378,25 @@ p {
   width: 100%;
 }
 
+.generator-settings select,
 .controls select {
   min-width: 0;
 }
 
+.generator-settings button,
 .controls button {
   white-space: nowrap;
 }
 
-.control-panel .controls:first-child .btn {
-  width: auto;
-  min-width: 8.5rem;
-}
-
 .board-io {
-  margin: 0;
+  margin-top: 0.5rem;
   max-width: none;
+  width: 100%;
   padding: 0.8rem;
   border: 1px solid var(--grid-box);
   border-radius: 12px;
   background: var(--cell-bg);
+  box-sizing: border-box;
 }
 
 .board-io label {
@@ -419,6 +443,12 @@ p {
   font-size: 0.8rem;
 }
 
+.btn,
+.cell,
+.numpad-btn {
+  touch-action: manipulation;
+}
+
 .btn {
   padding: 0.6rem 1.2rem;
   border: none;
@@ -426,6 +456,12 @@ p {
   font-weight: 600;
   cursor: pointer;
   color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .btn.primary {
@@ -624,10 +660,6 @@ select option {
   .controls {
     grid-template-columns: 1fr;
     width: 100%;
-  }
-
-  .control-panel .controls:first-child {
-    grid-template-columns: 1fr;
   }
 
   .controls select,
@@ -1351,4 +1383,18 @@ input[type="range"] {
 .no-transition,
 .no-transition * {
   transition: none !important;
+}
+
+/* Desktop side-by-side layout */
+@media (min-width: 950px) {
+  #app {
+    max-width: 1080px;
+    width: 100%;
+  }
+
+  .app-layout {
+    grid-template-columns: 360px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
 }

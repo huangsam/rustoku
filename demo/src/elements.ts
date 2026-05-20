@@ -23,6 +23,8 @@ export const btnErase = document.getElementById(
 export const btnReset = document.getElementById(
   "btn-reset",
 ) as HTMLButtonElement;
+export const btnUndo = document.getElementById("btn-undo") as HTMLButtonElement;
+export const btnRedo = document.getElementById("btn-redo") as HTMLButtonElement;
 export const inputBoard = document.getElementById(
   "input-board",
 ) as HTMLInputElement;
