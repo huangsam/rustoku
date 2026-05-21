@@ -30,7 +30,7 @@ import { notify, onClearSolveTrace } from "./state";
 // Module-level SolveTraceState
 let solveTrace: SolveTraceState | null = null;
 
-const TECHNIQUE_INFO: Record<
+export const TECHNIQUE_INFO: Record<
   string,
   { desc: string; difficulty: "easy" | "medium" | "hard" | "expert" }
 > = {
@@ -309,10 +309,7 @@ export function showSolveTrace(
 // Bind Button Listeners
 if (btnCloseInfo) {
   btnCloseInfo.onclick = () => {
-    stopSolveTracePlayback();
-    if (solveTrace) {
-      renderSolveTracePanel();
-    }
+    clearSolveTrace();
     infoPanel.style.display = "none";
   };
 }

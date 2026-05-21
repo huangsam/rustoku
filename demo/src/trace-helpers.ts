@@ -21,11 +21,18 @@ export function formatCellLabel(index: number | null): string {
 }
 
 export function titleCaseTechnique(technique: string): string {
-  return technique
+  let formatted = technique
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+  // Restore hyphen for Wings: X-Wing, XY-Wing, XYZ-Wing, W-Wing
+  formatted = formatted.replace(/\b(XYZ|XY|X|W)\s+Wing\b/gi, (_, p1) => {
+    return `${p1.toUpperCase()}-Wing`;
+  });
+
+  return formatted;
 }
 
 export function isPlacementStep(step: SolveTraceStep): boolean {

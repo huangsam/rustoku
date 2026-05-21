@@ -103,6 +103,16 @@ describe("trace-helpers.ts module", () => {
         "Naked Single Step",
       );
     });
+
+    it("should correctly format and restore hyphens for Wing techniques", () => {
+      expect(titleCaseTechnique("x-wing")).toBe("X-Wing");
+      expect(titleCaseTechnique("x_wing")).toBe("X-Wing");
+      expect(titleCaseTechnique("XY-Wing")).toBe("XY-Wing");
+      expect(titleCaseTechnique("xy_wing")).toBe("XY-Wing");
+      expect(titleCaseTechnique("xyz-wing")).toBe("XYZ-Wing");
+      expect(titleCaseTechnique("w_wing")).toBe("W-Wing");
+      expect(titleCaseTechnique("W Wing")).toBe("W-Wing");
+    });
   });
 
   describe("isPlacementStep", () => {
