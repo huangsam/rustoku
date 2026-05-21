@@ -30,6 +30,80 @@ import { notify, onClearSolveTrace } from "./state";
 // Module-level SolveTraceState
 let solveTrace: SolveTraceState | null = null;
 
+const TECHNIQUE_INFO: Record<
+  string,
+  { desc: string; difficulty: "easy" | "medium" | "hard" | "expert" }
+> = {
+  "Naked Singles": {
+    desc: "Only one candidate number is possible for this cell. Therefore, that number must be placed here.",
+    difficulty: "easy",
+  },
+  "Hidden Singles": {
+    desc: "This number can only go in one cell within its row, column, or box. Even if other candidates are possible in this cell, this number must be placed here.",
+    difficulty: "easy",
+  },
+  "Naked Pairs": {
+    desc: "Two cells in the same house contain exactly the same two candidates. These candidates can be eliminated from all other cells in that house.",
+    difficulty: "medium",
+  },
+  "Hidden Pairs": {
+    desc: "Two candidates can only go in the same two cells within a house. All other candidates can be eliminated from those two cells.",
+    difficulty: "medium",
+  },
+  "Locked Candidates": {
+    desc: "A candidate is restricted to a single row or column within a 3x3 box (or vice versa), allowing eliminations outside that constraint.",
+    difficulty: "medium",
+  },
+  "Naked Triples": {
+    desc: "Three cells in the same house contain a subset of the same three candidates. These candidates can be eliminated from all other cells in that house.",
+    difficulty: "medium",
+  },
+  "Hidden Triples": {
+    desc: "Three candidates can only go in the same three cells within a house. All other candidates can be eliminated from those three cells.",
+    difficulty: "medium",
+  },
+  "X-Wing": {
+    desc: "A candidate is restricted to the same two cells in two parallel rows (or columns). It can be eliminated from all other cells in those columns/rows.",
+    difficulty: "hard",
+  },
+  "Naked Quads": {
+    desc: "Four cells in the same house contain a subset of the same four candidates. These candidates can be eliminated from all other cells in that house.",
+    difficulty: "hard",
+  },
+  "Hidden Quads": {
+    desc: "Four candidates can only go in the same four cells within a house. All other candidates can be eliminated from those four cells.",
+    difficulty: "hard",
+  },
+  Swordfish: {
+    desc: "A candidate is restricted to at most three cells in three rows (or columns) that align in three columns (or rows). The candidate is eliminated elsewhere.",
+    difficulty: "hard",
+  },
+  Jellyfish: {
+    desc: "A candidate is restricted to at most four cells in four rows (or columns) that align in four columns (or rows). The candidate is eliminated elsewhere.",
+    difficulty: "hard",
+  },
+  Skyscraper: {
+    desc: "Two columns (or rows) have exactly two cells containing a candidate. Two of these cells align, allowing eliminations from cells seeing the other two.",
+    difficulty: "hard",
+  },
+  "W-Wing": {
+    desc: "Two bi-value cells contain the same candidates. They are linked through a third house, allowing eliminations from cells seeing both.",
+    difficulty: "expert",
+  },
+  "XY-Wing": {
+    desc: "A pivot cell and two pincers share candidates. Any cell that sees both pincers cannot contain their shared candidate, allowing its elimination.",
+    difficulty: "expert",
+  },
+  "XYZ-Wing": {
+    desc: "A pivot cell with three candidates and two pincers. Any cell that sees all three of these cells cannot contain the shared candidate, allowing its elimination.",
+    difficulty: "expert",
+  },
+  "Alternating Inference Chain": {
+    desc: "A chain of strong and weak links between candidate cells. If the chain forms a cycle or a contradiction, candidates can be eliminated.",
+    difficulty: "expert",
+  },
+};
+
 export function getSolveTrace(): SolveTraceState | null {
   return solveTrace;
 }
@@ -136,15 +210,35 @@ export function renderSolveTracePanel(): void {
     : solveTrace.isPlaying
       ? "Auto-playing"
       : "Manual review";
-  solveTraceTechnique.textContent = titleCaseTechnique(currentStep.technique);
-  solveTracePlacement.textContent = isPlacement
-    ? `${formatCellLabel(currentCell)} = ${currentStep.value}`
-    : `${formatCellLabel(currentCell)} eliminate ${currentStep.value}`;
-  solveTraceDetail.textContent = isComplete
-    ? "Final step reached. The board now matches the solved state."
-    : isPlacement
-      ? "Placement step. Use Prev and Next to inspect each digit, or Play to animate the remaining trace."
-      : `Elimination step. Removed ${eliminated} candidate${eliminated === 1 ? "" : "s"} across ${relatedCells} related cell${relatedCells === 1 ? "" : "s"}. The board digits do not change on this step.`;
+
+  const techName = titleCaseTechnique(currentStep.technique);
+  const techInfo = TECHNIQUE_INFO[techName] || {
+    desc: isPlacement ? "Placement step." : "Elimination step.",
+    difficulty: "easy",
+  };
+
+  solveTraceTechnique.innerHTML = `
+    <span class="tech-badge difficulty-${techInfo.difficulty}">${techInfo.difficulty.toUpperCase()}</span>
+    <span class="tech-name">${techName}</span>
+  `;
+
+  solveTracePlacement.innerHTML = isPlacement
+    ? `Place <span class="trace-value-highlight">${currentStep.value}</span> in <strong>${formatCellLabel(currentCell)}</strong>`
+    : `Eliminate candidate <span class="trace-value-highlight elim">${currentStep.value}</span> in <strong>${formatCellLabel(currentCell)}</strong>`;
+
+  let detailHtml: string;
+  if (isComplete) {
+    detailHtml = "Final step reached. The board now matches the solved state.";
+  } else {
+    detailHtml = `<div class="tech-explanation">${techInfo.desc}</div>`;
+    if (isPlacement) {
+      detailHtml += `<div class="tech-action-detail">Use the controls below to inspect candidates, or play the remaining trace.</div>`;
+    } else {
+      detailHtml += `<div class="tech-action-detail">Removed ${eliminated} candidate${eliminated === 1 ? "" : "s"} across ${relatedCells} related cell${relatedCells === 1 ? "" : "s"}. The digits do not change.</div>`;
+    }
+  }
+  solveTraceDetail.innerHTML = detailHtml;
+
   renderTraceChanges(currentStep);
 
   btnTracePrev.disabled = solveTrace.currentStep <= 0;

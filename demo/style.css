@@ -593,6 +593,19 @@ select option {
   opacity: 1;
 }
 
+.pmark.pmark-removed {
+  color: var(--danger);
+  text-decoration: line-through;
+  opacity: 0.45;
+  font-weight: 500;
+}
+
+.pmark.pmark-added {
+  color: var(--success);
+  font-weight: 800;
+  transform: scale(1.1);
+}
+
 .cell.related {
   background-color: var(--cell-highlight);
 }
@@ -803,23 +816,95 @@ select option {
 }
 
 .solve-trace-technique {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tech-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tech-badge.difficulty-easy {
+  background-color: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+}
+
+.tech-badge.difficulty-medium {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.tech-badge.difficulty-hard {
+  background-color: color-mix(in srgb, var(--clue-color) 12%, transparent);
   color: var(--clue-color);
-  font-size: 1.05rem;
+  border: 1px solid color-mix(in srgb, var(--clue-color) 30%, transparent);
+}
+
+.tech-badge.difficulty-expert {
+  background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+.tech-name {
+  color: var(--text-main);
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
 .solve-trace-placement {
-  margin-bottom: 0.35rem;
-  color: var(--text-main);
-  font-size: 1rem;
-  font-weight: 600;
+  margin-bottom: 0.6rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.trace-value-highlight {
+  display: inline-block;
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: 750;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.trace-value-highlight.elim {
+  background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .solve-trace-detail {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+.tech-explanation {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.tech-action-detail {
+  color: var(--clue-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-left: 2px solid var(--clue-color);
+  padding-left: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .solve-trace-changes {
@@ -1134,6 +1219,10 @@ input[type="range"] {
   background-color: color-mix(in srgb, var(--clue-color) 14%, var(--cell-bg));
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--clue-color) 55%, transparent);
+}
+
+.cell.trace-related {
+  background-color: color-mix(in srgb, var(--accent) 3.5%, transparent);
 }
 
 /* Toast Notifications */

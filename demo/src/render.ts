@@ -144,19 +144,26 @@ export function renderGrid(
     boardStr === state.currentBoard
       ? state.invalidCells
       : computeInvalidCells(boardStr);
+  const currentStepObj = solveTrace ? getCurrentTraceStep(solveTrace) : null;
   const traceFocusIndex =
     solveTrace && solveTrace.currentStep >= 0
       ? getTraceCellIndex(solveTrace.steps[solveTrace.currentStep])
       : null;
-  const traceAffectedIndices = getTraceAffectedIndices(
-    getCurrentTraceStep(solveTrace),
-  );
+  const traceAffectedIndices = getTraceAffectedIndices(currentStepObj);
   const traceCandidateGrid =
     solveTrace && solveTrace.currentStep >= 0
       ? buildTraceCandidateGrid(
           solveTrace.initialCandidateGrid,
           solveTrace.steps,
           solveTrace.currentStep,
+        )
+      : null;
+  const prevCandidateGrid =
+    solveTrace && solveTrace.currentStep >= 0
+      ? buildTraceCandidateGrid(
+          solveTrace.initialCandidateGrid,
+          solveTrace.steps,
+          solveTrace.currentStep - 1,
         )
       : null;
 
@@ -205,11 +212,42 @@ export function renderGrid(
       "same-digit",
       "trace-affected",
       "trace-focus",
+      "trace-related",
       "just-placed",
       "pop-in",
     );
 
-    if (state.selectedCell !== null) {
+    // Cell relationships & same-digit highlights
+    if (solveTrace && currentStepObj) {
+      // Trace mode highlighting
+      if (traceFocusIndex !== null) {
+        const focusRow = Math.floor(traceFocusIndex / 9);
+        const focusCol = traceFocusIndex % 9;
+        const focusBox =
+          Math.floor(focusRow / 3) * 3 + Math.floor(focusCol / 3);
+
+        const cellRow = Math.floor(i / 9);
+        const cellCol = i % 9;
+        const cellBox = Math.floor(cellRow / 3) * 3 + Math.floor(cellCol / 3);
+
+        if (
+          i !== traceFocusIndex &&
+          (cellRow === focusRow || cellCol === focusCol || cellBox === focusBox)
+        ) {
+          cell.classList.add("trace-related");
+        }
+      }
+
+      // Highlight the active digit of interest across the board
+      const interestDigit = currentStepObj.value;
+      if (interestDigit >= 1 && interestDigit <= 9) {
+        const interestValStr = String(interestDigit);
+        if (val === interestValStr && i !== traceFocusIndex) {
+          cell.classList.add("same-digit");
+        }
+      }
+    } else if (state.selectedCell !== null) {
+      // Normal play highlighting
       const selectedRow = Math.floor(state.selectedCell / 9);
       const selectedCol = state.selectedCell % 9;
       const selectedBox =
@@ -276,13 +314,34 @@ export function renderGrid(
       if ((state.showPencilMarks || Boolean(solveTrace)) && candidateGrid) {
         const row = Math.floor(i / 9);
         const col = i % 9;
-        const cellCandidates = Array.isArray(candidateGrid[row]?.[col])
-          ? candidateGrid[row][col]
-          : [];
+
+        let cellCandidates: number[] = [];
+        let removedCandidates: number[] = [];
+        let addedCandidates: number[] = [];
+
+        if (solveTrace && prevCandidateGrid && currentStepObj) {
+          cellCandidates = prevCandidateGrid[row]?.[col] || [];
+          const change = currentStepObj.candidate_changes?.find(
+            (c) => c.row === row && c.col === col,
+          );
+          if (change) {
+            removedCandidates = change.removed || [];
+            addedCandidates = change.added || [];
+          }
+        } else {
+          cellCandidates = candidateGrid[row]?.[col] || [];
+        }
+
         const marks = Array.from({ length: 9 }, (_, n) => {
           const digit = n + 1;
-          const visible = cellCandidates.includes(digit);
-          return `<span class="pmark${visible ? " visible" : ""}">${digit}</span>`;
+          if (removedCandidates.includes(digit)) {
+            return `<span class="pmark visible pmark-removed">${digit}</span>`;
+          } else if (addedCandidates.includes(digit)) {
+            return `<span class="pmark visible pmark-added">${digit}</span>`;
+          } else {
+            const visible = cellCandidates.includes(digit);
+            return `<span class="pmark${visible ? " visible" : ""}">${digit}</span>`;
+          }
         }).join("");
         cell.innerHTML = `<div class="pencil-grid">${marks}</div>`;
       } else {
