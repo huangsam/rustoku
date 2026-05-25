@@ -307,5 +307,19 @@ describe("state.ts module", () => {
       expect(state.undoStack[0].board).toBe(initialBoard);
       expect(state.redoStack).toHaveLength(0);
     });
+
+    it("should prevent duplicate snapshots when updating a cell to the same value", () => {
+      const initialBoard = "0".repeat(81);
+      setBoard(initialBoard, { setAsGiven: true });
+
+      state.selectedCell = 0;
+      updateCell(0, "5"); // first edit: push to undo
+
+      expect(state.currentBoard[0]).toBe("5");
+      expect(state.undoStack).toHaveLength(1);
+
+      updateCell(0, "5"); // duplicate edit: should return early
+      expect(state.undoStack).toHaveLength(1);
+    });
   });
 });

@@ -123,8 +123,10 @@ if (btnSolveSteps) {
         );
         showToast("Human-style solve steps loaded!", "success");
       } else {
-        pushUndo();
-        setBoard(result.board, { highlightMode: "solved" });
+        if (result.board !== state.currentBoard) {
+          pushUndo();
+          setBoard(result.board, { highlightMode: "solved" });
+        }
         showToast("Solved! (No human steps recorded)", "info");
       }
     } else {

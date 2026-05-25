@@ -143,17 +143,20 @@ if (selectExportFormat) {
 if (btnErase) {
   btnErase.onclick = () => {
     if (state.isGenerating || state.isAnimatingSolve) return;
-    clearSolveTrace();
-    state.showPencilMarks = false;
-    syncCandidatesButton();
-    pushUndo();
     const chars = state.currentBoard.split("");
     for (let i = 0; i < 81; i++) {
       if (!state.givenMask[i]) {
         chars[i] = "0";
       }
     }
-    setBoard(chars.join(""), { clearSelection: true });
+    const nextBoard = chars.join("");
+    if (nextBoard === state.currentBoard) return;
+
+    clearSolveTrace();
+    state.showPencilMarks = false;
+    syncCandidatesButton();
+    pushUndo();
+    setBoard(nextBoard, { clearSelection: true });
     infoPanel.style.display = "none";
     showToast("Erased all user cell entries", "info");
   };

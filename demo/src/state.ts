@@ -249,6 +249,7 @@ export function updateCell(index: number, value: string): void {
   if (index < 0 || index >= 81) return;
   if (state.givenMask[index]) return;
   if (!/^[0-9]$/.test(value)) return;
+  if (state.currentBoard[index] === value) return;
 
   triggerClearSolveTrace();
   pushUndo();
