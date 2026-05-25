@@ -23,7 +23,7 @@
     "vite": "^8.0.13",
     "vite-plugin-checker": "^0.13.0",
     "vite-plugin-static-copy": "^4.1.0",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   },
   "dependencies": {
     "rustoku-wasm": "file:../rustoku-wasm/pkg",
