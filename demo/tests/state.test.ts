@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
 // Mock elements to prevent real DOM operations and errors in tests
 vi.mock("../src/elements", () => {
@@ -10,18 +10,51 @@ vi.mock("../src/elements", () => {
 
 import { inputBoard, selectExportFormat } from "../src/elements";
 import {
+  STORAGE_KEYS,
+  state,
   normalizeBoardInput,
   isPlacementValid,
   computeInvalidCells,
   boardForExport,
   syncBoardInput,
+  hydrateBoardState,
 } from "../src/state";
 
 describe("state.ts module", () => {
+  let storage: {
+    getItem: (key: string) => string | null;
+    setItem: (key: string, value: string) => void;
+    clear: () => void;
+  };
+
   beforeEach(() => {
+    const values = new Map<string, string>();
+    storage = {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => {
+        values.set(key, value);
+      },
+      clear: () => {
+        values.clear();
+      },
+    };
+
+    vi.stubGlobal("localStorage", storage);
+
     // Reset mocked element values
     if (inputBoard) inputBoard.value = "";
     if (selectExportFormat) selectExportFormat.value = "zero";
+    storage.clear();
+    state.currentBoard = "0".repeat(81);
+    state.givenMask = Array(81).fill(false);
+    state.undoStack = [];
+    state.redoStack = [];
+    state.currentDifficulty = "custom";
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe("normalizeBoardInput", () => {
@@ -164,6 +197,51 @@ describe("state.ts module", () => {
       expect(inputBoard?.value).toBe(
         "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79",
       );
+    });
+  });
+
+  describe("hydrateBoardState", () => {
+    it("should keep only well-formed undo and redo snapshots", () => {
+      const validSnapshot = {
+        board:
+          "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+        givens: Array(81).fill(true),
+      };
+
+      localStorage.setItem(
+        STORAGE_KEYS.undoStack,
+        JSON.stringify([
+          validSnapshot,
+          { board: "123", givens: Array(81).fill(true) },
+          { board: validSnapshot.board, givens: Array(80).fill(false) },
+          { board: validSnapshot.board, givens: Array(81).fill("1") },
+          null,
+        ]),
+      );
+      localStorage.setItem(
+        STORAGE_KEYS.redoStack,
+        JSON.stringify([
+          { board: validSnapshot.board, givens: Array(81).fill(false) },
+          { foo: "bar" },
+        ]),
+      );
+
+      hydrateBoardState();
+
+      expect(state.undoStack).toEqual([validSnapshot]);
+      expect(state.redoStack).toEqual([
+        { board: validSnapshot.board, givens: Array(81).fill(false) },
+      ]);
+    });
+
+    it("should fall back to empty history when stored snapshots are invalid JSON", () => {
+      localStorage.setItem(STORAGE_KEYS.undoStack, "not-json");
+      localStorage.setItem(STORAGE_KEYS.redoStack, "also-not-json");
+
+      hydrateBoardState();
+
+      expect(state.undoStack).toEqual([]);
+      expect(state.redoStack).toEqual([]);
     });
   });
 });

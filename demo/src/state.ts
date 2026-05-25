@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   redoStack: "rustoku-redo-stack",
 };
 
+type BoardSnapshot = { board: string; givens: boolean[] };
+
 // Global reactive state object
 export const state = {
   isWasmLoaded: false,
@@ -18,8 +20,8 @@ export const state = {
   lastPlacedCell: null as number | null,
   showPencilMarks: false,
   invalidCells: new Set<number>(),
-  undoStack: [] as Array<{ board: string; givens: boolean[] }>,
-  redoStack: [] as Array<{ board: string; givens: boolean[] }>,
+  undoStack: [] as BoardSnapshot[],
+  redoStack: [] as BoardSnapshot[],
   currentHighlightMode: "none" as HighlightMode,
   currentDifficulty: "custom",
   isGenerating: false,
@@ -151,6 +153,34 @@ export function saveBoardState(): void {
   }
 }
 
+function isValidSnapshot(value: unknown): value is BoardSnapshot {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const snapshot = value as Partial<BoardSnapshot>;
+  return (
+    typeof snapshot.board === "string" &&
+    /^[0-9]{81}$/.test(snapshot.board) &&
+    Array.isArray(snapshot.givens) &&
+    snapshot.givens.length === 81 &&
+    snapshot.givens.every((cell) => typeof cell === "boolean")
+  );
+}
+
+function parseSnapshotStack(raw: string | null): BoardSnapshot[] {
+  if (!raw) {
+    return [];
+  }
+
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  return parsed.filter(isValidSnapshot);
+}
+
 export function hydrateBoardState(): void {
   try {
     const savedBoard = localStorage.getItem(STORAGE_KEYS.board);
@@ -173,21 +203,12 @@ export function hydrateBoardState(): void {
       state.currentDifficulty = "custom";
     }
 
-    const savedUndo = localStorage.getItem(STORAGE_KEYS.undoStack);
-    if (savedUndo) {
-      const parsed = JSON.parse(savedUndo);
-      if (Array.isArray(parsed)) {
-        state.undoStack = parsed;
-      }
-    }
-
-    const savedRedo = localStorage.getItem(STORAGE_KEYS.redoStack);
-    if (savedRedo) {
-      const parsed = JSON.parse(savedRedo);
-      if (Array.isArray(parsed)) {
-        state.redoStack = parsed;
-      }
-    }
+    state.undoStack = parseSnapshotStack(
+      localStorage.getItem(STORAGE_KEYS.undoStack),
+    );
+    state.redoStack = parseSnapshotStack(
+      localStorage.getItem(STORAGE_KEYS.redoStack),
+    );
   } catch (_err) {
     // Keep defaults
   }
