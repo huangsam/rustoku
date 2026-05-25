@@ -4,6 +4,7 @@ import {
   subscribe,
   hydrateBoardState,
   setBoard,
+  pushUndo,
   undo,
   redo,
   updateCell,
@@ -145,6 +146,7 @@ if (btnErase) {
     clearSolveTrace();
     state.showPencilMarks = false;
     syncCandidatesButton();
+    pushUndo();
     const chars = state.currentBoard.split("");
     for (let i = 0; i < 81; i++) {
       if (!state.givenMask[i]) {

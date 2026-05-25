@@ -18,6 +18,11 @@ import {
   boardForExport,
   syncBoardInput,
   hydrateBoardState,
+  pushUndo,
+  undo,
+  redo,
+  setBoard,
+  updateCell,
 } from "../src/state";
 
 describe("state.ts module", () => {
@@ -242,6 +247,65 @@ describe("state.ts module", () => {
 
       expect(state.undoStack).toEqual([]);
       expect(state.redoStack).toEqual([]);
+    });
+  });
+
+  describe("history stack (undo / redo / pushUndo)", () => {
+    it("should push the current state to the undo stack and clear the redo stack", () => {
+      state.currentBoard = "1" + "0".repeat(80);
+      state.givenMask = Array(81).fill(false);
+      state.givenMask[0] = true;
+      state.redoStack = [
+        { board: "2" + "0".repeat(80), givens: Array(81).fill(false) },
+      ];
+
+      pushUndo();
+
+      expect(state.undoStack).toHaveLength(1);
+      expect(state.undoStack[0]).toEqual({
+        board: "1" + "0".repeat(80),
+        givens: [...state.givenMask],
+      });
+      expect(state.redoStack).toHaveLength(0);
+    });
+
+    it("should limit the undo stack to 50 snapshots", () => {
+      state.givenMask = Array(81).fill(false);
+      for (let i = 0; i < 55; i++) {
+        state.currentBoard = String(i).padStart(81, "0");
+        pushUndo();
+      }
+      expect(state.undoStack).toHaveLength(50);
+      // The first 5 should be shifted off, so the oldest remaining should be index 5
+      expect(state.undoStack[0].board).toBe("5".padStart(81, "0"));
+    });
+
+    it("should correctly undo and redo states", () => {
+      const initialBoard = "0".repeat(81);
+      setBoard(initialBoard, { setAsGiven: true }); // Sets state.currentBoard and state.givenMask
+
+      // Simulating a cell edit
+      state.selectedCell = 0;
+      updateCell(0, "5"); // This will call pushUndo internally
+
+      expect(state.currentBoard[0]).toBe("5");
+      expect(state.undoStack).toHaveLength(1);
+      expect(state.undoStack[0].board).toBe(initialBoard);
+      expect(state.redoStack).toHaveLength(0);
+
+      // Perform undo
+      undo();
+      expect(state.currentBoard[0]).toBe("0");
+      expect(state.undoStack).toHaveLength(0);
+      expect(state.redoStack).toHaveLength(1);
+      expect(state.redoStack[0].board).toBe("5" + "0".repeat(80));
+
+      // Perform redo
+      redo();
+      expect(state.currentBoard[0]).toBe("5");
+      expect(state.undoStack).toHaveLength(1);
+      expect(state.undoStack[0].board).toBe(initialBoard);
+      expect(state.redoStack).toHaveLength(0);
     });
   });
 });
