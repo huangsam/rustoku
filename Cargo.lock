@@ -946,7 +946,7 @@ dependencies = [
 
 [[package]]
 name = "rustoku-cli"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "assert_cmd",
  "clap",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "rustoku-lib"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "bitflags",
  "clap",
@@ -972,7 +972,7 @@ dependencies = [
 
 [[package]]
 name = "rustoku-py"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "pyo3",
  "rustoku-lib",
@@ -980,7 +980,7 @@ dependencies = [
 
 [[package]]
 name = "rustoku-wasm"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom 0.4.2",
