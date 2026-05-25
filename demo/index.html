@@ -626,6 +626,8 @@
 
           var board = localStorage.getItem("rustoku-board");
           var givens = localStorage.getItem("rustoku-givens");
+          var undoStackRaw = localStorage.getItem("rustoku-undo-stack");
+          var redoStackRaw = localStorage.getItem("rustoku-redo-stack");
 
           if (!board || !/^[0-9]{81}$/.test(board)) {
             board = "0".repeat(81);
@@ -638,6 +640,29 @@
           var input = document.getElementById("input-board");
           if (input) {
             input.value = board;
+          }
+
+          var parseHistoryStack = function (raw) {
+            if (!raw) {
+              return [];
+            }
+
+            try {
+              var parsed = JSON.parse(raw);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (_err) {
+              return [];
+            }
+          };
+
+          var undoButton = document.getElementById("btn-undo");
+          if (undoButton) {
+            undoButton.disabled = parseHistoryStack(undoStackRaw).length === 0;
+          }
+
+          var redoButton = document.getElementById("btn-redo");
+          if (redoButton) {
+            redoButton.disabled = parseHistoryStack(redoStackRaw).length === 0;
           }
 
           var grid = document.getElementById("sudoku-grid");
