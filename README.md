@@ -6,7 +6,7 @@
 
 **Lightning-fast Sudoku solving and generation, crafted in Rust.**
 
-Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and clarity. It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for puzzle navigation. Try the [Live Demo](https://sambyte.net/rustoku/) in your browser, or install the Rust [library] and [CLI] crates.
+Rustoku is a highly optimized Sudoku puzzle solver and generator built with a focus on speed and clarity. It leverages [bitmasking] for constraint tracking and a backtracking algorithm with [MRV] for puzzle navigation. Try the [demo](https://sambyte.net/rustoku/) in your browser, or install the Rust [library] and [CLI] crates.
 
 - **Fast solving with clear solve paths:** Rustoku can find solutions in microseconds, even for the most complex puzzles. Plus, it shows you the step-by-step solve path for understanding how the solution was reached
 - **Unique and configurable puzzle generation:** Create Sudoku puzzles that are guaranteed to have only one solution. You can also customize the difficulty of the puzzle to your liking
