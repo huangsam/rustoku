@@ -1,0 +1,13 @@
+# macOS configuration for PyO3 extension modules
+# Allows cargo build to succeed by deferring Python symbol resolution to runtime
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
