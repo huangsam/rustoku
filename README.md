@@ -11,8 +11,7 @@ Rustoku is a highly optimized Sudoku puzzle solver and generator built with a fo
 - **Fast solving with clear solve paths:** Rustoku can find solutions in microseconds, even for the most complex puzzles. Plus, it shows you the step-by-step solve path for understanding how the solution was reached
 - **Unique and configurable puzzle generation:** Create Sudoku puzzles that are guaranteed to have only one solution. You can also customize the difficulty of the puzzle to your liking
 - **Human-like puzzle solving:** Beyond raw speed, it mimics human expertise, employing a full range of techniques from Naked Singles to X-Wing to solve puzzles with precision
-- **WebAssembly support:** Run the Sudoku engine from browser via the `rustoku-wasm` crate
-- **Python bindings:** Run the Sudoku engine from Python via the`rustoku-py` crate
+- **Multi-platform access:** Use Rustoku as a Rust library or CLI, run it in the browser via the `rustoku-wasm` crate, call it from Python via `rustoku-py`, or try the live demo at [sambyte.net/rustoku](https://sambyte.net/rustoku/)
 
 [bitmasking]: https://www.geeksforgeeks.org/what-is-bitmasking/
 [MRV]: https://www.alooba.com/skills/concepts/data-science-6/minimum-remaining-values/
@@ -23,6 +22,7 @@ Rustoku is a highly optimized Sudoku puzzle solver and generator built with a fo
 
 Comprehensive guides are available for all distribution channels:
 
+- [**Live Demo**](https://sambyte.net/rustoku/) - Hosted browser experience for trying Rustoku instantly.
 - [**CLI User Guide**](https://github.com/huangsam/rustoku/blob/main/docs/cli.md) - Reference for terminal usage.
 - [**Library User Guide**](https://github.com/huangsam/rustoku/blob/main/docs/library.md) - For Rust developers using `rustoku-lib`.
 - [**WebAssembly Guide**](https://github.com/huangsam/rustoku/blob/main/docs/wasm.md) - Browser-side integration.
