@@ -8,6 +8,7 @@ import {
   selectGenSymmetry,
   newGameModal,
 } from "./elements";
+import { closeModal } from "./modal";
 import { clearSolveTrace } from "./trace";
 
 if (btnGenerate) {
@@ -42,7 +43,7 @@ if (btnGenerate) {
             clearSelection: true,
           });
           if (newGameModal) {
-            newGameModal.style.display = "none";
+            closeModal(newGameModal);
           }
           showToast("Puzzle generated successfully!", "success");
         } else {

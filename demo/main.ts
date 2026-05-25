@@ -40,6 +40,11 @@ import {
 import { clearSolveTrace, getSolveTrace } from "./src/trace";
 import { getDisplayedBoard } from "./src/trace-helpers";
 import { renderCurrentView, syncCandidatesButton } from "./src/render";
+import {
+  closeModal,
+  initializeModalAccessibility,
+  openModal,
+} from "./src/modal";
 import { showToast } from "./src/toast";
 import { triggerConfetti } from "./src/confetti";
 import type { ThemeName } from "./src/types";
@@ -53,6 +58,8 @@ subscribe(() => {
   renderCurrentView();
   syncCandidatesButton();
 });
+
+initializeModalAccessibility();
 
 // Event Listeners — Tools
 if (btnCandidates) {
@@ -100,7 +107,7 @@ if (btnLoadBoard) {
       clearSelection: true,
     });
     if (newGameModal) {
-      newGameModal.style.display = "none";
+      closeModal(newGameModal);
     }
     showToast("Sudoku board loaded successfully!", "success");
   };
@@ -154,7 +161,7 @@ if (btnReset) {
   btnReset.onclick = () => {
     if (state.isGenerating || state.isAnimatingSolve) return;
     if (newGameModal) {
-      newGameModal.style.display = "flex";
+      openModal(newGameModal, btnReset);
     }
   };
 }
@@ -162,7 +169,7 @@ if (btnReset) {
 if (btnNewGameClose) {
   btnNewGameClose.onclick = () => {
     if (newGameModal) {
-      newGameModal.style.display = "none";
+      closeModal(newGameModal);
     }
   };
 }
@@ -198,7 +205,7 @@ if (btnClearBlank) {
     setBoard("0".repeat(81), { clearSelection: true });
     infoPanel.style.display = "none";
     if (newGameModal) {
-      newGameModal.style.display = "none";
+      closeModal(newGameModal);
     }
     showToast("Cleared grid to a fresh blank slate", "info");
   };
@@ -318,20 +325,20 @@ document.addEventListener("keydown", (event) => {
 // Info Modal controls
 if (btnInfoHeader) {
   btnInfoHeader.onclick = () => {
-    projectModal.style.display = "flex";
+    openModal(projectModal, btnInfoHeader);
   };
 }
 
 if (btnModalClose) {
   btnModalClose.onclick = () => {
-    projectModal.style.display = "none";
+    closeModal(projectModal);
   };
 }
 
 if (projectModal) {
   projectModal.onclick = (e) => {
     if (e.target === projectModal) {
-      projectModal.style.display = "none";
+      closeModal(projectModal);
     }
   };
 }
@@ -339,7 +346,7 @@ if (projectModal) {
 if (newGameModal) {
   newGameModal.onclick = (e) => {
     if (e.target === newGameModal) {
-      newGameModal.style.display = "none";
+      closeModal(newGameModal);
     }
   };
 }
