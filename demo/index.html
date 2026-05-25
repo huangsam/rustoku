@@ -388,14 +388,37 @@
             <button id="btn-new-game-close" class="btn danger">Close</button>
           </div>
           <div class="modal-body">
-            <div class="modal-tabs">
-              <button id="tab-generate" class="tab-btn active">Generate</button>
-              <button id="tab-import-export" class="tab-btn">
+            <div class="modal-tabs" role="tablist" aria-label="Game settings">
+              <button
+                id="tab-generate"
+                class="tab-btn active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="tab-content-generate"
+                tabindex="0"
+                type="button"
+              >
+                Generate
+              </button>
+              <button
+                id="tab-import-export"
+                class="tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="tab-content-import-export"
+                tabindex="-1"
+                type="button"
+              >
                 Import / Export
               </button>
             </div>
 
-            <div id="tab-content-generate" class="tab-content">
+            <div
+              id="tab-content-generate"
+              class="tab-content"
+              role="tabpanel"
+              aria-labelledby="tab-generate"
+            >
               <div
                 class="generator-settings"
                 style="
@@ -442,7 +465,10 @@
             <div
               id="tab-content-import-export"
               class="tab-content"
+              role="tabpanel"
+              aria-labelledby="tab-import-export"
               style="display: none"
+              hidden
             >
               <div
                 class="board-io"

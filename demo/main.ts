@@ -174,23 +174,101 @@ if (btnNewGameClose) {
   };
 }
 
+function setActiveNewGameTab(tab: "generate" | "import-export"): void {
+  if (!tabGenerate || !tabImportExport) {
+    return;
+  }
+
+  const isGenerateTab = tab === "generate";
+
+  tabGenerate.classList.toggle("active", isGenerateTab);
+  tabGenerate.setAttribute("aria-selected", String(isGenerateTab));
+  tabGenerate.tabIndex = isGenerateTab ? 0 : -1;
+
+  tabImportExport.classList.toggle("active", !isGenerateTab);
+  tabImportExport.setAttribute("aria-selected", String(!isGenerateTab));
+  tabImportExport.tabIndex = isGenerateTab ? -1 : 0;
+
+  if (tabContentGenerate) {
+    tabContentGenerate.style.display = isGenerateTab ? "block" : "none";
+    tabContentGenerate.hidden = !isGenerateTab;
+  }
+
+  if (tabContentImportExport) {
+    tabContentImportExport.style.display = isGenerateTab ? "none" : "block";
+    tabContentImportExport.hidden = isGenerateTab;
+  }
+}
+
+function moveNewGameTabFocus(direction: 1 | -1): void {
+  if (!tabGenerate || !tabImportExport) {
+    return;
+  }
+
+  const tabs = [tabGenerate, tabImportExport];
+  const currentIndex = tabs.findIndex((tab) => tab === document.activeElement);
+  const nextIndex =
+    currentIndex === -1
+      ? 0
+      : (currentIndex + direction + tabs.length) % tabs.length;
+
+  tabs[nextIndex].focus();
+  tabs[nextIndex].click();
+}
+
 if (tabGenerate) {
   tabGenerate.onclick = () => {
-    tabGenerate.classList.add("active");
-    if (tabImportExport) tabImportExport.classList.remove("active");
-    if (tabContentGenerate) tabContentGenerate.style.display = "block";
-    if (tabContentImportExport) tabContentImportExport.style.display = "none";
+    setActiveNewGameTab("generate");
+  };
+
+  tabGenerate.onkeydown = (event) => {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      moveNewGameTabFocus(1);
+      return;
+    }
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      moveNewGameTabFocus(-1);
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      tabGenerate.focus();
+      tabGenerate.click();
+    }
   };
 }
 
 if (tabImportExport) {
   tabImportExport.onclick = () => {
-    tabImportExport.classList.add("active");
-    if (tabGenerate) tabGenerate.classList.remove("active");
-    if (tabContentGenerate) tabContentGenerate.style.display = "none";
-    if (tabContentImportExport) tabContentImportExport.style.display = "block";
+    setActiveNewGameTab("import-export");
+  };
+
+  tabImportExport.onkeydown = (event) => {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      moveNewGameTabFocus(1);
+      return;
+    }
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      moveNewGameTabFocus(-1);
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      tabImportExport.focus();
+      tabImportExport.click();
+    }
   };
 }
+
+setActiveNewGameTab("generate");
 
 if (btnClearBlank) {
   btnClearBlank.onclick = () => {
