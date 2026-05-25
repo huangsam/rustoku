@@ -9,22 +9,26 @@ The same core API is exposed via [`rustoku-wasm`](wasm.md) for the browser and [
 ## Installation
 
 Add to your `Cargo.toml`:
+
 ```toml
 [dependencies]
-rustoku-lib = "0.14.0"
+rustoku-lib = "0.15.0"
 ```
 
 ## Core Concepts
 
 ### `Rustoku` Struct
+
 The primary interface for solving. It maintains the board state and optimized bitmasks for constraint propagation.
 
 ### `Board` Struct
+
 A simple wrapper around a `[[u8; 9]; 9]` array, providing convenient display and conversion methods.
 
 ## Basic Usage
 
 ### Solving a Puzzle
+
 ```rust
 use rustoku_lib::Rustoku;
 
@@ -39,6 +43,7 @@ fn main() {
 ```
 
 ### Generating a Puzzle
+
 ```rust
 use rustoku_lib::{generate_board_by_difficulty, Difficulty};
 
@@ -51,6 +56,7 @@ fn main() {
 ## Advanced Usage
 
 ### Enabling Specific Techniques
+
 You can configure which "human" techniques the solver uses via `TechniqueFlags`.
 
 ```rust
@@ -63,7 +69,9 @@ let solution = solver.solve_any();
 ```
 
 ### Serializing with Serde
+
 Core structs support JSON/YAML serialization via the `serde` feature.
 
 ## Error Handling
+
 The library uses a custom `RustokuError` enum for granular error reporting (invalid board length, duplicate clues, etc.).

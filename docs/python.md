@@ -11,11 +11,13 @@ The Python binding exposes the **same core API** as [`rustoku-wasm`](wasm.md) an
 Currently, Python bindings are built from source using `maturin`.
 
 ### Prerequisites
+
 - Python 3.8+
 - Rust toolchain
 - `maturin` (install via `pip install maturin` or `brew install maturin`)
 
 ### Building from Source
+
 ```bash
 cd rustoku-py
 # Recommended: use a virtual environment
@@ -29,31 +31,41 @@ maturin develop
 ## API Reference
 
 ### `solve(puzzle: str) -> str`
+
 Solves a Sudoku puzzle.
+
 - **Input**: 81-character string (empty cells: `0`, `.`, or `_`).
 - **Output**: 81-character solved string, or an empty string if unsolvable.
 - **Raises**: `ValueError` if the input string is malformed.
 
 ### `generate(difficulty: str) -> str`
+
 Generates a new Sudoku puzzle with a unique solution.
+
 - **Input**: Difficulty level (`"easy"`, `"medium"`, `"hard"`, or `"expert"`).
 - **Output**: 81-character puzzle string.
 - **Raises**: `ValueError` if the difficulty is invalid or generation fails.
 
 ### `generate_advanced(symmetry: str = "none", difficulty: str = None) -> str`
+
 Generates a puzzle with specific symmetry and difficulty.
+
 - **`symmetry`**: `"none"`, `"rotational180"`, `"rotational90"`, `"mirrorvertical"`, `"mirrorhorizontal"`, or `"mirrordiagonal"`.
 - **`difficulty`**: `"easy"`, `"medium"`, `"hard"`, `"expert"`, or `None` (for purely random).
 - **Output**: 81-character puzzle string.
 - **Raises**: `ValueError` if parameters are invalid or generation fails.
 
 ### `solve_all(puzzle: str) -> list[str]`
+
 Finds every solution for a puzzle.
+
 - **Output**: List of 81-character solved strings (empty list if unsolvable).
 - **Raises**: `ValueError` if the input string is malformed.
 
 ### `solve_steps(puzzle: str, difficulty: str = "expert") -> dict | None`
+
 Solves a puzzle and returns a full step-by-step trace.
+
 - **Output**: `{"board": str, "steps": list[dict]}` or `None` if unsolvable.
   Each step dict contains: `type` (`"placement"` or `"elimination"`), `row`, `col`,
   `value`, `technique`, `step_number`, `candidates_eliminated`, `related_cell_count`,
@@ -63,13 +75,17 @@ Solves a puzzle and returns a full step-by-step trace.
 - **Raises**: `ValueError` if the input or difficulty is invalid.
 
 ### `candidates(puzzle: str) -> list[list[list[int]]]`
+
 Returns the valid candidate digits for every cell.
+
 - **Output**: 9×9 list of lists. Each inner list contains the digits (1–9) still
   possible for that cell; filled cells return `[]`.
 - **Raises**: `ValueError` if the input string is malformed.
 
 ### `check(board: str) -> bool`
+
 Validates if a board is a completed, valid Sudoku solution.
+
 - **Input**: 81-character string.
 - **Output**: `True` if valid and complete, `False` otherwise.
 - **Raises**: `ValueError` if the input string is malformed.
