@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-05-25
+
+### Added
+- Python bindings via the new `rustoku-py` crate
+- WebAssembly bindings via the new `rustoku-wasm` crate
+- Interactive web demo for solving, generating, importing, and tracing Sudoku puzzles in the browser
+- Alternating Inference Chain (AIC) as an expert human-solving technique
+- Puzzle generation by named difficulty levels
+- Property-based tests for solver and generator behavior
+- Dedicated usage docs for the CLI, library, Python bindings, and WASM bindings
+
+### Changed
+- Refined public binding APIs to expose a more focused surface area
+- Improved CI, Pages deploy, and binding-package workflows for Python and WASM distributions
+- Expanded and polished the demo UX with solve traces, candidates, stats, import/export, tests, and responsive layout improvements
+- Updated workspace dependencies and toolchain requirements
+- Simplified publishing and contribution guidance across project docs
+
+### Fixed
+- Demo startup and persistence edge cases, including safer history hydration and modal/toast accessibility behavior
+- Solve-step rendering and trace visualization issues in the web demo
+- CI robustness issues, dependency vulnerabilities, and assorted code quality nits across the workspace
+
 ## [0.14.0] - 2026-03-08
 
 ### Added
@@ -205,6 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[0.15.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.14.0...rustoku-lib-v0.15.0
+[0.14.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.13.0...rustoku-lib-v0.14.0
 [0.13.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.12.3...rustoku-lib-v0.13.0
 [0.12.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.12.2...rustoku-lib-v0.12.3
 [0.12.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.12.1...rustoku-lib-v0.12.2
