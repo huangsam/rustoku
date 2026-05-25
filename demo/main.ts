@@ -11,7 +11,7 @@ import {
   boardForExport,
   syncBoardInput,
 } from "./src/state";
-import { validThemes, applyTheme } from "./src/theme";
+import { applyTheme, getStoredTheme } from "./src/theme";
 import {
   btnCandidates,
   btnCheck,
@@ -349,11 +349,7 @@ async function run(): Promise<void> {
   try {
     hydrateBoardState();
 
-    const savedTheme = localStorage.getItem("rustoku-theme");
-    const initialTheme: ThemeName =
-      savedTheme && validThemes.includes(savedTheme as ThemeName)
-        ? (savedTheme as ThemeName)
-        : "midnight";
+    const initialTheme: ThemeName = getStoredTheme() ?? "midnight";
     applyTheme(initialTheme);
     if (selectTheme) {
       selectTheme.value = initialTheme;
@@ -384,9 +380,9 @@ async function run(): Promise<void> {
     setBoard(state.currentBoard, { clearSelection: true });
     console.log("Rustoku WASM successfully initialized!");
   } catch (err) {
-    console.error("Failed to load WASM module", err);
+    console.error("Failed to initialize Rustoku UI", err);
     if (grid) {
-      grid.innerHTML = `<p style="color:red; grid-column:span 9; text-align:center; padding-top:50%;">Failed to load WASM</p>`;
+      grid.innerHTML = `<p style="color:red; grid-column:span 9; text-align:center; padding-top:50%;">Failed to initialize Rustoku UI</p>`;
     }
   }
 }
