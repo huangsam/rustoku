@@ -9,8 +9,8 @@
     "all": "npm run build && npm run test && npm run sync"
   },
   "devDependencies": {
-    "vite": "^8.0.15",
+    "vite": "^8.0.16",
     "vite-plugin-wasm": "^3.6.0",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   }
 }
