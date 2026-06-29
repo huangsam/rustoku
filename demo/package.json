@@ -15,15 +15,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.4.1",
-    "globals": "^17.6.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.0",
-    "vite": "^8.0.15",
-    "vite-plugin-checker": "^0.14.1",
-    "vite-plugin-static-copy": "^4.1.0",
-    "vitest": "^4.1.6"
+    "typescript-eslint": "^8.62.0",
+    "vite": "^8.1.0",
+    "vite-plugin-checker": "^0.14.4",
+    "vite-plugin-static-copy": "^4.1.1",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "rustoku-wasm": "file:../rustoku-wasm/pkg",
