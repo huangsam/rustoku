@@ -36,10 +36,4 @@ export interface SolveTraceState {
 }
 
 export type ThemeName =
-  | "midnight"
-  | "paper"
-  | "arcade"
-  | "blueprint"
-  | "ember"
-  | "forest"
-  | "mono";
+  "midnight" | "paper" | "arcade" | "blueprint" | "ember" | "forest" | "mono";

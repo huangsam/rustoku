@@ -118,8 +118,7 @@ if (btnCopyBoard) {
   btnCopyBoard.onclick = async () => {
     if (state.isGenerating || state.isAnimatingSolve) return;
     const format = (selectExportFormat.value === "dot" ? "dot" : "zero") as
-      | "zero"
-      | "dot";
+      "zero" | "dot";
     const output = boardForExport(
       getDisplayedBoard(getSolveTrace(), state.currentBoard),
       format,

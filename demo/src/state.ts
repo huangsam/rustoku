@@ -127,8 +127,7 @@ export function boardForExport(
 export function syncBoardInput(boardStr: string): void {
   if (!inputBoard) return;
   const format = (selectExportFormat?.value === "dot" ? "dot" : "zero") as
-    | "zero"
-    | "dot";
+    "zero" | "dot";
   inputBoard.value = boardForExport(boardStr, format);
 }
 

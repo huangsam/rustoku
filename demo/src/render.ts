@@ -191,11 +191,13 @@ export function renderGrid(
       cell.tabIndex = 0;
       cell.addEventListener("click", () => {
         if (state.isGenerating || state.isAnimatingSolve) return;
+        if (state.selectedCell === i) return;
         state.selectedCell = i;
         notify();
       });
       cell.addEventListener("focus", () => {
         if (state.isGenerating || state.isAnimatingSolve) return;
+        if (state.selectedCell === i) return;
         state.selectedCell = i;
         notify();
       });
@@ -203,19 +205,18 @@ export function renderGrid(
     }
 
     const val = boardStr[i];
-    cell.classList.remove(
-      "clue",
-      "solved",
-      "selected",
-      "invalid",
-      "related",
-      "same-digit",
-      "trace-affected",
-      "trace-focus",
-      "trace-related",
-      "just-placed",
-      "pop-in",
-    );
+
+    // Compute status states
+    let isClue = false;
+    let isSolved = false;
+    const isSelected = state.selectedCell === i;
+    const isInvalid = invalidSet.has(i);
+    let isRelated = false;
+    let isSameDigit = false;
+    const isTraceAffected = traceAffectedIndices.has(i);
+    const isTraceFocus = traceFocusIndex === i;
+    let isTraceRelated = false;
+    let isJustPlaced = false;
 
     // Cell relationships & same-digit highlights
     if (solveTrace && currentStepObj) {
@@ -234,7 +235,7 @@ export function renderGrid(
           i !== traceFocusIndex &&
           (cellRow === focusRow || cellCol === focusCol || cellBox === focusBox)
         ) {
-          cell.classList.add("trace-related");
+          isTraceRelated = true;
         }
       }
 
@@ -243,7 +244,7 @@ export function renderGrid(
       if (interestDigit >= 1 && interestDigit <= 9) {
         const interestValStr = String(interestDigit);
         if (val === interestValStr && i !== traceFocusIndex) {
-          cell.classList.add("same-digit");
+          isSameDigit = true;
         }
       }
     } else if (state.selectedCell !== null) {
@@ -263,7 +264,7 @@ export function renderGrid(
           cellCol === selectedCol ||
           cellBox === selectedBox)
       ) {
-        cell.classList.add("related");
+        isRelated = true;
       }
 
       const selectedVal = boardStr[state.selectedCell];
@@ -272,43 +273,40 @@ export function renderGrid(
         val === selectedVal &&
         i !== state.selectedCell
       ) {
-        cell.classList.add("same-digit");
+        isSameDigit = true;
       }
-    }
-
-    if (state.selectedCell === i) {
-      cell.classList.add("selected");
-    }
-    if (invalidSet.has(i)) {
-      cell.classList.add("invalid");
-    }
-
-    if (traceAffectedIndices.has(i)) {
-      cell.classList.add("trace-affected");
-    }
-
-    if (traceFocusIndex === i) {
-      cell.classList.add("trace-focus");
     }
 
     if (val !== "0") {
+      if (state.givenMask[i]) {
+        isClue = true;
+      } else if (highlightMode === "solved") {
+        isSolved = true;
+      } else if (state.lastPlacedCell === i) {
+        isJustPlaced = true;
+      }
+    }
+
+    // Toggle CSS classes instead of removing/re-adding unconditionally to prevent rendering flicker
+    cell.classList.toggle("clue", isClue);
+    cell.classList.toggle("solved", isSolved);
+    cell.classList.toggle("selected", isSelected);
+    cell.classList.toggle("invalid", isInvalid);
+    cell.classList.toggle("related", isRelated);
+    cell.classList.toggle("same-digit", isSameDigit);
+    cell.classList.toggle("trace-affected", isTraceAffected);
+    cell.classList.toggle("trace-focus", isTraceFocus);
+    cell.classList.toggle("trace-related", isTraceRelated);
+    cell.classList.toggle("just-placed", isJustPlaced);
+
+    let isNewValue = false;
+    if (val !== "0") {
       const currentSpan = cell.querySelector("span");
       const currentVal = currentSpan ? currentSpan.textContent : null;
-      const isNewValue =
-        currentVal !== val || cell.querySelector(".pencil-grid");
+      isNewValue =
+        currentVal !== val || Boolean(cell.querySelector(".pencil-grid"));
       if (isNewValue) {
         cell.innerHTML = `<span>${val}</span>`;
-        if (!state.givenMask[i]) {
-          cell.classList.add("pop-in");
-        }
-      }
-
-      if (state.givenMask[i]) {
-        cell.classList.add("clue");
-      } else if (highlightMode === "solved") {
-        cell.classList.add("solved");
-      } else if (state.lastPlacedCell === i) {
-        cell.classList.add("just-placed");
       }
     } else {
       if ((state.showPencilMarks || Boolean(solveTrace)) && candidateGrid) {
@@ -343,11 +341,18 @@ export function renderGrid(
             return `<span class="pmark${visible ? " visible" : ""}">${digit}</span>`;
           }
         }).join("");
-        cell.innerHTML = `<div class="pencil-grid">${marks}</div>`;
+        const newHTML = `<div class="pencil-grid">${marks}</div>`;
+        if (cell.innerHTML !== newHTML) {
+          cell.innerHTML = newHTML;
+        }
       } else {
-        cell.innerHTML = "";
+        if (cell.innerHTML !== "") {
+          cell.innerHTML = "";
+        }
       }
     }
+
+    cell.classList.toggle("pop-in", isNewValue && !state.givenMask[i]);
   }
 
   // Clear transient flag
