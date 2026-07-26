@@ -188,6 +188,13 @@ body {
   padding: 0;
 }
 
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 body {
   font-family:
     "Inter",
@@ -457,9 +464,8 @@ p {
   background-color: var(--panel-bg);
   color: var(--text-main);
   font-family:
-    "JetBrains Mono",
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   font-size: 0.8rem;
 }
 
@@ -470,6 +476,7 @@ p {
 }
 
 .btn {
+  font-family: inherit;
   padding: 0.6rem 1.2rem;
   border: none;
   border-radius: 8px;
@@ -1337,7 +1344,8 @@ input[type="range"] {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-main);
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 #stat-difficulty {
