@@ -35,6 +35,8 @@ updates:
       interval: 'weekly'
     ignore:
       - dependency-name: 'rustoku-wasm'
+      - dependency-name: 'typescript'
+      - dependency-name: 'typescript-eslint'
     groups:
       demo-dependencies:
         patterns:
