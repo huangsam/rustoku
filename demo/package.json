@@ -25,6 +25,8 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "rustoku-wasm": "file:../rustoku-wasm/pkg",
     "vite-plugin-wasm": "^3.6.0"
   }

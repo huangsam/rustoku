@@ -1,3 +1,11 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
+
 html,
 body {
   background-color: var(--bg-color);
@@ -192,6 +200,17 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+}
+
+.cell,
+.pencil-grid,
+.pmark,
+.numpad-btn,
+.stat-value,
+.board-io input,
+.timer,
+#clues-value {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .preload #app {
@@ -438,6 +457,7 @@ p {
   background-color: var(--panel-bg);
   color: var(--text-main);
   font-family:
+    "JetBrains Mono",
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.8rem;
@@ -874,7 +894,7 @@ select option {
   font-weight: 750;
   padding: 1px 6px;
   border-radius: 4px;
-  font-family: ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.9em;
 }
 
@@ -925,7 +945,7 @@ select option {
   color: var(--clue-color);
   background-color: color-mix(in srgb, var(--clue-color) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--clue-color) 30%, transparent);
-  font-family: ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.75rem;
   font-weight: 750;
   padding: 2px 6px;
@@ -1175,7 +1195,7 @@ kbd {
 
 #clues-value {
   color: var(--clue-color);
-  font-family: ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 input[type="range"] {
@@ -1317,7 +1337,7 @@ input[type="range"] {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-main);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 #stat-difficulty {
