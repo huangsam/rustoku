@@ -15,13 +15,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.7.0",
-    "globals": "^17.7.0",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.63.0",
-    "vite": "^8.1.4",
-    "vite-plugin-checker": "^0.14.4",
+    "vite": "^8.1.5",
+    "vite-plugin-checker": "^0.14.5",
     "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^4.1.10"
   },
