@@ -50,8 +50,8 @@ jobs:
           python3 tests/test_basic.py
         working-directory: rustoku-py
 
-  wasm-build:
-    name: WASM
+  wasm-demo-build:
+    name: WASM + Demo
     runs-on: ubuntu-latest
 
     steps:
@@ -62,7 +62,9 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-          cache-dependency-path: 'rustoku-wasm/package-lock.json'
+          cache-dependency-path: |
+            rustoku-wasm/package-lock.json
+            demo/package-lock.json
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Install dependencies and build/test WASM
@@ -70,3 +72,10 @@ jobs:
           npm ci
           npm run all
         working-directory: rustoku-wasm
+      - name: Setup and build demo
+        run: |
+          npm ci
+          npm run lint
+          npm run test
+          npm run build
+        working-directory: demo
