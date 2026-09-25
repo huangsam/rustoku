@@ -3,4 +3,6 @@ target/
 .DS_Store
 Thumbs.db
 brainstorm/
+scratch/
+playground/
 demo/pkg/
