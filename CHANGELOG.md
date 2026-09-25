@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] - 2026-09-25
+
+### Changed
+- Added comprehensive package metadata, descriptions, URLs, and documentation to Python (`rustoku-py`) and WebAssembly (`rustoku-wasm`) packages
+- Added dedicated READMEs with quickstart guides and CI badges for PyPI and npm distributions
+
 ## [0.15.0] - 2026-05-25
 
 ### Added
@@ -228,6 +234,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[0.15.1]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.0...rustoku-lib-v0.15.1
 [0.15.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.14.0...rustoku-lib-v0.15.0
 [0.14.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.13.0...rustoku-lib-v0.14.0
 [0.13.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.12.3...rustoku-lib-v0.13.0
