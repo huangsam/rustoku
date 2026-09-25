@@ -4,13 +4,27 @@ build-backend = "maturin"
 
 [project]
 name = "rustoku"
+description = "High-performance Sudoku solver and generator in Rust with Python bindings"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Samuel Huang", email = "samhuang91@gmail.com" }]
 requires-python = ">=3.8"
 dynamic = ["version"]
+keywords = ["sudoku", "puzzles", "solver", "generator", "rust", "pyo3"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Games/Entertainment :: Puzzle Games",
+    "License :: OSI Approved :: MIT License",
 ]
+
+[project.urls]
+Homepage = "https://github.com/huangsam/rustoku"
+Documentation = "https://github.com/huangsam/rustoku/blob/main/docs/python.md"
+Repository = "https://github.com/huangsam/rustoku"
+Issues = "https://github.com/huangsam/rustoku/issues"
+Changelog = "https://github.com/huangsam/rustoku/blob/main/CHANGELOG.md"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
