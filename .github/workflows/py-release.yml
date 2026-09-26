@@ -11,12 +11,28 @@ permissions:
   contents: read
 
 jobs:
+  sdist:
+    name: Build Source Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist -m rustoku-py/Cargo.toml
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: dist
+
   linux:
     name: Build Linux Wheels (${{ matrix.target }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64, aarch64]
+        target: [x86_64]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -26,8 +42,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m rustoku-py/Cargo.toml
-          sdist: ${{ matrix.target == 'x86_64' }}
+          args: --release --out dist --find-interpreter -m rustoku-py/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -49,7 +64,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m rustoku-py/Cargo.toml
+          args: --release --out dist --find-interpreter -m rustoku-py/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -71,7 +86,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m rustoku-py/Cargo.toml
+          args: --release --out dist --find-interpreter -m rustoku-py/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -81,7 +96,7 @@ jobs:
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [linux, windows, macos]
+    needs: [sdist, linux, windows, macos]
     permissions:
       id-token: write
     steps:
@@ -95,4 +110,3 @@ jobs:
         with:
           packages-dir: dist
           skip-existing: true
-          password: ${{ secrets.PYPI_API_TOKEN }}
