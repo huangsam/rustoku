@@ -15,6 +15,9 @@ jobs:
   publish-npm:
     name: Publish to npm
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -26,6 +29,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
+      - name: Upgrade npm (required for OIDC Trusted Publishing)
+        run: npm install -g npm@latest
 
       - name: Build WASM package
         run: wasm-pack build --release
