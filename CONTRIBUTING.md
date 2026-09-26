@@ -21,12 +21,18 @@ cd rustoku-wasm && wasm-pack build && npm test
 
 ## Maintainer Release Process
 
-Rustoku uses `cargo-release` for workspace versioning and crates.io publishing. `rustoku-py` and `rustoku-wasm` are marked `publish = false` in Cargo and are distributed via their respective package registries.
+Rustoku uses automated GitHub Actions workflows with keyless **OIDC Trusted Publishing** for all package registries (crates.io, PyPI, npm).
 
 ### 1. Update `CHANGELOG.md`
-Document changes for the release according to existing conventions.
+Document changes for the release according to existing conventions and commit:
+```bash
+git add CHANGELOG.md
+git commit -m "docs: prepare v0.X.Y changelog"
+git push origin main
+```
 
-### 2. Bump & Publish Rust Crates (crates.io)
+### 2. Bump & Tag Release
+Use `cargo-release` to bump workspace versions, create tags, and push:
 ```bash
 # New feature (minor bump)
 cargo release minor --execute
@@ -34,27 +40,16 @@ cargo release minor --execute
 # Bug fix / doc patch (patch bump)
 cargo release patch --execute
 ```
-*Requires `cargo login` with a valid crates.io API token. This bumps workspace versions, creates git tags, publishes `rustoku-lib` and `rustoku-cli`, and pushes commits and tags to GitHub.*
+*`cargo release` is configured via `release.toml` (`publish = false`) to handle version bumping, git committing, tagging (`rustoku-lib-v*`, `rustoku-cli-v*`), and pushing to GitHub without requiring local crates.io credentials.*
 
-### 3. Publish Python Package (PyPI)
-```bash
-cd rustoku-py
-maturin publish --token <PYPI_TOKEN>
-# or: MATURIN_PYPI_TOKEN=... maturin publish --non-interactive
-```
-*Builds the release wheel + source distribution (`.tar.gz`) and uploads to PyPI.*
+### 3. Automated CI/CD Publishing
+Pushing the release tags automatically triggers three parallel keyless GitHub Actions workflows using OIDC Trusted Publishing:
+- **`crates-release.yml`**: Authenticates via `rust-lang/crates-io-auth-action` and publishes `rustoku-lib` and `rustoku-cli` to [crates.io](https://crates.io).
+- **`py-release.yml`**: Builds Linux, macOS, and Windows wheels + sdist and publishes `rustoku` to [PyPI](https://pypi.org/project/rustoku/).
+- **`wasm-release.yml`**: Builds WASM binaries and publishes `rustoku-wasm` to [npm](https://www.npmjs.com/package/rustoku-wasm) with cryptographic provenance.
 
-### 4. Publish WebAssembly Package (npm)
-```bash
-cd rustoku-wasm
-wasm-pack build --release
-cd pkg
-npm publish --access public
-```
-*Requires `npm login`. Publishes compiled WASM binary, JS glue code, and TypeScript typings to npm.*
-
-### 5. Verify
-- Rust crates: [crates.io/crates/rustoku-lib](https://crates.io/crates/rustoku-lib)
+### 4. Verify
+- Rust crates: [crates.io/crates/rustoku-lib](https://crates.io/crates/rustoku-lib) & [crates.io/crates/rustoku-cli](https://crates.io/crates/rustoku-cli)
 - Python package: [pypi.org/project/rustoku/](https://pypi.org/project/rustoku/)
 - npm package: [npmjs.com/package/rustoku-wasm](https://www.npmjs.com/package/rustoku-wasm)
-- Git tags visible on GitHub
+- GitHub Actions: [Actions Dashboard](https://github.com/huangsam/rustoku/actions)

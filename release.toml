@@ -1,0 +1,4 @@
+# Configuration for cargo-release
+# Local publishing is disabled because GitHub Actions handles publishing
+# to crates.io automatically via keyless OIDC Trusted Publishing.
+publish = false
