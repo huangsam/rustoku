@@ -1,86 +1,60 @@
 # Contributing to Rustoku
 
-Thank you for your interest in contributing to Rustoku! This document covers development reference, coding guidelines, and publishing instructions.
-
-## Potential Improvements
-
-- **Property-based Testing**: Mathematically verify correctness against millions of random inputs.
-- **Export Formats**: Support saving puzzles and solutions as JSON, PNG, or SVG.
-- **Profile-Guided Optimization**: Use real-world execution profiles to optimize machine code.
-- **Fuzz Testing**: Identify obscure panics by stress-testing the solver with mutated inputs.
+Thank you for your interest in contributing to Rustoku! This document covers development workflows, quality checks, and maintainer release steps.
 
 ## Build & Quality Checks
+
+Run before submitting a PR:
 
 ```bash
 cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --workspace
 cargo build --release          # builds rustoku-lib + rustoku-cli
-cargo bench
-```
+cargo bench                    # in rustoku-lib/benches/
 
-### Binding crates (`rustoku-py`, `rustoku-wasm`)
-
-`rustoku-py` and `rustoku-wasm` are excluded from the default build because they
-require external toolchains that link against Python / the WASM runtime.
-The correct way to work with them:
-
-```bash
-# Type-check both binding crates on any platform
+# Binding crates checks
 cargo check -p rustoku-py -p rustoku-wasm
 cargo clippy --no-deps -p rustoku-py -p rustoku-wasm
-
-# Build the Python extension (requires maturin)
-cd rustoku-py && maturin develop
-
-# Build the WASM module (requires wasm-pack)
-cd rustoku-wasm && wasm-pack build --target web
+cd rustoku-wasm && wasm-pack build && npm test
 ```
 
-## Publishing a New Version
+## Maintainer Release Process
 
-Rustoku uses `cargo-release` to handle workspace-wide versioning and publishing.
-
-`rustoku-lib` and `rustoku-cli` are published to [crates.io](https://crates.io).
-`rustoku-py` and `rustoku-wasm` are marked `publish = false` — they are distributed
-through their own ecosystems and are not part of the `cargo release` flow.
+Rustoku uses `cargo-release` for workspace versioning and crates.io publishing. `rustoku-py` and `rustoku-wasm` are marked `publish = false` in Cargo and are distributed via their respective package registries.
 
 ### 1. Update `CHANGELOG.md`
-Document changes since the last release according to existing conventions.
+Document changes for the release according to existing conventions.
 
-### 2. Bump & publish Rust crates
+### 2. Bump & Publish Rust Crates (crates.io)
 ```bash
 # New feature (minor bump)
 cargo release minor --execute
 
-# Bug fix (patch bump)
+# Bug fix / doc patch (patch bump)
 cargo release patch --execute
 ```
-This bumps the workspace version, tags the commit, and publishes `rustoku-lib`
-and `rustoku-cli`. It will skip `rustoku-py` and `rustoku-wasm` automatically
-because they set `publish = false`.
+*Requires `cargo login` with a valid crates.io API token. This bumps workspace versions, creates git tags, publishes `rustoku-lib` and `rustoku-cli`, and pushes commits and tags to GitHub.*
 
-### 3. Publish Python package (PyPI)
+### 3. Publish Python Package (PyPI)
 ```bash
 cd rustoku-py
-maturin publish
+maturin publish --token <PYPI_TOKEN>
+# or: MATURIN_PYPI_TOKEN=... maturin publish --non-interactive
 ```
-Requires PyPI credentials. `maturin publish` builds the wheel for the current
-platform and uploads it. For a multi-platform release, use a CI workflow or
-`maturin build --release` + `twine upload`.
+*Builds the release wheel + source distribution (`.tar.gz`) and uploads to PyPI.*
 
-### 4. Publish WASM package (npm)
+### 4. Publish WebAssembly Package (npm)
 ```bash
 cd rustoku-wasm
-wasm-pack build --release --target web
-wasm-pack publish
+wasm-pack build --release
+cd pkg
+npm publish --access public
 ```
-Requires an npm account and `wasm-pack` ≥ 0.13.
+*Requires `npm login`. Publishes compiled WASM binary, JS glue code, and TypeScript typings to npm.*
 
 ### 5. Verify
-- Rust crates visible on [crates.io](https://crates.io)
-- Python package visible on [PyPI](https://pypi.org)
-- npm package visible on [npmjs.com](https://www.npmjs.com)
-- Git tag pushed to GitHub
-
-If you have questions or need help, open an issue or PR!
+- Rust crates: [crates.io/crates/rustoku-lib](https://crates.io/crates/rustoku-lib)
+- Python package: [pypi.org/project/rustoku/](https://pypi.org/project/rustoku/)
+- npm package: [npmjs.com/package/rustoku-wasm](https://www.npmjs.com/package/rustoku-wasm)
+- Git tags visible on GitHub
