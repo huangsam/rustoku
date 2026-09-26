@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.3] - 2026-09-26
+
+### Added
+- Automated CI/CD release workflow for crates.io (`crates-release.yml`) using keyless OIDC Trusted Publishing via `rust-lang/crates-io-auth-action`
+- Comprehensive docstrings achieving 100% rustdoc coverage (111/111 public items) across `rustoku-lib`
+- 20 new runnable, tested `# Examples` doctests across solver, generator, formatters, and bindings (25 doctests total)
+
+### Changed
+- Configured `release.toml` to delegate package registry publishing to GitHub Actions on tag push
+- Added live package registry version badges across root, PyPI, and npm READMEs
+- Updated `CONTRIBUTING.md` to document the unified keyless release pipeline across all three ecosystems
+
 ## [0.15.2] - 2026-09-25
 
 ### Added
@@ -245,6 +257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[0.15.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.2...rustoku-lib-v0.15.3
 [0.15.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.1...rustoku-lib-v0.15.2
 [0.15.1]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.0...rustoku-lib-v0.15.1
 [0.15.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.14.0...rustoku-lib-v0.15.0
