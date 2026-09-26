@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2026-09-25
+
+### Added
+- Automated CI/CD release workflows for Python (`py-release.yml`) and WebAssembly (`wasm-release.yml`) using keyless OIDC Trusted Publishing
+- Cross-platform precompiled Python wheel builds across Linux (x86_64, aarch64), Windows (x64), and macOS (arm64, x86_64)
+
+### Changed
+- Streamlined `AGENTS.md` to high-signal invariants, check commands, and performance budgets
+- Updated `CONTRIBUTING.md` with accurate release steps and cleaner maintainer runbook
+- Consolidated workspace gitignore rules into a single root `.gitignore`
+
 ## [0.15.1] - 2026-09-25
 
 ### Changed
@@ -234,6 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[0.15.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.1...rustoku-lib-v0.15.2
 [0.15.1]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.0...rustoku-lib-v0.15.1
 [0.15.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.14.0...rustoku-lib-v0.15.0
 [0.14.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.13.0...rustoku-lib-v0.14.0
