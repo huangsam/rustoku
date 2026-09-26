@@ -1,6 +1,7 @@
 # rustoku
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/huangsam/rustoku/ci.yml)](https://github.com/huangsam/rustoku/actions)
+[![PyPI](https://img.shields.io/pypi/v/rustoku)](https://pypi.org/project/rustoku/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/huangsam/rustoku/blob/main/LICENSE)
 
 High-performance Sudoku solving and generation for Python, powered by a core Rust engine.

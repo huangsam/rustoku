@@ -1,6 +1,7 @@
 # rustoku-wasm
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/huangsam/rustoku/ci.yml)](https://github.com/huangsam/rustoku/actions)
+[![npm](https://img.shields.io/npm/v/rustoku-wasm)](https://www.npmjs.com/package/rustoku-wasm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/huangsam/rustoku/blob/main/LICENSE)
 
 High-performance Sudoku solving and generation in WebAssembly, powered by the core Rustoku engine.
