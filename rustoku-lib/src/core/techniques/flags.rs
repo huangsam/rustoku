@@ -80,10 +80,15 @@ bitflags! {
     Serialize,
     Deserialize,
 )]
+/// Overall puzzle difficulty classification based on the highest technique required to solve it.
 pub enum Difficulty {
+    /// Puzzles solvable using basic single techniques (Naked / Hidden Singles).
     Easy,
+    /// Puzzles requiring intersection or subset techniques (Pairs, Triples, Locked Candidates).
     Medium,
+    /// Puzzles requiring fish patterns (X-Wing, Swordfish, Jellyfish, Quads).
     Hard,
+    /// Puzzles requiring advanced chaining or wings (XY-Wing, XYZ-Wing, W-Wing, Skyscrapers, AIC).
     Expert,
 }
 
@@ -120,6 +125,16 @@ impl TechniqueFlags {
 }
 
 impl Difficulty {
+    /// Returns the capitalized string representation of the difficulty level (`"Easy"`, `"Medium"`, `"Hard"`, `"Expert"`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Difficulty;
+    ///
+    /// assert_eq!(Difficulty::Easy.difficulty_name(), "Easy");
+    /// assert_eq!(Difficulty::Expert.difficulty_name(), "Expert");
+    /// ```
     pub fn difficulty_name(&self) -> &'static str {
         match self {
             Difficulty::Easy => "Easy",

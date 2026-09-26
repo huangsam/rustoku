@@ -45,6 +45,16 @@ pub enum Symmetry {
 
 impl Symmetry {
     /// Returns the symmetric partners for a given cell (r, c).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Symmetry;
+    ///
+    /// let partners = Symmetry::Rotational180.get_partners(0, 0);
+    /// assert!(partners.contains(&(0, 0)));
+    /// assert!(partners.contains(&(8, 8)));
+    /// ```
     pub fn get_partners(&self, r: usize, c: usize) -> Vec<(usize, usize)> {
         let mut partners = HashSet::new();
         partners.insert((r, c));
@@ -343,6 +353,17 @@ pub struct Rustoku {
 
 impl Rustoku {
     /// Constructs a new `Rustoku` instance from an initial `Board`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Board;
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let board = Board::default();
+    /// let solver = Rustoku::new(board);
+    /// assert!(solver.is_ok());
+    /// ```
     pub fn new(initial_board: Board) -> Result<Self, RustokuError> {
         let board = initial_board; // Now takes a Board directly
         let mut masks = Masks::new();
@@ -379,17 +400,50 @@ impl Rustoku {
     }
 
     /// Start building a configured `Rustoku` via a builder pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Board;
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let solver = Rustoku::builder()
+    ///     .board(Board::default())
+    ///     .build();
+    /// assert!(solver.is_ok());
+    /// ```
     pub fn builder() -> RustokuBuilder {
         RustokuBuilder::new()
     }
 
     /// Constructs a new `Rustoku` instance from a string representation of the board.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let solver = Rustoku::new_from_str(puzzle);
+    /// assert!(solver.is_ok());
+    /// ```
     pub fn new_from_str(s: &str) -> Result<Self, RustokuError> {
         let board = Board::try_from(s)?;
         Self::new(board)
     }
 
     /// Returns the existing Rustoku instance, with modified techniques.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::TechniqueFlags;
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let solver = Rustoku::new_from_str(puzzle).unwrap().with_techniques(TechniqueFlags::all());
+    /// assert_eq!(solver.techniques, TechniqueFlags::all());
+    /// ```
     pub fn with_techniques(mut self, techniques: TechniqueFlags) -> Self {
         self.techniques = techniques;
         self
@@ -539,6 +593,17 @@ impl Rustoku {
     }
 
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+    /// let solutions = solver.solve_until(1);
+    /// assert_eq!(solutions.len(), 1);
+    /// ```
     pub fn solve_until(&mut self, bound: usize) -> Vec<Solution> {
         let mut solutions = Vec::new();
         let mut path = SolvePath::default();
@@ -552,11 +617,33 @@ impl Rustoku {
     }
 
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+    /// let solution = solver.solve_any();
+    /// assert!(solution.is_some());
+    /// ```
     pub fn solve_any(&mut self) -> Option<Solution> {
         self.solve_until(1).into_iter().next()
     }
 
     /// Finds all possible solutions for the Sudoku puzzle.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+    /// let solutions = solver.solve_all();
+    /// assert_eq!(solutions.len(), 1);
+    /// ```
     pub fn solve_all(&mut self) -> Vec<Solution> {
         use rayon::prelude::*;
 
@@ -617,6 +704,16 @@ impl Rustoku {
     }
 
     /// Checks if the Sudoku puzzle is solved correctly.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let solved = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+    /// let solver = Rustoku::new_from_str(solved).unwrap();
+    /// assert!(solver.is_solved());
+    /// ```
     pub fn is_solved(&self) -> bool {
         self.board.cells.iter().flatten().all(|&val| val != 0) && Rustoku::new(self.board).is_ok()
     }
@@ -673,6 +770,18 @@ impl RustokuBuilder {
     }
 
     /// Finalize the builder and construct the `Rustoku` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Board;
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let solver = Rustoku::builder()
+    ///     .board(Board::default())
+    ///     .build();
+    /// assert!(solver.is_ok());
+    /// ```
     pub fn build(self) -> Result<Rustoku, RustokuError> {
         let board = self.board.unwrap_or_default();
         let mut r = Rustoku::new(board)?;
@@ -705,6 +814,17 @@ struct Frame {
 impl Solutions {
     /// Construct a `Solutions` iterator from an existing `Rustoku` solver.
     /// This will run the technique propagator once before starting DFS.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::{Rustoku, Solutions};
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let solver = Rustoku::new_from_str(puzzle).unwrap();
+    /// let mut solutions = Solutions::from_solver(solver);
+    /// assert!(solutions.next().is_some());
+    /// ```
     pub fn from_solver(mut solver: Rustoku) -> Self {
         let mut path = SolvePath::default();
         let mut finished = false;
@@ -843,7 +963,7 @@ impl Iterator for Solutions {
     }
 }
 
-/// Generates a new Sudoku puzzle with a unique solution and specified symmetry.
+/// Generates a new Sudoku puzzle with a unique solution.
 ///
 /// The `num_clues` parameter specifies the desired number of initially
 /// filled cells (clues) in the generated puzzle. Fewer clues generally
@@ -851,16 +971,16 @@ impl Iterator for Solutions {
 /// more than `num_clues` if it's impossible to remove more numbers
 /// while maintaining a unique solution.
 ///
-/// # Example
+/// This is a convenience shim for `BoardGenerator::new().clues(num_clues).generate()`.
+///
+/// # Examples
 ///
 /// ```
 /// use rustoku_lib::generate_board;
+///
 /// let puzzle = generate_board(30);
 /// assert!(puzzle.is_ok());
 /// ```
-/// Generates a new Sudoku puzzle with a unique solution.
-///
-/// This is a convenience shim for `BoardGenerator::new().clues(num_clues).generate()`.
 pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
     BoardGenerator::new().clues(num_clues).generate()
 }
@@ -868,6 +988,15 @@ pub fn generate_board(num_clues: usize) -> Result<Board, RustokuError> {
 /// Generates a new Sudoku puzzle that matches a specific difficulty level.
 ///
 /// This is a convenience shim for `BoardGenerator::new().difficulty(difficulty).max_attempts(max_attempts).generate()`.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::{Difficulty, generate_board_by_difficulty};
+///
+/// let board = generate_board_by_difficulty(Difficulty::Easy, 100);
+/// assert!(board.is_ok());
+/// ```
 pub fn generate_board_by_difficulty(
     difficulty: Difficulty,
     max_attempts: usize,

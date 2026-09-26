@@ -14,6 +14,18 @@ pub struct Board {
 }
 
 impl Board {
+    /// Creates a new `Board` from a 9x9 2D array of digits.
+    ///
+    /// Empty cells are represented by `0`, and filled cells contain digits `1..=9`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Board;
+    ///
+    /// let board = Board::new([[0; 9]; 9]);
+    /// assert!(board.is_empty(0, 0));
+    /// ```
     pub fn new(initial_board: [[u8; 9]; 9]) -> Self {
         Board {
             cells: initial_board,

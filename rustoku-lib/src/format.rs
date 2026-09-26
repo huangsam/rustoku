@@ -185,8 +185,20 @@ pub(crate) fn format_grid(board: &Board) -> Vec<String> {
 
 /// Formats the Sudoku board into a single line string representation.
 ///
-/// This function converts the board into a single string where each number is
-/// represented by its digit, and empty cells are represented by a dot (`.`).
+/// This function converts the board into an 81-character string where each number is
+/// represented by its digit (`1..=9`), and empty cells are represented by `'0'`.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::core::Board;
+/// use rustoku_lib::format_line;
+///
+/// let board = Board::default();
+/// let line = format_line(&board);
+/// assert_eq!(line.len(), 81);
+/// assert!(line.chars().all(|c| c == '0'));
+/// ```
 pub fn format_line(board: &Board) -> String {
     board
         .cells

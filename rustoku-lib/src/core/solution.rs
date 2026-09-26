@@ -24,6 +24,16 @@ pub struct SolvePath {
 }
 
 impl SolvePath {
+    /// Creates an empty `SolvePath`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::SolvePath;
+    ///
+    /// let path = SolvePath::new();
+    /// assert!(path.steps.is_empty());
+    /// ```
     pub fn new() -> Self {
         SolvePath { steps: Vec::new() }
     }

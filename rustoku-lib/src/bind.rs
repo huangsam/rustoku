@@ -18,13 +18,20 @@ use std::str::FromStr;
 
 // ── Step / Solution types ─────────────────────────────────────────────────────
 
+/// Represents changes to candidate values in a specific cell resulting from a solve step.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CandidateChange {
+    /// 0-indexed row coordinate of the affected cell.
     pub row: usize,
+    /// 0-indexed column coordinate of the affected cell.
     pub col: usize,
+    /// Candidate values available before this step was applied.
     pub before: Vec<u8>,
+    /// Candidate values remaining after this step was applied.
     pub after: Vec<u8>,
+    /// Candidate values eliminated as a result of this step.
     pub removed: Vec<u8>,
+    /// Candidate values added (if any) as a result of this step.
     pub added: Vec<u8>,
 }
 
@@ -34,16 +41,23 @@ pub struct SolveStepInfo {
     /// `"placement"` or `"elimination"`.
     #[serde(rename = "type")]
     pub step_type: String,
+    /// 0-indexed row coordinate of the primary cell affected.
     pub row: usize,
+    /// 0-indexed column coordinate of the primary cell affected.
     pub col: usize,
+    /// The digit placed or eliminated (1..=9).
     pub value: u8,
     /// Human-readable name of the technique used (e.g. `"Naked Singles"`).
     pub technique: String,
+    /// 1-based sequential index of the solve step.
     pub step_number: u32,
+    /// Total count of candidates eliminated in this step.
     pub candidates_eliminated: u32,
+    /// Number of related peer cells involved in this deduction.
     pub related_cell_count: u8,
     /// Difficulty metric (0 = trivial, 10 = hardest).
     pub difficulty_point: u8,
+    /// Detailed per-cell candidate changes.
     #[serde(default)]
     pub candidate_changes: Vec<CandidateChange>,
 }
@@ -188,12 +202,32 @@ fn technique_flags_from_str(s: &str) -> Result<TechniqueFlags, RustokuError> {
 }
 
 /// Solves `puzzle` and returns the first solution as an 81-char string, or `None` if unsolvable.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::bind::solve_any_str;
+///
+/// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+/// let solution = solve_any_str(puzzle).unwrap();
+/// assert!(solution.is_some());
+/// ```
 pub fn solve_any_str(puzzle: &str) -> Result<Option<String>, RustokuError> {
     let mut rustoku = Rustoku::new_from_str(puzzle)?;
     Ok(rustoku.solve_any().map(|s| format_line(&s.board)))
 }
 
 /// Solves `puzzle` and returns **all** solutions as 81-char strings.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::bind::solve_all_str;
+///
+/// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+/// let solutions = solve_all_str(puzzle).unwrap();
+/// assert_eq!(solutions.len(), 1);
+/// ```
 pub fn solve_all_str(puzzle: &str) -> Result<Vec<String>, RustokuError> {
     let mut rustoku = Rustoku::new_from_str(puzzle)?;
     Ok(rustoku
@@ -244,6 +278,15 @@ pub fn candidates_grid(puzzle: &str) -> Result<Vec<Vec<Vec<u8>>>, RustokuError> 
 }
 
 /// Generates a puzzle for the given difficulty string and returns it as an 81-char string.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::bind::generate_str;
+///
+/// let puzzle = generate_str("easy").unwrap();
+/// assert_eq!(puzzle.len(), 81);
+/// ```
 pub fn generate_str(difficulty: &str) -> Result<String, RustokuError> {
     let diff = Difficulty::from_str(difficulty)
         .map_err(|_| RustokuError::UnknownDifficulty(difficulty.to_string()))?;
@@ -251,6 +294,15 @@ pub fn generate_str(difficulty: &str) -> Result<String, RustokuError> {
 }
 
 /// Returns `true` if `puzzle` is a fully-solved, valid Sudoku board.
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::bind::is_valid_solution;
+///
+/// let solved = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+/// assert!(is_valid_solution(solved).unwrap());
+/// ```
 pub fn is_valid_solution(puzzle: &str) -> Result<bool, RustokuError> {
     Rustoku::new_from_str(puzzle).map(|r| r.is_solved())
 }
