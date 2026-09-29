@@ -4,6 +4,24 @@
 //! backtracking and Minimum Remaining Values (MRV). It provides functionality for solving
 //! puzzles and checking solutions.
 //!
+//! ### Architecture & Solving Pipeline
+//! The solving engine operates across three synchronized data structures maintaining a ~1KB footprint:
+//! - [`Board`]: Direct 9x9 byte matrix storing current cell assignments (0 for empty, 1–9 for digits).
+//! - [`Masks`]: Bitmasks for each row, column, and 3x3 box tracking which digits are already placed.
+//! - [`Candidates`]: Precomputed 9-bit bitmask cache per empty cell representing valid candidate digits.
+//!
+//! The solving pipeline combines deterministic human deduction with depth-first search:
+//! 1. **Deterministic Constraint Propagation**: Before search begins, configured human techniques
+//!    (such as Naked Singles, Hidden Pairs, X-Wings, etc.) run in [`TechniquePropagator`]
+//!    to eliminate invalid candidates and place forced digits without guessing.
+//! 2. **MRV-Guided Backtracking**: If techniques do not completely solve the puzzle, recursive DFS
+//!    explores the state space using the Minimum Remaining Values (MRV / "fail-first") heuristic,
+//!    always branching on the empty cell with the fewest candidates remaining.
+//! 3. **Parallel Solution Search**: In [`Rustoku::solve_all`], the top-level branches of the root MRV
+//!    cell are distributed across CPU threads in parallel via Rayon.
+//! 4. **Lazy Iteration**: For on-demand solution streaming, [`Solutions`] provides an explicit-stack
+//!    iterator that avoids allocating all solutions up front.
+//!
 //! This module also includes a function to generate new Sudoku puzzles with a specified
 //! number of clues, ensuring that the generated puzzle has a unique solution.
 
@@ -162,17 +180,31 @@ impl BoardGenerator {
         }
     }
 
+    /// Generates a valid Sudoku board with a guaranteed unique solution and requested symmetry.
+    ///
+    /// ### Algorithmic Workflow (Dig-Hole Method)
+    /// 1. **Complete Board Generation**: Solves an empty board using randomized backtracking to
+    ///    create a fully populated, valid Sudoku grid (81 clues).
+    /// 2. **Symmetric Partitioning**: Groups cells into symmetry orbits (e.g. 180° rotation yields
+    ///    2-cell orbits; 90° rotation yields 4-cell orbits).
+    /// 3. **Iterative Clue Carving**: Iterates through shuffled symmetry groups, tentatively clearing
+    ///    them to 0 on the board.
+    /// 4. **Uniqueness Verification**: Uses `solve_until(2)` on each candidate puzzle. If the solver
+    ///    finds anything other than exactly 1 solution (e.g., 2 solutions or 0), removing the group
+    ///    breaks unique solvability; the clues are immediately restored.
+    /// 5. **Termination**: Continues until the clue count reaches `num_clues` or no more clues can
+    ///    be removed without sacrificing uniqueness.
     fn generate_single(&self) -> Result<Board, RustokuError> {
         if !(17..=81).contains(&self.num_clues) {
             return Err(RustokuError::InvalidClueCount);
         }
 
-        // Start with a fully solved board
+        // 1. Generate a complete, randomized, valid 81-cell solved board
         let mut rustoku = Rustoku::new(Board::default())?;
         let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
         let mut board = solution.board;
 
-        // Collect all unique symmetric groups
+        // 2. Partition all 81 cells into symmetry groups
         let mut visited = [[false; 9]; 9];
         let mut groups = Vec::new();
 
@@ -195,13 +227,13 @@ impl BoardGenerator {
 
         let mut clues = 81;
 
-        // Remove numbers while maintaining a unique solution
+        // 3. Iteratively carve out clues while maintaining a unique solution
         for group in groups {
             if clues <= self.num_clues {
                 break;
             }
 
-            // Potential clues to remove (only those currently filled)
+            // Collect clues currently filled in this symmetry group
             let mut group_clues = Vec::new();
             for &(r, c) in &group {
                 let val = board.cells[r][c];
@@ -214,22 +246,24 @@ impl BoardGenerator {
                 continue;
             }
 
-            // Temporarily remove the entire group
+            // Tentatively clear the entire symmetry group
             for &(r, c, _) in &group_clues {
                 board.cells[r][c] = 0;
             }
 
+            // Uniqueness check: bounded solve to verify exactly 1 solution exists
             if Rustoku::new(board)?.solve_until(2).len() != 1 {
-                // Restore if not unique
+                // More than 1 solution found (or 0): restore clues to maintain uniqueness
                 for &(r, c, val) in &group_clues {
                     board.cells[r][c] = val;
                 }
             } else {
+                // Successfully removed clues while maintaining unique solvability
                 clues -= group_clues.len();
             }
         }
 
-        // Final safety check
+        // Final safety check to ensure generated board is valid and uniquely solvable
         if Rustoku::new(board)?.solve_until(2).len() != 1 {
             return Err(RustokuError::GenerateFailure);
         }
@@ -237,6 +271,15 @@ impl BoardGenerator {
         Ok(board)
     }
 
+    /// Generates a Sudoku board classified at a specific difficulty level.
+    ///
+    /// ### Algorithmic Workflow
+    /// 1. Uses a clue range heuristic appropriate for `target_difficulty`.
+    /// 2. Generates candidate puzzles via [`BoardGenerator::generate_single`].
+    /// 3. Analyzes each candidate puzzle's solve path using all human techniques:
+    ///    - Ensures the puzzle can be completely solved without backtracking / guessing (`!required_guessing`).
+    ///    - Ensures the highest-difficulty technique required matches `target_difficulty`.
+    /// 4. Retries up to `max_attempts` before returning [`RustokuError::GenerateFailure`].
     fn generate_with_difficulty(
         &self,
         target_difficulty: Difficulty,
@@ -244,7 +287,7 @@ impl BoardGenerator {
         use rand::RngExt;
 
         for _ in 0..self.max_attempts {
-            // Ignore num_clues if difficulty is set, and use a range appropriate for the level
+            // Heuristic clue count range tailored to the desired difficulty level
             let clues = match target_difficulty {
                 Difficulty::Easy => rand::rng().random_range(34..=42),
                 Difficulty::Medium => rand::rng().random_range(28..=34),
@@ -252,7 +295,7 @@ impl BoardGenerator {
                 Difficulty::Expert => rand::rng().random_range(17..=22),
             };
 
-            // Generate a uniquely solvable board with symmetry
+            // Generate a uniquely solvable candidate board with symmetry
             let mut sub_generator = *self;
             sub_generator.num_clues = clues;
             sub_generator.difficulty = None; // Avoid recursion
@@ -263,18 +306,19 @@ impl BoardGenerator {
                     .techniques(TechniqueFlags::all())
                     .build()?;
 
-                // Check if human techniques can fully solve the board
+                // Evaluate whether human deduction techniques can fully solve the board
                 let solutions = rustoku.solve_all();
                 if solutions.len() == 1 {
                     let solution = &solutions[0];
 
-                    // Inspect the solve path to find the highest difficulty technique used
+                    // Inspect the solve path to evaluate difficulty and verify no guessing occurred
                     let mut max_difficulty = Difficulty::Easy;
                     let mut required_guessing = false;
 
                     for step in &solution.solve_path.steps {
                         match step {
                             SolveStep::Placement { flags, .. } => {
+                                // Placements with empty flags indicate DFS backtracking / guessing
                                 if flags.is_empty() {
                                     required_guessing = true;
                                     break;
@@ -295,6 +339,7 @@ impl BoardGenerator {
                         }
                     }
 
+                    // Accept board only if solvable purely through logic and matching target difficulty
                     if !required_guessing && max_difficulty == target_difficulty {
                         return Ok(board);
                     }
@@ -369,20 +414,27 @@ impl Rustoku {
         let mut masks = Masks::new();
         let mut candidates = Candidates::new();
 
-        // Initialize masks and check for duplicates based on the provided board
+        // 1. Constraint Mask Initialization & Duplicate Validation
+        // Iterate through all 81 cells of the initial board. For each pre-filled clue,
+        // verify that it does not violate row, column, or 3x3 box uniqueness constraints.
         for r in 0..9 {
             for c in 0..9 {
                 let num = board.get(r, c);
                 if num != 0 {
+                    // Check if bit (1 << (num - 1)) is already set in this row, col, or box
                     if !masks.is_safe(r, c, num) {
                         return Err(RustokuError::DuplicateValues);
                     }
+                    // Register the clue in the row, column, and box bitmasks
                     masks.add_number(r, c, num);
                 }
             }
         }
 
-        // Initialize the candidates cache for empty cells based on initial masks and board
+        // 2. Candidate Cache Forward-Checking Initialization
+        // For each empty cell, compute its candidate bitmask:
+        // ~(row_mask | col_mask | box_mask) & 0x01FF.
+        // Bit (v - 1) is set if and only if digit v (1..=9) is currently valid at (r, c).
         for r in 0..9 {
             for c in 0..9 {
                 if board.is_empty(r, c) {
@@ -449,6 +501,12 @@ impl Rustoku {
         self
     }
 
+    /// Extracts a snapshot of all candidate lists as a 3D grid: `[row][col][candidates]`.
+    ///
+    /// Empty cells contain a sorted list of candidate digits (1–9).
+    /// Filled cells return an empty list `vec![]`.
+    ///
+    /// Useful for telemetry, solving visualizers, and external bindings.
     pub(crate) fn candidate_grid_snapshot(&self) -> Vec<Vec<Vec<u8>>> {
         (0..9)
             .map(|r| {
@@ -465,6 +523,10 @@ impl Rustoku {
             .collect()
     }
 
+    /// Replays a single [`SolveStep`] on the current solver state.
+    ///
+    /// - For [`SolveStep::Placement`]: places `value` at `(row, col)`, synchronizing masks and candidate caches.
+    /// - For [`SolveStep::CandidateElimination`]: clears the single candidate bit corresponding to `value`.
     pub(crate) fn apply_trace_step(&mut self, step: &SolveStep) {
         match *step {
             SolveStep::Placement {
@@ -482,7 +544,10 @@ impl Rustoku {
         }
     }
 
-    /// Extracts candidate numbers (1-9) from a bitmask into a Vec.
+    /// Extracts candidate numbers (1-9) from a bitmask into a `Vec<u8>`.
+    ///
+    /// In the bitmask, bit index `(v - 1)` represents digit `v` (e.g., bit 0 = 1, bit 8 = 9).
+    /// Pre-allocates vector capacity using `mask.count_ones()` to eliminate reallocations.
     fn candidates_from_mask(mask: u16) -> Vec<u8> {
         let mut nums = Vec::with_capacity(mask.count_ones() as usize);
         for v in 1..=9u8 {
@@ -493,7 +558,16 @@ impl Rustoku {
         nums
     }
 
-    /// Helper for solver to find the next empty cell (MRV).
+    /// Locates the next empty cell using the Minimum Remaining Values (MRV / "fail-first") heuristic.
+    ///
+    /// ### Algorithmic Logic
+    /// 1. Iterates over all empty cells on the board via [`Board::iter_empty_cells`].
+    /// 2. Queries the candidate count in `O(1)` time via `mask.count_ones()`.
+    /// 3. Tracks the cell `(r, c)` with the fewest remaining candidates.
+    /// 4. **Singleton Short-Circuit**: If any cell has exactly 1 candidate remaining,
+    ///    no other cell can have fewer options (0 would be an immediate contradiction).
+    ///    The method returns this cell immediately, avoiding a full scan of the remaining board.
+    /// 5. Returns `None` if no empty cells remain, signalling that the puzzle is solved.
     #[inline]
     fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
         let mut min = (10, None); // Min candidates, (r, c)
@@ -509,7 +583,12 @@ impl Rustoku {
         min.1
     }
 
-    /// Place and remove operations for the solver, updated to use the new structs.
+    /// Places a digit on the board and propagates constraints forward.
+    ///
+    /// Maintains solver invariants across all three data structures:
+    /// 1. Assigns `num` to `(r, c)` in [`Board`].
+    /// 2. Sets bit `(1 << (num - 1))` in row `r`, column `c`, and 3x3 box in [`Masks`].
+    /// 3. Clears `num` from the candidate masks of peer cells in the same row, col, and box in [`Candidates`].
     #[inline]
     fn place_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, num);
@@ -518,7 +597,12 @@ impl Rustoku {
             .update_affected_cells_for(r, c, &self.masks, &self.board, Some(num));
     }
 
-    /// Remove a number from the board and update masks and candidates.
+    /// Removes a digit from the board during backtracking undo.
+    ///
+    /// Restores solver invariants across all three data structures:
+    /// 1. Clears cell `(r, c)` back to `0` (empty) in [`Board`].
+    /// 2. Clears bit `(1 << (num - 1))` from row `r`, column `c`, and 3x3 box in [`Masks`].
+    /// 3. Recalculates candidate masks for affected peer cells and the newly-emptied cell in [`Candidates`].
     #[inline]
     fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         self.board.set(r, c, 0); // Set back to empty
@@ -528,14 +612,33 @@ impl Rustoku {
         // Note: `update_affected_cells` will recalculate candidates for the removed cell.
     }
 
-    /// Recursive function to solve the Sudoku puzzle with backtracking.
+    /// Core recursive depth-first backtracking search with MRV and forward checking.
+    ///
+    /// ### Search Lifecycle
+    /// 1. **Base Case (Goal Check)**: Calls `find_next_empty_cell()`. If `None`, all 81 cells
+    ///    are filled without contradiction. Clones the current board and solve path into
+    ///    `solutions`, and returns 1.
+    /// 2. **Variable Selection (MRV)**: Selects the empty cell with the fewest candidates.
+    /// 3. **Value Ordering & Randomization**: Extracts valid candidate digits and shuffles
+    ///    them using the thread RNG. This provides branching entropy for puzzle generation.
+    /// 4. **Forward Checking & Pruning**: Verifies candidate digit is still safe against
+    ///    current masks via `masks.is_safe(r, c, num)`.
+    /// 5. **State Transition (Descent)**:
+    ///    - Applies placement via `place_number`.
+    ///    - Logs `SolveStep::Placement` to `path.steps`.
+    ///    - Recurses into child subtree (`solve_until_recursive`).
+    /// 6. **State Restoration (Backtrack)**:
+    ///    - Pops placement step from `path.steps`.
+    ///    - Undoes placement via `remove_number`, restoring masks and candidate bitmasks.
+    /// 7. **Bound Termination**: If `bound > 0` and the solution count reaches `bound`,
+    ///    aborts search early and unwinds remaining recursive calls.
     fn solve_until_recursive(
         &mut self,
         solutions: &mut Vec<Solution>,
         path: &mut SolvePath,
         bound: usize,
     ) -> usize {
-        // Early return for base case: no empty cells means puzzle is solved
+        // Base case: no empty cells remain -> board is completely and validly solved
         let Some((r, c)) = self.find_next_empty_cell() else {
             solutions.push(Solution {
                 board: self.board,
@@ -545,16 +648,19 @@ impl Rustoku {
         };
 
         let mut count = 0;
-        // Use the candidate cache to only iterate valid candidates
+        // Query candidate bitmask for the chosen MRV cell and unpack to candidate numbers
         let mask = self.candidates.get(r, c);
         let mut nums = Self::candidates_from_mask(mask);
+        // Shuffle candidates for randomized exploration (useful during puzzle generation)
         nums.shuffle(&mut rng());
 
         for &num in &nums {
+            // Forward checking: ensure placement does not violate current masks
             if !self.masks.is_safe(r, c, num) {
                 continue;
             }
 
+            // Apply forward move: write to board, masks, and prune peer candidate caches
             self.place_number(r, c, num);
             let step_number = path.steps.len() as u32;
             path.steps.push(SolveStep::Placement {
@@ -568,11 +674,14 @@ impl Rustoku {
                 difficulty_point: 0,
             });
 
+            // Recurse into child state space
             count += self.solve_until_recursive(solutions, path, bound);
+
+            // Backtrack: undo move, restore masks, recalculate candidates, pop solve step
             path.steps.pop();
             self.remove_number(r, c, num);
 
-            // Early return if we've found enough solutions
+            // Early return if we have found the requested number of solutions
             if bound > 0 && solutions.len() >= bound {
                 return count;
             }
@@ -581,7 +690,11 @@ impl Rustoku {
         count
     }
 
-    /// Run techniques and check if they make valid changes.
+    /// Executes deterministic human solving techniques before starting backtracking search.
+    ///
+    /// Instantiates [`TechniquePropagator`] with the currently enabled techniques.
+    /// Returns `true` if techniques completed without contradiction, or `false` if an
+    /// invalid state (empty cell with 0 candidates) was encountered.
     fn techniques_make_valid_changes(&mut self, path: &mut SolvePath) -> bool {
         let mut propagator = TechniquePropagator::new(
             &mut self.board,
@@ -593,6 +706,14 @@ impl Rustoku {
     }
 
     /// Solves the Sudoku puzzle up to a certain bound, returning solutions with their solve paths.
+    ///
+    /// ### Solving Strategy
+    /// 1. **Phase 1 (Constraint Propagation)**: Runs enabled human deduction techniques to fill
+    ///    forced cells and prune candidate spaces without guessing. If propagation encounters
+    ///    a contradiction, returns an empty vector immediately.
+    /// 2. **Phase 2 (Backtracking DFS)**: If cells remain unsolved, runs MRV-guided recursive
+    ///    backtracking until either the search space is exhausted or `bound` solutions are found.
+    ///    Passing `bound = 0` searches for all possible solutions sequentially.
     ///
     /// # Examples
     ///
@@ -608,15 +729,19 @@ impl Rustoku {
         let mut solutions = Vec::new();
         let mut path = SolvePath::default();
 
+        // Phase 1: Run deterministic constraint propagation
         if !self.techniques_make_valid_changes(&mut path) {
             return solutions;
         }
 
+        // Phase 2: Run recursive backtracking DFS with MRV
         self.solve_until_recursive(&mut solutions, &mut path, bound);
         solutions
     }
 
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
+    ///
+    /// This is an optimized convenience wrapper around `solve_until(1)` to find the first valid solution.
     ///
     /// # Examples
     ///
@@ -632,7 +757,16 @@ impl Rustoku {
         self.solve_until(1).into_iter().next()
     }
 
-    /// Finds all possible solutions for the Sudoku puzzle.
+    /// Finds all possible solutions for the Sudoku puzzle, parallelizing top-level MRV branches.
+    ///
+    /// ### Parallel Search Architecture
+    /// 1. Runs deterministic constraint propagation once on the root solver state.
+    /// 2. If the puzzle is already fully solved by propagation alone, returns the single solution immediately.
+    /// 3. Otherwise, identifies the first MRV cell with the fewest candidate choices.
+    /// 4. Uses Rayon (`par_iter`) to explore each candidate branch in parallel across CPU worker threads.
+    /// 5. Each thread receives an independent copy of `Rustoku` (enabled by cheap `Copy` semantics),
+    ///    places its assigned candidate digit, and executes sequential DFS via `solve_until_recursive`.
+    /// 6. Flattens and returns all discovered solutions without thread contention.
     ///
     /// # Examples
     ///
@@ -647,28 +781,28 @@ impl Rustoku {
     pub fn solve_all(&mut self) -> Vec<Solution> {
         use rayon::prelude::*;
 
-        // Run technique propagation once on the current solver state.
+        // Phase 1: Run technique propagation once on the current solver state.
         let mut path = SolvePath::default();
         if !self.techniques_make_valid_changes(&mut path) {
             return Vec::new();
         }
 
-        // If there is at least one empty cell, split work by the first MRV cell's candidates.
+        // Phase 2: If empty cells remain, parallelize search across first MRV cell's candidates.
         if let Some((r, c)) = self.find_next_empty_cell() {
             let mask = self.candidates.get(r, c);
             let nums = Self::candidates_from_mask(mask);
 
             let initial_path = path.clone();
 
-            // Parallelize each top-level candidate branch.
+            // Parallelize each top-level candidate branch across worker threads.
             let chunks: Vec<Vec<Solution>> = nums
                 .par_iter()
                 .map(|&num| {
-                    let mut cloned = *self; // Rustoku is Copy/Clone
+                    let mut cloned = *self; // Rustoku is Copy/Clone (cheap 1KB copy)
                     let mut local_solutions: Vec<Solution> = Vec::new();
                     let mut local_path = initial_path.clone();
 
-                    // Place the candidate and record the placement in the path.
+                    // Place the candidate and record the placement in the thread-local path.
                     cloned.place_number(r, c, num);
                     let step_number = local_path.steps.len() as u32;
                     local_path.steps.push(SolveStep::Placement {
@@ -688,7 +822,7 @@ impl Rustoku {
                 })
                 .collect();
 
-            // Flatten results
+            // Flatten results collected from all parallel branches
             let mut solutions = Vec::new();
             for mut s in chunks {
                 solutions.append(&mut s);
@@ -704,6 +838,9 @@ impl Rustoku {
     }
 
     /// Checks if the Sudoku puzzle is solved correctly.
+    ///
+    /// Validates that all 81 cells are non-empty and that no row, column, or 3x3 box
+    /// contains duplicate values.
     ///
     /// # Examples
     ///
@@ -794,6 +931,9 @@ impl RustokuBuilder {
 
 /// Lazy iterator wrapper for solutions. Uses an explicit DFS stack and yields
 /// solutions one-by-one without computing them all up-front.
+///
+/// Unlike recursive search, `Solutions` maintains its state in an explicit heap-allocated
+/// stack of [`Frame`] structures. This allows caller-driven, memory-bounded solution streaming.
 #[derive(Debug)]
 pub struct Solutions {
     solver: Rustoku,
@@ -802,12 +942,19 @@ pub struct Solutions {
     finished: bool,
 }
 
+/// Represents an active level in the explicit depth-first backtracking search stack.
 #[derive(Debug)]
 struct Frame {
+    /// Row index of the cell being decided at this search depth.
     r: usize,
+    /// Column index of the cell being decided at this search depth.
     c: usize,
+    /// Remaining candidate digits available for cell `(r, c)`.
     nums: Vec<u8>,
+    /// Index into `nums` pointing to the next candidate to evaluate.
     idx: usize,
+    /// Digit currently placed on the board by this frame, if any.
+    /// Tracked so that backtracking can undo the exact value before trying the next candidate.
     placed: Option<u8>,
 }
 
@@ -829,12 +976,16 @@ impl Solutions {
         let mut path = SolvePath::default();
         let mut finished = false;
 
+        // 1. Initial Constraint Propagation Pass
+        // Run deterministic techniques once. If a contradiction is detected, terminate immediately.
         if !solver.techniques_make_valid_changes(&mut path) {
             finished = true;
         }
 
         let mut stack = Vec::new();
         if !finished {
+            // 2. Initialize the Root Frame
+            // Find the most constrained variable (MRV) on the board to form the root of the DFS stack.
             if let Some((r, c)) = solver.find_next_empty_cell() {
                 let mask = solver.candidates.get(r, c);
                 let mut nums = Rustoku::candidates_from_mask(mask);
@@ -847,7 +998,8 @@ impl Solutions {
                     placed: None,
                 });
             } else {
-                // Already solved; leave stack empty and let next() yield the board once
+                // Puzzle is already fully solved after deterministic propagation alone;
+                // leave stack empty and let next() yield the board on the first call.
             }
         }
 
@@ -863,13 +1015,26 @@ impl Solutions {
 impl Iterator for Solutions {
     type Item = Solution;
 
+    /// Advances the explicit DFS stack to discover and yield the next valid solution.
+    ///
+    /// ### State Machine Logic
+    /// - **Empty Stack Handling**: If the stack is empty, either starts search from the next
+    ///   empty cell, or yields the already-solved board if no empty cells exist.
+    /// - **Candidate Exhaustion**: When a frame has exhausted its candidate list (`idx >= nums.len()`),
+    ///   any tentative placement made by this frame is undone, and the frame is popped to backtrack up.
+    /// - **Forward Trial**: Reads the next candidate digit, verifies safety via `masks.is_safe()`,
+    ///   and places it on the board (`place_number`).
+    /// - **Descent vs. Solution Yield**:
+    ///   - If another empty cell exists: pushes a child `Frame` for the next MRV cell and descends.
+    ///   - If no empty cells remain: a valid solution is reached. Captures the solution,
+    ///     immediately backtracks the final placement so the iterator remains clean, and yields `Some(solution)`.
     fn next(&mut self) -> Option<Self::Item> {
         if self.finished {
             return None;
         }
 
         loop {
-            // If stack is empty, check if there are any empty cells left
+            // 1. Stack Empty State: Check whether the board is already solved or needs a root frame
             if self.stack.is_empty() {
                 if let Some((r, c)) = self.solver.find_next_empty_cell() {
                     let mask = self.solver.candidates.get(r, c);
@@ -884,7 +1049,7 @@ impl Iterator for Solutions {
                     });
                     continue;
                 } else {
-                    // No empty cells -> current board is a solution
+                    // No empty cells remain -> current board configuration is a valid solution
                     let sol = Solution {
                         board: self.solver.board,
                         solve_path: self.path.clone(),
@@ -897,25 +1062,27 @@ impl Iterator for Solutions {
             let last_idx = self.stack.len() - 1;
             let frame = &mut self.stack[last_idx];
 
-            // If we've exhausted candidates for this frame
+            // 2. Candidate Exhaustion & Backtracking
+            // If all candidate digits at this frame have been evaluated:
             if frame.idx >= frame.nums.len() {
                 if let Some(num) = frame.placed {
-                    // remove the previously placed number
+                    // Backtrack the active placement made by this frame
                     self.solver.remove_number(frame.r, frame.c, num);
                     self.path.steps.pop();
                     frame.placed = None;
                 } else {
-                    // No placement was made for this frame; pop it and continue
+                    // All candidates tried and placement undone: pop frame to backtrack to parent
                     self.stack.pop();
                 }
                 continue;
             }
 
+            // 3. Evaluate Next Candidate Digit
             let num = frame.nums[frame.idx];
             frame.idx += 1;
 
             if self.solver.masks.is_safe(frame.r, frame.c, num) {
-                // place and record
+                // Forward move: place digit and record placement step
                 self.solver.place_number(frame.r, frame.c, num);
                 let step_number = self.path.steps.len() as u32;
                 self.path.steps.push(SolveStep::Placement {
@@ -930,8 +1097,9 @@ impl Iterator for Solutions {
                 });
                 frame.placed = Some(num);
 
-                // Find next empty cell after this placement
+                // 4. Branch Descent or Goal Reached
                 if let Some((nr, nc)) = self.solver.find_next_empty_cell() {
+                    // Empty cells remain: push new child frame for the next MRV cell and descend
                     let mask = self.solver.candidates.get(nr, nc);
                     let mut nums2 = Rustoku::candidates_from_mask(mask);
                     nums2.shuffle(&mut rng());
@@ -944,12 +1112,13 @@ impl Iterator for Solutions {
                     });
                     continue;
                 } else {
-                    // Found a solution. Capture it, then backtrack one placement so iteration can continue.
+                    // Goal reached: all 81 cells filled. Capture the solution.
                     let solution = Solution {
                         board: self.solver.board,
                         solve_path: self.path.clone(),
                     };
-                    // Backtrack the placement we just made on this frame
+                    // Backtrack the placement just made on this frame so subsequent next() calls
+                    // can cleanly resume exploring alternative branches
                     if let Some(pnum) = frame.placed {
                         self.solver.remove_number(frame.r, frame.c, pnum);
                         self.path.steps.pop();
@@ -958,7 +1127,7 @@ impl Iterator for Solutions {
                     return Some(solution);
                 }
             }
-            // else try next candidate
+            // else candidate was not safe; try next candidate in this frame
         }
     }
 }
