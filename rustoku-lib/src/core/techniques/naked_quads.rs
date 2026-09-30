@@ -5,22 +5,23 @@ use super::{TechniquePropagator, TechniqueRule, units};
 /// Naked quads technique implementation.
 ///
 /// A naked quad occurs when four cells in the same unit (row, column, or box)
-/// collectively contain exactly four candidate numbers. Each individual cell may
+/// collectively contain candidates from a set of exactly four numbers. Each cell may
 /// have 2, 3, or 4 of these candidates, but the union of all their candidates is
 /// exactly 4 values.
 ///
 /// Since these four cells must contain those four numbers between them, no other
 /// cell in the same unit can contain any of those numbers.
 ///
-/// The algorithm:
-/// 1. Find all cells in a unit that have 2, 3, or 4 candidates
-/// 2. For each quad of such cells, compute the union of their candidate masks
-/// 3. If the union has exactly 4 bits set, it's a naked quad
-/// 4. Eliminate those candidates from all other cells in the unit
+/// ### Example
+/// If four cells in a column have candidate sets `{1, 2}`, `{2, 3}`, `{3, 4}`, and `{1, 4}`,
+/// their union is `{1, 2, 3, 4}`. Candidates 1, 2, 3, and 4 are eliminated from all other
+/// cells in that column.
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_naked.php#n4>
 pub struct NakedQuads;
 
 impl NakedQuads {
-    /// Process a single unit (row, column, or box) for naked quads.
+    /// Processes a single unit (row, column, or box) for naked quads.
     fn process_unit_for_naked_quads(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -29,7 +30,7 @@ impl NakedQuads {
     ) -> bool {
         let mut eliminations_made = false;
 
-        // Find all cells with 2, 3, or 4 candidates
+        // Step 1: Find all empty cells with 2, 3, or 4 candidates
         let mut eligible_cells: Vec<(usize, usize, u16)> = Vec::new();
         for &(r, c) in unit_cells {
             if prop.board.is_empty(r, c) {
@@ -45,7 +46,7 @@ impl NakedQuads {
             return false;
         }
 
-        // Check all quads
+        // Step 2: Check all 4-cell combinations for a candidate union of size 4
         for i in 0..eligible_cells.len() {
             for j in (i + 1)..eligible_cells.len() {
                 for k in (j + 1)..eligible_cells.len() {
@@ -57,11 +58,10 @@ impl NakedQuads {
 
                         let union_mask = mask1 | mask2 | mask3 | mask4;
 
-                        // Naked quad requires exactly 4 candidates in the union
+                        // Step 3: If the union contains exactly 4 candidates, eliminate from other cells
                         if union_mask.count_ones() == 4 {
                             let quad_cells = [(r1, c1), (r2, c2), (r3, c3), (r4, c4)];
 
-                            // Eliminate from other cells in the unit
                             for &(other_r, other_c) in unit_cells {
                                 if quad_cells.contains(&(other_r, other_c)) {
                                     continue;
@@ -90,7 +90,7 @@ impl TechniqueRule for NakedQuads {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_eliminations_made = false;
 
-        // Process rows
+        // Step 1: Process rows for naked quads
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_naked_quads(prop, &cells, path, self.flags()) {
@@ -98,7 +98,7 @@ impl TechniqueRule for NakedQuads {
             }
         }
 
-        // Process columns
+        // Step 2: Process columns for naked quads
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_naked_quads(prop, &cells, path, self.flags()) {
@@ -106,7 +106,7 @@ impl TechniqueRule for NakedQuads {
             }
         }
 
-        // Process 3x3 boxes
+        // Step 3: Process 3x3 boxes for naked quads
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_naked_quads(prop, &cells, path, self.flags()) {

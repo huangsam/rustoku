@@ -4,35 +4,22 @@ use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Naked pairs technique implementation.
 ///
-/// A naked pair occurs when two cells in the same unit (row, column, or box) both contain
-/// exactly the same two candidate numbers. Since these two cells must contain these two
-/// numbers between them, no other cell in the same unit can contain either of these numbers.
+/// A naked pair occurs when two cells in the same unit (row, column, or box) contain
+/// only the same two candidate numbers. Because those two numbers are locked into those
+/// two cells, neither number can appear in any other cell in that unit.
 ///
-/// If two cells in a unit are the only possible locations for two specific numbers, then
-/// those numbers cannot appear anywhere else in that unit. This allows us to eliminate
-/// those candidates from all other cells in the unit.
+/// ### Example
+/// If cells `(0, 0)` and `(0, 1)` in row 0 both have candidate mask `{1, 2}`, then
+/// candidates 1 and 2 are eliminated from all other empty cells in row 0.
 ///
-/// Consider this row: [1,2] [1,2] [3,4,5] [3,4,5] [3,4,5] [6,7,8] [6,7,8] [6,7,8] [9]
-///
-/// The first two cells both have candidates {1,2}. Since these two cells must take 1 and 2,
-/// we can eliminate 1 and 2 from all other cells in the row, leaving:
-/// [1,2] [1,2] [3,4,5] [3,4,5] [3,4,5] [6,7,8] [6,7,8] [6,7,8] [9]
-///
-/// 1. Find all cells in a unit that have exactly 2 candidates
-/// 2. For each pair of such cells, check if they have identical candidate sets
-/// 3. If they do, eliminate those candidates from all other cells in the unit
-/// 4. Repeat for rows, columns, and boxes
+/// See: <https://hodoku.sourceforge.net/en/tech_naked.php#n2>
 pub struct NakedPairs;
 
 impl NakedPairs {
-    /// Process a single unit (row, column, or box) for naked pairs.
+    /// Processes a single unit (row, column, or box) for naked pairs.
     ///
-    /// This function implements the core naked pairs algorithm for one unit:
-    /// - Find cells with exactly 2 candidates
-    /// - Identify pairs of cells with identical candidate sets
-    /// - Eliminate those candidates from other cells in the unit
-    ///
-    /// Returns true if any eliminations were made.
+    /// Identifies pairs of cells with identical 2-candidate masks and eliminates
+    /// those candidates from all other cells in the unit.
     fn process_unit_for_naked_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -42,7 +29,7 @@ impl NakedPairs {
         let mut eliminations_made = false;
         let mut two_cand_cells: Vec<(usize, usize, u16)> = Vec::new();
 
-        // Find all cells in the unit with exactly 2 candidates
+        // Step 1: Collect all empty cells in the unit that have exactly 2 candidates
         for &(r, c) in unit_cells {
             if prop.board.is_empty(r, c) {
                 let cand_mask = prop.candidates.get(r, c);
@@ -56,16 +43,16 @@ impl NakedPairs {
             return false;
         }
 
-        // Check each pair of cells with 2 candidates
+        // Step 2: Check each pairwise combination of 2-candidate cells
         for i in 0..two_cand_cells.len() {
             for j in (i + 1)..two_cand_cells.len() {
                 let (r1, c1, mask1) = two_cand_cells[i];
                 let (r2, c2, mask2) = two_cand_cells[j];
 
+                // Step 3: When two cells share the exact same two candidates, eliminate from other cells
                 if mask1 == mask2 {
                     let pair_cand_mask = mask1;
 
-                    // Eliminate these candidates from other cells in the unit
                     eliminations_made |= Self::eliminate_candidates_from_other_cells(
                         prop,
                         unit_cells,
@@ -120,7 +107,7 @@ impl TechniqueRule for NakedPairs {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_eliminations_made = false;
 
-        // Process rows
+        // Step 1: Process rows for naked pairs
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_naked_pairs(prop, &cells, path, self.flags()) {
@@ -128,7 +115,7 @@ impl TechniqueRule for NakedPairs {
             }
         }
 
-        // Process columns
+        // Step 2: Process columns for naked pairs
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_naked_pairs(prop, &cells, path, self.flags()) {
@@ -136,7 +123,7 @@ impl TechniqueRule for NakedPairs {
             }
         }
 
-        // Process 3x3 boxes
+        // Step 3: Process 3x3 boxes for naked pairs
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_naked_pairs(prop, &cells, path, self.flags()) {

@@ -5,27 +5,20 @@ use super::{TechniquePropagator, TechniqueRule, units};
 /// Naked triples technique implementation.
 ///
 /// A naked triple occurs when three cells in the same unit (row, column, or box)
-/// collectively contain exactly three candidate numbers. Each individual cell may
-/// have 2 or 3 of these candidates, but the union of all their candidates is
-/// exactly 3 values.
+/// collectively contain candidates from a set of exactly three numbers. Each cell may
+/// contain 2 or 3 of these candidates, but their union contains exactly 3 digits.
+/// Because these three values are locked into those three cells, none of them can
+/// appear in any other cell in that unit.
 ///
-/// Since these three cells must contain those three numbers between them, no other
-/// cell in the same unit can contain any of those numbers.
+/// ### Example
+/// If cells in a row have candidate sets `{1, 3}`, `{1, 2}`, and `{2, 3}`, their union
+/// is `{1, 2, 3}`. Candidates 1, 2, and 3 are eliminated from all other cells in that row.
 ///
-/// Example:
-/// Consider cells in a row with candidates: {1,3}, {1,2}, {2,3}
-/// The union is {1,2,3}. These three cells must hold 1, 2, and 3 between them,
-/// so 1, 2, and 3 can be eliminated from all other cells in that row.
-///
-/// The algorithm:
-/// 1. Find all cells in a unit that have 2 or 3 candidates
-/// 2. For each triple of such cells, compute the union of their candidate masks
-/// 3. If the union has exactly 3 bits set, it's a naked triple
-/// 4. Eliminate those candidates from all other cells in the unit
+/// See: <https://hodoku.sourceforge.net/en/tech_naked.php#n3>
 pub struct NakedTriples;
 
 impl NakedTriples {
-    /// Process a single unit (row, column, or box) for naked triples.
+    /// Processes a single unit (row, column, or box) for naked triples.
     fn process_unit_for_naked_triples(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -34,7 +27,7 @@ impl NakedTriples {
     ) -> bool {
         let mut eliminations_made = false;
 
-        // Find all cells with 2 or 3 candidates
+        // Step 1: Find all empty cells with 2 or 3 candidates
         let mut eligible_cells: Vec<(usize, usize, u16)> = Vec::new();
         for &(r, c) in unit_cells {
             if prop.board.is_empty(r, c) {
@@ -50,7 +43,7 @@ impl NakedTriples {
             return false;
         }
 
-        // Check all triples
+        // Step 2: Check all 3-cell combinations for a candidate union of size 3
         for i in 0..eligible_cells.len() {
             for j in (i + 1)..eligible_cells.len() {
                 for k in (j + 1)..eligible_cells.len() {
@@ -60,11 +53,10 @@ impl NakedTriples {
 
                     let union_mask = mask1 | mask2 | mask3;
 
-                    // Naked triple requires exactly 3 candidates in the union
+                    // Step 3: If the union contains exactly 3 candidates, eliminate from other cells
                     if union_mask.count_ones() == 3 {
                         let triple_cells = [(r1, c1), (r2, c2), (r3, c3)];
 
-                        // Eliminate from other cells in the unit
                         for &(other_r, other_c) in unit_cells {
                             if triple_cells.contains(&(other_r, other_c)) {
                                 continue;
@@ -92,7 +84,7 @@ impl TechniqueRule for NakedTriples {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_eliminations_made = false;
 
-        // Process rows
+        // Step 1: Process rows for naked triples
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_naked_triples(prop, &cells, path, self.flags()) {
@@ -100,7 +92,7 @@ impl TechniqueRule for NakedTriples {
             }
         }
 
-        // Process columns
+        // Step 2: Process columns for naked triples
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_naked_triples(prop, &cells, path, self.flags()) {
@@ -108,7 +100,7 @@ impl TechniqueRule for NakedTriples {
             }
         }
 
-        // Process 3x3 boxes
+        // Step 3: Process 3x3 boxes for naked triples
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_naked_triples(prop, &cells, path, self.flags()) {
