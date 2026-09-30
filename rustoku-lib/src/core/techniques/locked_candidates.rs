@@ -2,35 +2,31 @@ use crate::core::{SolvePath, TechniqueFlags};
 
 use super::{TechniquePropagator, TechniqueRule};
 
-/// Locked candidates technique implementation.
+/// Locked candidates technique implementation (Pointing and Claiming).
 ///
-/// This technique identifies "locked candidates" - situations where a candidate
-/// value is confined to a specific region within a unit (row, column, or box).
-/// There are two main types of locked candidates:
+/// Locked candidates occur when candidate digits within an intersection of a line (row or column)
+/// and a 3x3 box are confined such that they force candidate eliminations elsewhere:
 ///
-/// 1. **Pointing Pairs/Triples**: When all candidates for a number in a box
-///    are confined to a single row or column within that box, the candidate
-///    can be eliminated from that row/column outside the box.
+/// - **Type 1: Pointing**: When all candidate occurrences for a digit within a 3x3 box are confined
+///   to a single row or column, that digit cannot appear elsewhere in that entire row or column
+///   outside the box.
+/// - **Type 2: Claiming (Box-Line Reduction)**: When all candidate occurrences for a digit within
+///   a row or column are confined to a single 3x3 box, that digit cannot appear elsewhere in that
+///   box outside the row or column.
 ///
-/// 2. **Box/Line Reduction**: When all candidates for a number in a row or column
-///    are confined to a single box, the candidate can be eliminated from the
-///    rest of that box.
+/// ### Example
+/// If candidate 5 in box 0 is confined to row 1 (columns 0 and 1), candidate 5 is eliminated
+/// from row 1 in boxes 1 and 2 (columns 3 through 8).
 ///
-/// Example of pointing pair:
-/// If in box 1, candidate 5 only appears in row 1, columns 1-2, then 5 can be
-/// eliminated from row 1, columns 4-9 (outside the box).
-///
-/// This technique is also known as "Pointing Pairs/Triples" and "Box/Line Reduction".
+/// See: <https://hodoku.sourceforge.net/en/tech_intersections.php>
 pub struct LockedCandidates;
 
 impl LockedCandidates {
-    /// Processes pointing pairs/triples for a specific row.
+    /// Processes Claiming (Box-Line Reduction / Type 2) eliminations for a specific row.
     ///
-    /// For each candidate (1-9), checks if all occurrences of that candidate
-    /// in the given row are confined to a single 3x3 box. If so, eliminates
-    /// that candidate from the rest of the box (outside this row).
-    ///
-    /// This is the "pointing pair/triple" elimination for rows.
+    /// For each candidate (1..=9), checks if all occurrences in the given row are confined
+    /// to a single 3x3 box. If so, eliminates that candidate from all other cells in that
+    /// box outside this row.
     fn process_row_for_locked_candidates(
         prop: &mut TechniquePropagator,
         row: usize,
@@ -39,11 +35,12 @@ impl LockedCandidates {
     ) -> bool {
         let mut eliminations_made = false;
 
+        // Step 1: Check each candidate digit 1..=9
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            // Track which boxes in this row contain this candidate
-            // box_mask uses bits 0-8 to represent boxes 0-8
+            // Step 2: Track which 3x3 boxes in this row contain the candidate
+            // box_mask uses bits 0..=8 to represent the 9 boxes
             let mut box_mask: u16 = 0;
             let mut found_any = false;
 
@@ -57,8 +54,8 @@ impl LockedCandidates {
                 }
             }
 
-            // If candidate appears in exactly one box within this row,
-            // eliminate it from other cells in that box (different rows)
+            // Step 3: If candidate appears in exactly one box within this row,
+            // eliminate it from other cells in that box outside this row
             if found_any && box_mask.count_ones() == 1 {
                 let box_idx = box_mask.trailing_zeros() as usize;
                 let start_row = (box_idx / 3) * 3;
@@ -81,13 +78,11 @@ impl LockedCandidates {
         eliminations_made
     }
 
-    /// Processes pointing pairs/triples for a specific column.
+    /// Processes Claiming (Box-Line Reduction / Type 2) eliminations for a specific column.
     ///
-    /// For each candidate (1-9), checks if all occurrences of that candidate
-    /// in the given column are confined to a single 3x3 box. If so, eliminates
-    /// that candidate from the rest of the box (outside this column).
-    ///
-    /// This is the "pointing pair/triple" elimination for columns.
+    /// For each candidate (1..=9), checks if all occurrences in the given column are confined
+    /// to a single 3x3 box. If so, eliminates that candidate from all other cells in that
+    /// box outside this column.
     fn process_col_for_locked_candidates(
         prop: &mut TechniquePropagator,
         col: usize,
@@ -96,10 +91,11 @@ impl LockedCandidates {
     ) -> bool {
         let mut eliminations_made = false;
 
+        // Step 1: Check each candidate digit 1..=9
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            // Track which boxes in this column contain this candidate
+            // Step 2: Track which 3x3 boxes in this column contain the candidate
             let mut box_mask: u16 = 0;
             let mut found_any = false;
 
@@ -113,8 +109,8 @@ impl LockedCandidates {
                 }
             }
 
-            // If candidate appears in exactly one box within this column,
-            // eliminate it from other cells in that box (different columns)
+            // Step 3: If candidate appears in exactly one box within this column,
+            // eliminate it from other cells in that box outside this column
             if found_any && box_mask.count_ones() == 1 {
                 let box_idx = box_mask.trailing_zeros() as usize;
                 let start_row = (box_idx / 3) * 3;
@@ -137,13 +133,11 @@ impl LockedCandidates {
         eliminations_made
     }
 
-    /// Processes box/line reduction for a specific 3x3 box.
+    /// Processes Pointing (Type 1) eliminations for a specific 3x3 box.
     ///
-    /// For each candidate (1-9), checks if all occurrences of that candidate
-    /// in the given box are confined to a single row or column. If so, eliminates
-    /// that candidate from the rest of the row/column (outside this box).
-    ///
-    /// This is the "box/line reduction" or "claiming" elimination.
+    /// For each candidate (1..=9), checks if all occurrences in the given box are confined
+    /// to a single row or column. If so, eliminates that candidate from the rest of that
+    /// row or column outside this box.
     fn process_box_for_locked_candidates(
         prop: &mut TechniquePropagator,
         box_idx: usize,
@@ -154,10 +148,11 @@ impl LockedCandidates {
         let start_row = (box_idx / 3) * 3;
         let start_col = (box_idx % 3) * 3;
 
+        // Step 1: Check each candidate digit 1..=9
         for candidate in 1..=9 {
             let candidate_bit = 1 << (candidate - 1);
 
-            // Track which rows and columns in this box contain this candidate
+            // Step 2: Track which rows and columns in this box contain the candidate
             let mut row_mask: u16 = 0;
             let mut col_mask: u16 = 0;
             let mut found_any = false;
@@ -179,8 +174,8 @@ impl LockedCandidates {
                 continue;
             }
 
-            // If all candidates in this box are in the same row,
-            // eliminate from other cells in that row (outside this box)
+            // Step 3: If all candidates in this box are confined to a single row,
+            // eliminate from other cells in that row outside this box
             if row_mask.count_ones() == 1 {
                 let row = row_mask.trailing_zeros() as usize;
 
@@ -195,8 +190,8 @@ impl LockedCandidates {
                 }
             }
 
-            // If all candidates in this box are in the same column,
-            // eliminate from other cells in that column (outside this box)
+            // Step 4: If all candidates in this box are confined to a single column,
+            // eliminate from other cells in that column outside this box
             if col_mask.count_ones() == 1 {
                 let col = col_mask.trailing_zeros() as usize;
 
@@ -216,26 +211,26 @@ impl LockedCandidates {
 }
 
 impl TechniqueRule for LockedCandidates {
-    /// Applies the locked candidates technique by checking all rows, columns, and boxes
-    /// for pointing pairs/triples and box/line reductions.
+    /// Applies the locked candidates technique across all rows, columns, and boxes
+    /// for both Pointing (Type 1) and Claiming (Type 2 / Box-Line Reduction).
     ///
     /// Returns true if any candidate eliminations were made.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_eliminations_made = false;
 
-        // Check rows for pointing pairs/triples
+        // Step 1: Check rows for Claiming (Box-Line Reduction)
         for row in 0..9 {
             overall_eliminations_made |=
                 Self::process_row_for_locked_candidates(prop, row, path, self.flags());
         }
 
-        // Check columns for pointing pairs/triples
+        // Step 2: Check columns for Claiming (Box-Line Reduction)
         for col in 0..9 {
             overall_eliminations_made |=
                 Self::process_col_for_locked_candidates(prop, col, path, self.flags());
         }
 
-        // Check boxes for box/line reduction
+        // Step 3: Check boxes for Pointing pairs and triples
         for box_idx in 0..9 {
             overall_eliminations_made |=
                 Self::process_box_for_locked_candidates(prop, box_idx, path, self.flags());
