@@ -1,4 +1,22 @@
-//! Error module for Rustoku.
+//! Error types and handling for Rustoku.
+//!
+//! All fallible operations return [`RustokuError`], categorized by operational phase:
+//!
+//! | Phase | Variants | Description |
+//! | :--- | :--- | :--- |
+//! | **Parsing** | [`InvalidInputLength`](RustokuError::InvalidInputLength), [`InvalidInputCharacter`](RustokuError::InvalidInputCharacter) | Malformed 81-character puzzle string |
+//! | **Validation** | [`DuplicateValues`](RustokuError::DuplicateValues) | Initial board contains duplicate clues |
+//! | **Generation** | [`InvalidClueCount`](RustokuError::InvalidClueCount), [`GenerateFailure`](RustokuError::GenerateFailure) | Out-of-bounds clues (<17 or >81) or timeout |
+//! | **Config** | [`UnknownDifficulty`](RustokuError::UnknownDifficulty) | Unrecognized difficulty string |
+//!
+//! # Example
+//!
+//! ```rust
+//! use rustoku_lib::core::Board;
+//! use rustoku_lib::RustokuError;
+//!
+//! assert_eq!(Board::try_from("too short"), Err(RustokuError::InvalidInputLength));
+//! ```
 
 use std::fmt;
 
