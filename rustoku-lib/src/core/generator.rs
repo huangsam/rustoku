@@ -1,7 +1,3 @@
-//! Board generator for Sudoku puzzles with configurable clues, symmetry, and difficulty.
-//!
-//! Provides the [`BoardGenerator`] builder, [`Symmetry`] types, and top-level generation helpers.
-
 use std::collections::HashSet;
 
 use rand::prelude::SliceRandom;

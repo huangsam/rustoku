@@ -1,3 +1,8 @@
+//! Human deduction techniques and deterministic constraint propagation.
+//!
+//! Provides the [`TechniquePropagator`] mediator and implementations for all 13
+//! standard Sudoku solving techniques, registered and evaluated in ascending difficulty order.
+
 use crate::core::{SolvePath, SolveStep};
 
 use super::board::Board;

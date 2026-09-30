@@ -1,8 +1,3 @@
-//! Solver primitive and builder for Sudoku puzzles.
-//!
-//! Provides [`Rustoku`] for constraint propagation and MRV backtracking search,
-//! along with [`RustokuBuilder`] for fluent configuration.
-
 use rand::prelude::SliceRandom;
 use rand::rng;
 use rayon::prelude::*;

@@ -1,8 +1,3 @@
-//! Lazy streaming solution iterator for Sudoku puzzles.
-//!
-//! Provides [`Solutions`], which uses an explicit depth-first search stack
-//! to yield solutions one by one on demand without computing them all up front.
-
 use rand::prelude::SliceRandom;
 use rand::rng;
 
