@@ -4,36 +4,30 @@ use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Hidden singles technique implementation.
 ///
-/// A hidden single occurs when a number can only appear in one cell within a unit
-/// (row, column, or box), even though that cell may contain other candidates.
-/// Since the number must go somewhere in the unit and only one cell can take it,
-/// we can place it in that cell.
+/// A hidden single occurs when a candidate digit appears in only one cell within a house
+/// (row, column, or box), even if that cell contains other candidates. Because the digit
+/// must appear somewhere in the unit, it must be placed in that unique cell, eliminating
+/// any other candidates from it.
 ///
-/// Each number 1-9 must appear exactly once in each row, column, and box.
-/// If a number has only one possible cell left in a unit, that cell must contain it,
-/// regardless of what other candidates the cell might have.
+/// ### Example
+/// In a row with candidate distributions where digit 1 appears only in cell `(0, 3)` (e.g.
+/// candidate mask `{1, 4}` while no other cell in row 0 contains candidate 1), digit 1
+/// is placed at `(0, 3)`.
 ///
-/// Consider this row: [1,2,3] [1,4] [2,5] [2,5] [2,5] [6,7] [6,7] [6,7] [8,9]
-///
-/// Number 1 appears only in the first cell. Even though that cell has other candidates
-/// (2 and 3), we know it must contain 1, so we can place 1 there and eliminate 2 and 3.
-///
-/// 1. For each unit (row, column, box) and each number 1-9:
-/// 2. Count how many cells in the unit can contain that number
-/// 3. If exactly one cell can contain it, place the number in that cell
-/// 4. Update constraints and candidates for the entire board
+/// See: <https://hodoku.sourceforge.net/en/tech_singles.php#h1>
 pub struct HiddenSingles;
 
 impl TechniqueRule for HiddenSingles {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut overall_placements_made = false;
 
-        // Helper closure (can be moved to a private helper function if desired)
+        // Helper closure to evaluate hidden singles within a specific house (row, col, or box)
         let check_unit_hidden_singles =
             |unit_cells: &[(usize, usize)],
              prop: &mut TechniquePropagator,
              path: &mut SolvePath| {
                 let mut unit_placement_made = false;
+                // Step 1: For each candidate digit 1..=9, count occurrences within the unit
                 for cand_val in 1..=9 {
                     let cand_bit = 1 << (cand_val - 1);
                     let mut potential_cell: Option<(usize, usize)> = None;
@@ -49,6 +43,7 @@ impl TechniqueRule for HiddenSingles {
                         }
                     }
 
+                    // Step 2: If the candidate appears in exactly one cell in the unit, place it
                     if cand_occurrences == 1
                         && let Some((r, c)) = potential_cell
                         && prop.board.is_empty(r, c)
@@ -60,6 +55,7 @@ impl TechniqueRule for HiddenSingles {
                 unit_placement_made
             };
 
+        // Step 3: Scan all 9 rows for hidden singles
         for r in 0..9 {
             let cells = units::row_cells(r);
             if check_unit_hidden_singles(&cells, prop, path) {
@@ -67,6 +63,7 @@ impl TechniqueRule for HiddenSingles {
             }
         }
 
+        // Step 4: Scan all 9 columns for hidden singles
         for c in 0..9 {
             let cells = units::col_cells(c);
             if check_unit_hidden_singles(&cells, prop, path) {
@@ -74,6 +71,7 @@ impl TechniqueRule for HiddenSingles {
             }
         }
 
+        // Step 5: Scan all 9 3x3 boxes for hidden singles
         for box_idx in 0..9 {
             let cells = units::box_cells(box_idx);
             if check_unit_hidden_singles(&cells, prop, path) {
