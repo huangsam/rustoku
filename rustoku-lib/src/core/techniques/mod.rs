@@ -45,29 +45,16 @@ use xyz_wing::XyzWing;
 
 /// Propagates constraints via zero or more techniques.
 ///
-/// The techniques are toggled via bitflags. Most of the data in struct comes
-/// from the Rustoku instance, which has a longer lifetime than this struct - since
-/// it is only used at the start, before any backtracking occurs.
-///
-/// Some examples of techniques employed including Naked Singles and X-Wings.
-/// If we want to add more techniques, extend the existing logic and bitflags
-/// in this module.
-///
-/// This class acts as the Mediator object between `Rustoku` and the `TechniqueRule`
-/// implementations out there. To learn about the Mediator design pattern, please
-/// consult [this link](https://refactoring.guru/design-patterns/mediator)
-/// for more details.
+/// Acts as the Mediator between [`Rustoku`] and individual [`TechniqueRule`] implementations,
+/// coordinating updates across [`Board`], [`Masks`], and [`Candidates`] while ensuring individual
+/// techniques do not mutate board state directly (see [Mediator pattern](https://refactoring.guru/design-patterns/mediator)).
 ///
 /// ### Mediator Architecture & Invariants
-/// Individual [`TechniqueRule`] implementations do not mutate the board or candidates
-/// directly. Instead, they interact solely through `TechniquePropagator`:
-/// 1. **Synchronized State Updates**: Placing a number or eliminating candidates automatically
-///    synchronizes [`Board`], [`Masks`], and [`Candidates`] caches.
-/// 2. **Telemetry & Audit Trail**: Every deduction is logged to the [`SolvePath`] with
-///    metrics like candidates eliminated, peer cells affected, and difficulty points.
-/// 3. **Transactional Rollback**: If propagation uncovers an inconsistency (an empty cell with
-///    no valid candidates left), all steps executed during the propagation pass are cleanly
-///    unwound in reverse order to restore the board and candidate state.
+/// - **Synchronized State**: Placing digits or eliminating candidates updates [`Board`],
+///   [`Masks`], and [`Candidates`] in lockstep.
+/// - **Telemetry**: Records step metadata ([`SolveStep`]) with candidate and peer counts.
+/// - **Transactional Rollback**: If a contradiction occurs (an empty cell with zero candidates),
+///   all changes applied during the pass are unwound to restore the previous state.
 pub struct TechniquePropagator<'a> {
     board: &'a mut Board,
     masks: &'a mut Masks,
@@ -91,14 +78,7 @@ impl<'a> TechniquePropagator<'a> {
         }
     }
 
-    /// Places a number on the board and propagates the new constraint across all peer cells.
-    ///
-    /// This method performs the following coordinated updates:
-    /// 1. Updates the cell value on the [`Board`].
-    /// 2. Records the number in the row, column, and 3x3 box in [`Masks`].
-    /// 3. Computes telemetry: counts affected peer cells and candidate eliminations caused by the placement.
-    /// 4. Recomputes candidate bitmasks for all peer cells (same row, column, box) via [`Candidates::update_affected_cells`].
-    /// 5. Appends a [`SolveStep::Placement`] to `path` with difficulty rating and telemetry.
+    /// Places a number on the board, updates masks and peer candidates, and records the step.
     fn place_and_update(
         &mut self,
         r: usize,
@@ -135,9 +115,7 @@ impl<'a> TechniquePropagator<'a> {
         });
     }
 
-    /// Reverses a number placement, restoring constraint masks and recalculating candidates.
-    ///
-    /// Used during contradiction rollback to undo tentative placements made by techniques.
+    /// Reverses a number placement and restores peer candidates during propagation rollback.
     fn remove_and_update(&mut self, r: usize, c: usize, num: u8) {
         // Reset board cell to empty
         self.board.set(r, c, 0);
@@ -149,10 +127,6 @@ impl<'a> TechniquePropagator<'a> {
     }
 
     /// Eliminates a single candidate digit from cell `(r, c)` and records the step.
-    ///
-    /// `candidate_bit` is a one-hot bitmask representing digit `v` as `1 << (v - 1)`.
-    ///
-    /// Returns `true` if the candidate was present and successfully eliminated, `false` otherwise.
     fn eliminate_candidate(
         &mut self,
         r: usize,
@@ -186,12 +160,7 @@ impl<'a> TechniquePropagator<'a> {
         initial_mask != refined_mask
     }
 
-    /// Eliminates multiple candidate digits simultaneously from cell `(r, c)` and logs each elimination.
-    ///
-    /// `elimination_mask` is a bitmask where set bits correspond to digits to eliminate.
-    /// Used by techniques such as Naked/Hidden Subsets and Locked Candidates.
-    ///
-    /// Returns `true` if one or more candidates were actually eliminated, `false` otherwise.
+    /// Eliminates multiple candidate digits simultaneously from cell `(r, c)` and records each step.
     fn eliminate_multiple_candidates(
         &mut self,
         r: usize,
@@ -232,9 +201,7 @@ impl<'a> TechniquePropagator<'a> {
         initial_mask != refined_mask
     }
 
-    /// Counts empty peer cells in the same row, column, or 3x3 box as `(r, c)`.
-    ///
-    /// Deduplicates cells that appear in multiple units (e.g. intersection of row and box).
+    /// Counts empty peer cells sharing a row, column, or 3x3 box with `(r, c)`.
     fn count_affected_cells(&self, r: usize, c: usize, _num: u8) -> u32 {
         let mut count = 0u32;
         let box_r = (r / 3) * 3;
@@ -266,10 +233,7 @@ impl<'a> TechniquePropagator<'a> {
         count
     }
 
-    /// Counts how many peer cells currently contain `num` as a candidate.
-    ///
-    /// Placing `num` at `(r, c)` will eliminate `num` from all these cells.
-    /// Deduplicates peer cells across row, column, and 3x3 box boundaries.
+    /// Counts peer cells containing candidate `num` that will be eliminated by placing `num` at `(r, c)`.
     fn count_candidates_eliminated(&self, r: usize, c: usize, num: u8) -> u32 {
         let mut count = 0u32;
         let box_r = (r / 3) * 3;
@@ -311,25 +275,15 @@ impl<'a> TechniquePropagator<'a> {
         }
     }
 
-    /// Iteratively applies enabled solving techniques until reaching a fixpoint or detecting a contradiction.
+    /// Iteratively applies enabled techniques in priority order until reaching a fixpoint or contradiction.
     ///
-    /// ### Algorithmic Workflow
-    /// 1. **Prioritized Ordering**: Techniques are evaluated in order of human difficulty and
-    ///    computational complexity, starting from fast direct deductions ([`NakedSingles`],
-    ///    [`HiddenSingles`]) through intermediate patterns ([`LockedCandidates`], [`XWing`])
-    ///    up to advanced search chains ([`AlternatingInferenceChain`]).
-    /// 2. **Greedy Restart**: Whenever a technique makes any deduction (placing a number or
-    ///    eliminating candidates), the loop breaks immediately and restarts from the beginning.
-    ///    This ensures simpler techniques are always prioritized (e.g. an advanced elimination
-    ///    that exposes a new Naked Single will immediately trigger the Naked Single rather than
-    ///    another advanced technique).
-    /// 3. **Contradiction Detection & Rollback**: If an empty cell is reduced to zero candidates,
-    ///    the puzzle state is invalid. The method unwinds all steps applied during this run
-    ///    (back to `initial_path_len`), restoring candidate masks and removing placements,
-    ///    and returns `false`.
-    /// 4. **Fixpoint Termination**: When a complete iteration pass over all enabled techniques
-    ///    yields no changes, the puzzle cannot be simplified further with the current techniques.
-    ///    The method terminates cleanly and returns `true`.
+    /// ### Algorithmic Behavior
+    /// - **Priority & Greedy Restart**: Evaluates techniques in ascending difficulty. Whenever a technique
+    ///   makes progress (places a digit or eliminates candidates), iteration breaks and restarts from the
+    ///   simplest techniques to capitalize on newly unlocked deductions.
+    /// - **Contradiction & Rollback**: If an empty cell is reduced to zero candidates, returns `false`
+    ///   and unwinds all steps applied during this run back to `initial_path_len`.
+    /// - **Fixpoint**: Terminates with `true` when a complete pass produces no further changes.
     pub fn propagate_constraints(&mut self, path: &mut SolvePath, initial_path_len: usize) -> bool {
         // Techniques registered in ascending order of complexity/difficulty
         let techniques: Vec<&dyn TechniqueRule> = vec![
@@ -415,22 +369,18 @@ impl<'a> TechniquePropagator<'a> {
     }
 }
 
-/// This is the contract for all human techniques.
+/// Contract for deterministic Sudoku solving strategies.
 ///
-/// All techniques are expected to have a way to apply themselves to a board
-/// and modify the solve path with placements and eliminations. In addition, they
-/// are expected to return one flag that helps with technique attribution when
-/// people want to visualize the solve path.
+/// Each technique inspects the board/candidate state and applies deductions (placements
+/// or candidate eliminations) via [`TechniquePropagator`].
 ///
-/// To get started on the intuition behind the techniques, check out
+/// For intuition and background on these solving patterns, consult
 /// [SudokuWiki](https://www.sudokuwiki.org/Introduction) and
-/// [HoDoKu](https://hodoku.sourceforge.net/en/tech_intro.php)
-/// to understand the basic strategies and techniques used in Sudoku solving.
+/// [HoDoKu](https://hodoku.sourceforge.net/en/tech_intro.php).
 pub trait TechniqueRule {
     /// Applies the technique to the given propagator.
     ///
-    /// Returns `true` if any candidate was eliminated or cell value was placed,
-    /// signalling the propagator to record progress and restart the technique pass.
+    /// Returns `true` if any candidate was eliminated or cell value was placed.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool;
 
     /// Returns the bitflag associated with this technique for attribution and difficulty scoring.
