@@ -4,37 +4,50 @@ use super::{TechniquePropagator, TechniqueRule, units};
 
 /// Skyscraper technique implementation.
 ///
-/// A Skyscraper occurs when two rows (or columns) each contain exactly two candidates
-/// for a specific digit, and they share exactly one column (or row). The two unshared
-/// candidates (the "roof") cannot both be false (because that would force the shared
-/// "base" candidates to both be true, which is impossible since they are in the same
-/// unit). Therefore, any cell that sees *both* roof cells cannot contain the digit.
+/// A Skyscraper is a single-digit pattern (Turbot Fish variant) involving two parallel
+/// base lines (rows or columns) that each contain exactly two candidates for a digit:
+/// - The two base lines share exactly one perpendicular coordinate (the shared "base").
+/// - The remaining candidates in the two lines lie on different perpendicular coordinates (the "roof" cells).
+///
+/// Because the two base cells share a unit, at most one of them can contain the digit.
+/// Consequently, at least one of the two roof cells must contain the digit.
+/// Therefore, any cell that sees **both** roof cells cannot contain the digit.
+///
+/// ### Example (Row-based)
+/// If row 2 contains candidate 4 only in columns 1 and 5, and row 6 contains candidate 4
+/// only in columns 1 and 8:
+/// - Column 1 is the shared base.
+/// - The roof cells are `(2, 5)` and `(6, 8)`.
+///
+/// Candidate 4 can be eliminated from any cell that sees both `(2, 5)` and `(6, 8)` (such as `(2, 8)` or `(6, 5)`).
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_sdp.php#sk>
 pub struct Skyscraper;
 
 impl Skyscraper {
-    /// Returns true if two cells can "see" each other (share a row, column, or box).
+    /// Returns true if two cells can see each other (share a row, column, or 3x3 box).
     fn sees(r1: usize, c1: usize, r2: usize, c2: usize) -> bool {
         r1 == r2 || c1 == c2 || (r1 / 3 == r2 / 3 && c1 / 3 == c2 / 3)
     }
 
+    /// Finds row-based Skyscrapers (base rows sharing 1 column) and eliminates candidates.
     fn find_row_based_skyscraper(
         prop: &mut TechniquePropagator,
         candidate_bit: u16,
         path: &mut SolvePath,
         flags: crate::core::TechniqueFlags,
     ) -> bool {
-        // Find rows with exactly 2 candidates
+        // Step 1: Collect all rows containing exactly 2 candidates
         let eligible_rows = Self::find_eligible_units(prop, candidate_bit, units::UnitType::Row);
 
         let mut eliminations_made = false;
 
+        // Step 2: Compare each pair of rows to find those sharing exactly 1 column (the base)
         for i in 0..eligible_rows.len() {
             for j in (i + 1)..eligible_rows.len() {
                 let (r1, ref cols1) = eligible_rows[i];
                 let (r2, ref cols2) = eligible_rows[j];
 
-                // For Skyscraper, they must share exactly 1 column (the base)
-                // cols1 and cols2 both have length 2.
                 let mut shared_cols = Vec::new();
                 for &c1 in cols1 {
                     if cols2.contains(&c1) {
@@ -44,12 +57,12 @@ impl Skyscraper {
 
                 if shared_cols.len() == 1 {
                     let shared_col = shared_cols[0];
-                    // Safe: cols1 and cols2 each have 2 elements, shared_cols has 1, so there's always 1 non-shared element
+                    // Step 3: Identify the two non-shared column positions (the roof cells)
                     let roof_col1 = cols1.iter().find(|&&c| c != shared_col);
                     let roof_col2 = cols2.iter().find(|&&c| c != shared_col);
 
                     if let (Some(roof_col1), Some(roof_col2)) = (roof_col1, roof_col2) {
-                        // Eliminate candidate from cells that see BOTH roof cells.
+                        // Step 4: Eliminate candidate from any cell seeing BOTH roof cells
                         for r in 0..9 {
                             for c in 0..9 {
                                 if (r == r1 && c == *roof_col1) || (r == r2 && c == *roof_col2) {
@@ -73,16 +86,19 @@ impl Skyscraper {
         eliminations_made
     }
 
+    /// Finds column-based Skyscrapers (base columns sharing 1 row) and eliminates candidates.
     fn find_col_based_skyscraper(
         prop: &mut TechniquePropagator,
         candidate_bit: u16,
         path: &mut SolvePath,
         flags: crate::core::TechniqueFlags,
     ) -> bool {
+        // Step 1: Collect all columns containing exactly 2 candidates
         let eligible_cols = Self::find_eligible_units(prop, candidate_bit, units::UnitType::Column);
 
         let mut eliminations_made = false;
 
+        // Step 2: Compare each pair of columns to find those sharing exactly 1 row (the base)
         for i in 0..eligible_cols.len() {
             for j in (i + 1)..eligible_cols.len() {
                 let (c1, ref rows1) = eligible_cols[i];
@@ -97,11 +113,12 @@ impl Skyscraper {
 
                 if shared_rows.len() == 1 {
                     let shared_row = shared_rows[0];
-                    // Safe: rows1 and rows2 each have 2 elements, shared_rows has 1, so there's always 1 non-shared element
+                    // Step 3: Identify the two non-shared row positions (the roof cells)
                     let roof_row1 = rows1.iter().find(|&&r| r != shared_row);
                     let roof_row2 = rows2.iter().find(|&&r| r != shared_row);
 
                     if let (Some(roof_row1), Some(roof_row2)) = (roof_row1, roof_row2) {
+                        // Step 4: Eliminate candidate from any cell seeing BOTH roof cells
                         for r in 0..9 {
                             for c in 0..9 {
                                 if (r == *roof_row1 && c == c1) || (r == *roof_row2 && c == c2) {
@@ -125,6 +142,7 @@ impl Skyscraper {
         eliminations_made
     }
 
+    /// Finds units (rows or columns) where a candidate appears in exactly 2 positions.
     fn find_eligible_units(
         prop: &TechniquePropagator,
         candidate_bit: u16,
@@ -157,6 +175,7 @@ impl Skyscraper {
 }
 
 impl TechniqueRule for Skyscraper {
+    /// Applies row-based and column-based Skyscraper searches for each candidate digit 1..=9.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut eliminations_made = false;
 

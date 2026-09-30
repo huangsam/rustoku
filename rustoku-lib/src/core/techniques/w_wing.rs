@@ -4,14 +4,26 @@ use crate::core::SolvePath;
 
 /// W-Wing technique implementation.
 ///
-/// A W-Wing connects two identical bivalue cells {X, Y} via a "strong link" on one
-/// of the candidates (say, X).
+/// A W-Wing connects two identical bivalue cells `{X, Y}` via a strong link (conjugate pair)
+/// on one of the candidates (say, `X`).
 ///
-/// If a conjugate pair (strong link) of candidate X exists in some unit (row/col/box),
-/// and one bivalue cell sees one end of the link while the other bivalue cell sees
-/// the other end, then at least one of the bivalue cells must be Y.
+/// If a strong link on `X` exists in some unit (row, column, or box) between cells `(s1, s2)`,
+/// where one bivalue cell sees `s1` and the other sees `s2`:
+/// - If `s1` is `X`, the first bivalue cell cannot be `X` and must be `Y`.
+/// - If `s2` is `X`, the second bivalue cell cannot be `X` and must be `Y`.
 ///
-/// Therefore, Y can be eliminated from any cell that sees both bivalue cells.
+/// Since either `s1` or `s2` must be `X`, at least one of the two bivalue cells must be `Y`.
+/// Therefore, `Y` can be eliminated from any cell that sees both bivalue cells.
+///
+/// ### Example
+/// If bivalue cell 1 at `(0, 1)` has `{3, 8}` and bivalue cell 2 at `(8, 7)` has `{3, 8}`,
+/// and a strong link for candidate `3` connects `(0, 5)` and `(8, 5)` in column 5:
+/// - `(0, 1)` sees `(0, 5)`
+/// - `(8, 7)` sees `(8, 5)`
+///
+/// Then candidate `8` can be eliminated from any cell that sees both `(0, 1)` and `(8, 7)` (such as `(0, 7)` or `(8, 1)`).
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_wings.php#w>
 pub struct WWing;
 
 impl WWing {
@@ -22,20 +34,20 @@ impl WWing {
     ) -> bool {
         let mut eliminations_made = false;
 
-        // 1. Find all bivalue cells
+        // Step 1: Collect all bivalue cells
         let bivalue_cells = Self::get_bivalue_cells(prop);
         if bivalue_cells.len() < 2 {
             return false;
         }
 
-        // 2. Iterate through pairs of identical bivalue cells
+        // Step 2: Iterate through pairs of identical bivalue cells {X, Y}
         for (i, &(r1, c1, mask1)) in bivalue_cells.iter().enumerate() {
             for &(r2, c2, mask2) in bivalue_cells.iter().skip(i + 1) {
                 if mask1 != mask2 {
                     continue;
                 }
 
-                // If they see each other, it's a naked pair (handled elsewhere)
+                // If they see each other directly, it's a Naked Pair (handled elsewhere)
                 if r1 == r2 || c1 == c2 || (r1 / 3 == r2 / 3 && c1 / 3 == c2 / 3) {
                     continue;
                 }
@@ -47,7 +59,7 @@ impl WWing {
                 let x_val = candidates[0];
                 let y_val = candidates[1];
 
-                // Check both as the "bridge" candidate X
+                // Step 3: Test each candidate as the strong link "bridge"
                 eliminations_made |=
                     Self::check_pincer_pair(prop, (r1, c1), (r2, c2), x_val, y_val, flags, path);
                 eliminations_made |=
@@ -58,8 +70,8 @@ impl WWing {
         eliminations_made
     }
 
-    /// Checks if a pair of pincers {X,Y} are connected by a strong link on `bridge_val`.
-    /// If so, eliminates `other_val` from common peers.
+    /// Checks if a pair of pincers {X, Y} are connected by a strong link on `bridge_val`.
+    /// If so, eliminates `other_val` from common peers seeing both pincers.
     fn check_pincer_pair(
         prop: &mut TechniquePropagator,
         p1: (usize, usize),
@@ -72,8 +84,7 @@ impl WWing {
         let bridge_bit = 1 << (bridge_val - 1);
         let other_bit = 1 << (other_val - 1);
 
-        // Find all strong links for bridge_val
-        // A strong link is a unit where bridge_val appears exactly twice.
+        // Search all units (rows, columns, boxes) for a strong link on bridge_val
         for unit_idx in 0..9 {
             // Rows
             if let Some(elim) = Self::check_unit_strong_link(
@@ -89,7 +100,7 @@ impl WWing {
             {
                 return true;
             }
-            // Cols
+            // Columns
             if let Some(elim) = Self::check_unit_strong_link(
                 prop,
                 p1,
@@ -141,16 +152,17 @@ impl WWing {
             .cloned()
             .collect();
 
+        // Strong link: candidate appears in exactly 2 cells within this unit
         if positions.len() == 2 {
             let s1 = positions[0];
             let s2 = positions[1];
 
-            // If p1 sees s1 and p2 sees s2 (or vice-versa)
+            // Verify that one pincer sees s1 and the other sees s2
             let match_v1 = (Self::sees(p1, s1) && Self::sees(p2, s2))
                 || (Self::sees(p1, s2) && Self::sees(p2, s1));
 
             if match_v1 {
-                // Ensure the bridge cells are NOT the pincers themselves
+                // Ensure the bridge cells are not the pincers themselves
                 if s1 == p1 || s1 == p2 || s2 == p1 || s2 == p2 {
                     return None;
                 }
@@ -165,10 +177,12 @@ impl WWing {
         None
     }
 
+    /// Returns true if two cells see each other (share a row, column, or 3x3 box).
     fn sees(c1: (usize, usize), c2: (usize, usize)) -> bool {
         c1.0 == c2.0 || c1.1 == c2.1 || (c1.0 / 3 == c2.0 / 3 && c1.1 / 3 == c2.1 / 3)
     }
 
+    /// Eliminates `val_bit` from any empty cell that sees both pincer cells `p1` and `p2`.
     fn eliminate_from_common_peers(
         prop: &mut TechniquePropagator,
         p1: (usize, usize),
@@ -194,6 +208,7 @@ impl WWing {
         eliminations_made
     }
 
+    /// Collects all empty cells that have exactly 2 candidates.
     fn get_bivalue_cells(prop: &TechniquePropagator) -> Vec<(usize, usize, u16)> {
         let mut result = Vec::new();
         for r in 0..9 {
@@ -211,6 +226,7 @@ impl WWing {
 }
 
 impl TechniqueRule for WWing {
+    /// Applies the W-Wing technique across all candidate pairs.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         Self::find_w_wings(prop, path, self.flags())
     }

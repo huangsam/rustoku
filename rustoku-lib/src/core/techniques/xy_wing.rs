@@ -4,28 +4,33 @@ use super::{TechniquePropagator, TechniqueRule};
 
 /// XY-Wing technique implementation.
 ///
-/// An XY-Wing involves three cells:
-/// - A **pivot** cell with exactly 2 candidates {X, Y}
-/// - A **wing** cell that sees the pivot, with exactly 2 candidates {X, Z}
-/// - Another **wing** cell that sees the pivot, with exactly 2 candidates {Y, Z}
+/// An XY-Wing involves three bivalue cells:
+/// - A **pivot** cell with exactly 2 candidates `{X, Y}`.
+/// - A **wing** cell that sees the pivot, with exactly 2 candidates `{X, Z}`.
+/// - Another **wing** cell that sees the pivot, with exactly 2 candidates `{Y, Z}`.
 ///
-/// Since the pivot must be either X or Y:
-/// - If pivot = X, then the {X,Z} wing must be Z
-/// - If pivot = Y, then the {Y,Z} wing must be Z
+/// Since the pivot must be either `X` or `Y`:
+/// - If pivot = `X`, then the `{X, Z}` wing must be `Z`.
+/// - If pivot = `Y`, then the `{Y, Z}` wing must be `Z`.
 ///
-/// Either way, one of the two wings must be Z. Therefore, any cell that sees
-/// both wings can have candidate Z eliminated.
+/// Either way, at least one wing must contain `Z`. Therefore, any cell that sees both wings
+/// can have candidate `Z` eliminated.
 ///
-/// "Sees" means sharing a row, column, or box.
+/// ### Example
+/// If pivot at `(0, 0)` has candidates `{1, 2}`, wing 1 at `(0, 4)` has `{1, 3}`, and wing 2
+/// at `(4, 0)` has `{2, 3}`, candidate `3` can be eliminated from any cell seeing both `(0, 4)`
+/// and `(4, 0)` (such as `(4, 4)`).
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_wings.php#xy>
 pub struct XYWing;
 
 impl XYWing {
-    /// Returns true if two cells see each other (share a row, column, or box).
+    /// Returns true if two cells see each other (share a row, column, or 3x3 box).
     fn cells_see_each_other(r1: usize, c1: usize, r2: usize, c2: usize) -> bool {
         r1 == r2 || c1 == c2 || (r1 / 3 == r2 / 3 && c1 / 3 == c2 / 3)
     }
 
-    /// Gets all empty cells with exactly 2 candidates.
+    /// Gets all empty bivalue cells (exactly 2 candidates) as `(row, col, mask)` tuples.
     fn bivalue_cells(prop: &TechniquePropagator) -> Vec<(usize, usize, u16)> {
         let mut cells = Vec::new();
         for r in 0..9 {
@@ -47,18 +52,19 @@ impl XYWing {
         path: &mut SolvePath,
         flags: crate::core::TechniqueFlags,
     ) -> bool {
-        // Snapshot all bivalue cells up front so we don't conflict with mutable prop
+        // Step 1: Snapshot all bivalue cells up front
         let bivalue = Self::bivalue_cells(prop);
         let mut eliminations_made = false;
 
+        // Step 2: Iterate over each bivalue cell as a potential pivot {X, Y}
         for pivot_idx in 0..bivalue.len() {
             let (pr, pc, pivot_mask) = bivalue[pivot_idx];
 
             // Extract the two candidates of the pivot
-            let x = pivot_mask & pivot_mask.wrapping_neg(); // lowest bit
-            let y = pivot_mask ^ x; // the other bit
+            let x = pivot_mask & pivot_mask.wrapping_neg(); // lowest set bit
+            let y = pivot_mask ^ x; // the remaining bit
 
-            // Find wing candidates among bivalue cells that see the pivot
+            // Step 3: Find wing candidates among bivalue cells that see the pivot
             let mut x_wings: Vec<(usize, usize, u16)> = Vec::new(); // cells with {X, Z}
             let mut y_wings: Vec<(usize, usize, u16)> = Vec::new(); // cells with {Y, Z}
 
@@ -83,23 +89,22 @@ impl XYWing {
                 }
             }
 
-            // Try all pairs of (x_wing, y_wing)
+            // Step 4: Test all pairs of (x_wing, y_wing)
             for &(xr, xc, xmask) in &x_wings {
                 for &(yr, yc, ymask) in &y_wings {
-                    // The wings should not be the same cell
                     if xr == yr && xc == yc {
                         continue;
                     }
 
-                    // Z is the non-pivot candidate in each wing; both wings must agree on Z
-                    let z_from_x = xmask & !x; // should be Z
-                    let z_from_y = ymask & !y; // should be Z
+                    // Both wings must agree on the same non-pivot candidate Z
+                    let z_from_x = xmask & !x;
+                    let z_from_y = ymask & !y;
                     if z_from_x != z_from_y {
                         continue;
                     }
                     let z_bit = z_from_x;
 
-                    // Eliminate Z from all cells that see both wings
+                    // Step 5: Eliminate Z from all common peers that see both wings
                     eliminations_made |= Self::eliminate_z_from_common_peers(
                         prop,
                         (xr, xc),
@@ -128,10 +133,9 @@ impl XYWing {
         let (w1r, w1c) = wing1;
         let (w2r, w2c) = wing2;
 
-        // Collect peers of both wings by iterating all cells
+        // Eliminate Z from all empty cells seeing both wings (excluding wings themselves)
         for r in 0..9 {
             for c in 0..9 {
-                // Skip the wing cells themselves
                 if (r == w1r && c == w1c) || (r == w2r && c == w2c) {
                     continue;
                 }
@@ -180,6 +184,7 @@ impl XYWing {
 }
 
 impl TechniqueRule for XYWing {
+    /// Applies the XY-Wing technique across all candidate pairs.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         Self::find_xy_wings(prop, path, self.flags())
     }
