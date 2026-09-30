@@ -10,19 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Algorithmic docstrings for all 13 human deduction techniques with formal rules, LaTeX inferences, and references
 - Architectural solving pipeline documentation with bitmask invariant tables in `rustoku-lib::core`
-- Integration test for CLI behavior when solving nonexistent CSV files
 
 ### Changed
 - Modularized `rustoku-lib::core` into `generator.rs`, `solver.rs`, and `solutions.rs` submodules
 - Derived `PartialEq` and `Eq` on `RustokuError` for exact error-variant assertions in tests
-- Refactored CLI subcommand handlers to use idiomatic `?` error propagation with `Box<dyn std::error::Error>`
-- Replaced multi-level relative imports in technique units with crate-rooted `crate::core::...` paths
 - Moved error documentation from private module declarations to public `RustokuError` docs for docs.rs
 - Updated workspace dependencies, GitHub Actions workflows, and demo packages
 
 ### Removed
-- Removed `thiserror` dependency from `rustoku-lib`, eliminating 21 transitive proc-macro dependencies
-- Removed private module docstrings from `error` and `format` modules
+- Removed `thiserror` dependency from `rustoku-lib`, eliminating 21 proc-macro dependencies
 
 ## [0.15.3] - 2026-09-26
 
