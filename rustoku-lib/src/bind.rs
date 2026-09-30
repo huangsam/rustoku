@@ -348,10 +348,10 @@ mod tests {
 
     #[test]
     fn test_technique_flags_from_str_invalid() {
-        assert!(matches!(
+        assert_eq!(
             technique_flags_from_str("invalid"),
-            Err(RustokuError::UnknownDifficulty(_))
-        ));
+            Err(RustokuError::UnknownDifficulty("invalid".to_string()))
+        );
     }
 
     #[test]
@@ -365,18 +365,17 @@ mod tests {
 
     #[test]
     fn test_solve_any_str_unsolvable() {
-        // Invalid puzzle with conflicts
-        let puzzle =
-            "111111111111111111111111111111111111111111111111111111111111111111111111111111";
-        let result = solve_any_str(puzzle);
+        // Invalid puzzle with conflicts (81 ones)
+        let puzzle = "1".repeat(81);
+        let result = solve_any_str(&puzzle);
         // All 1s creates a conflict, so it's invalid and returns an error
-        assert!(result.is_err());
+        assert_eq!(result, Err(RustokuError::DuplicateValues));
     }
 
     #[test]
     fn test_solve_any_str_invalid_input() {
         let puzzle = "invalid";
-        assert!(solve_any_str(puzzle).is_err());
+        assert_eq!(solve_any_str(puzzle), Err(RustokuError::InvalidInputLength));
     }
 
     #[test]

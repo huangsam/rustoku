@@ -563,7 +563,7 @@ mod tests {
         let s = "530070000600195000098000060800060003400803001700020006060000280000419005500080079";
         let board = Board::try_from(s).expect("Board parsing failed before duplicate check");
         let rustoku = Rustoku::new(board);
-        assert!(matches!(rustoku, Err(RustokuError::DuplicateValues)));
+        assert_eq!(rustoku.err(), Some(RustokuError::DuplicateValues));
     }
 
     #[test]

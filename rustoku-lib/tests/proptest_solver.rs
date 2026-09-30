@@ -1,5 +1,6 @@
 #![allow(clippy::collapsible_if)]
 use proptest::prelude::*;
+use rustoku_lib::RustokuError;
 use rustoku_lib::core::{Board, Rustoku, generate_board};
 
 // Strategy for generating valid Sudoku clue counts (17-81)
@@ -205,11 +206,7 @@ proptest! {
         // Only test invalid clue counts
         if !(17..=81).contains(&clues) {
             let result = generate_board(clues);
-            prop_assert!(
-                result.is_err(),
-                "Clue count {} should return error",
-                clues
-            );
+            prop_assert_eq!(result, Err(RustokuError::InvalidClueCount));
         }
     }
 
@@ -249,6 +246,7 @@ proptest! {
 
 #[cfg(test)]
 mod edge_case_tests {
+    use rustoku_lib::RustokuError;
     use rustoku_lib::core::{Board, BoardGenerator, Rustoku, Symmetry, generate_board};
 
     #[test]
@@ -266,13 +264,13 @@ mod edge_case_tests {
     #[test]
     fn test_clue_count_too_low() {
         let result = generate_board(16);
-        assert!(result.is_err(), "16 clues should be invalid");
+        assert_eq!(result, Err(RustokuError::InvalidClueCount));
     }
 
     #[test]
     fn test_clue_count_too_high() {
         let result = generate_board(82);
-        assert!(result.is_err(), "82 clues should be invalid");
+        assert_eq!(result, Err(RustokuError::InvalidClueCount));
     }
 
     #[test]

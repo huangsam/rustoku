@@ -138,7 +138,7 @@ fn handle_generate(
     clues: Option<usize>,
     difficulty: Option<rustoku_lib::Difficulty>,
     symmetry_arg: SymmetryArg,
-) -> Result<(), rustoku_lib::RustokuError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let symmetry = symmetry_arg.to_symmetry();
     let mut generator = BoardGenerator::new().symmetry(symmetry);
 
@@ -148,20 +148,19 @@ fn handle_generate(
             generator = generator.clues(c);
         }
 
-        generator.generate().map(|board| {
-            println!("🎲 Generated {} puzzle (Symmetry: {:?}):", diff, symmetry);
-            println!("{board}")
-        })
+        let board = generator.generate()?;
+        println!("🎲 Generated {} puzzle (Symmetry: {:?}):", diff, symmetry);
+        println!("{board}");
     } else {
         let clues = clues.unwrap_or(30);
-        generator.clues(clues).generate().map(|board| {
-            println!(
-                "🎲 Generated puzzle with {clues} clues (Symmetry: {:?}):",
-                symmetry
-            );
-            println!("{board}")
-        })
+        let board = generator.clues(clues).generate()?;
+        println!(
+            "🎲 Generated puzzle with {clues} clues (Symmetry: {:?}):",
+            symmetry
+        );
+        println!("{board}");
     }
+    Ok(())
 }
 
 /// Helper enum for CLI symmetry selection
@@ -193,27 +192,30 @@ fn handle_solve_any(
     puzzle: &str,
     verbose: bool,
     human: bool,
-) -> Result<(), rustoku_lib::RustokuError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let techniques = if human {
         TechniqueFlags::all()
     } else {
         TechniqueFlags::EASY
     };
 
-    Rustoku::builder()
-        .board_from_str(puzzle)
-        .and_then(|b| b.techniques(techniques).build())
-        .map(|mut rustoku| match rustoku.solve_any() {
-            None => println!("🚫 No solution found"),
-            Some(solution) => {
-                println!("🎯 Solution found:");
-                if verbose {
-                    println!("{}\n\n{}", solution.board, solution.solve_path);
-                } else {
-                    println!("{}", solution.board);
-                }
+    let mut rustoku = Rustoku::builder()
+        .board_from_str(puzzle)?
+        .techniques(techniques)
+        .build()?;
+
+    match rustoku.solve_any() {
+        None => println!("🚫 No solution found"),
+        Some(solution) => {
+            println!("🎯 Solution found:");
+            if verbose {
+                println!("{}\n\n{}", solution.board, solution.solve_path);
+            } else {
+                println!("{}", solution.board);
             }
-        })
+        }
+    }
+    Ok(())
 }
 
 fn handle_solve_all(
@@ -221,68 +223,65 @@ fn handle_solve_all(
     verbose: bool,
     until: usize,
     human: bool,
-) -> Result<(), rustoku_lib::RustokuError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let techniques = if human {
         TechniqueFlags::all()
     } else {
         TechniqueFlags::EASY
     };
 
-    Rustoku::builder()
-        .board_from_str(puzzle)
-        .and_then(|b| b.techniques(techniques).build())
-        .map(|mut rustoku| {
-            let solutions = if until > 0 {
-                rustoku.solve_until(until)
-            } else {
-                rustoku.solve_all()
-            };
+    let mut rustoku = Rustoku::builder()
+        .board_from_str(puzzle)?
+        .techniques(techniques)
+        .build()?;
 
-            match solutions.len() {
-                0 => println!("🚫 No solutions found"),
-                1 => {
-                    println!("🎯 Found 1 unique solution:");
-                    if verbose {
-                        println!("{}\n\n{}", solutions[0].board, solutions[0].solve_path);
-                    } else {
-                        println!("{}", solutions[0].board);
-                    }
-                }
-                n => {
-                    println!("🔍 Found {n} solutions:");
-                    solutions.iter().enumerate().for_each(|(i, solution)| {
-                        println!("\n--- Solution {} ---", i + 1);
-                        if verbose {
-                            println!("{}\n\n{}", solution.board, solution.solve_path);
-                        } else {
-                            println!("{}", solution.board);
-                        }
-                    });
-                    println!("\n✅ All solutions displayed");
-                }
+    let solutions = if until > 0 {
+        rustoku.solve_until(until)
+    } else {
+        rustoku.solve_all()
+    };
+
+    match solutions.len() {
+        0 => println!("🚫 No solutions found"),
+        1 => {
+            println!("🎯 Found 1 unique solution:");
+            if verbose {
+                println!("{}\n\n{}", solutions[0].board, solutions[0].solve_path);
+            } else {
+                println!("{}", solutions[0].board);
             }
-        })
+        }
+        n => {
+            println!("🔍 Found {n} solutions:");
+            solutions.iter().enumerate().for_each(|(i, solution)| {
+                println!("\n--- Solution {} ---", i + 1);
+                if verbose {
+                    println!("{}\n\n{}", solution.board, solution.solve_path);
+                } else {
+                    println!("{}", solution.board);
+                }
+            });
+            println!("\n✅ All solutions displayed");
+        }
+    }
+    Ok(())
 }
 
-fn handle_check(puzzle: &str) -> Result<(), rustoku_lib::RustokuError> {
-    Rustoku::builder()
-        .board_from_str(puzzle)
-        .and_then(|b| b.build())
-        .map(|rustoku| {
-            if rustoku.is_solved() {
-                println!("✅ Puzzle is solved correctly!");
-            } else {
-                println!("❌ Puzzle is not solved correctly");
-            }
-        })
+fn handle_check(puzzle: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let rustoku = Rustoku::builder().board_from_str(puzzle)?.build()?;
+
+    if rustoku.is_solved() {
+        println!("✅ Puzzle is solved correctly!");
+    } else {
+        println!("❌ Puzzle is not solved correctly");
+    }
+    Ok(())
 }
 
-fn handle_show(puzzle: &str) -> Result<(), rustoku_lib::RustokuError> {
-    Rustoku::builder()
-        .board_from_str(puzzle)
-        .and_then(|b| b.build())
-        .map(|rustoku| {
-            println!("🎨 Show puzzle:");
-            println!("{}", rustoku.board);
-        })
+fn handle_show(puzzle: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let rustoku = Rustoku::builder().board_from_str(puzzle)?.build()?;
+
+    println!("🎨 Show puzzle:");
+    println!("{}", rustoku.board);
+    Ok(())
 }

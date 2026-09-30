@@ -155,14 +155,14 @@ mod tests {
     fn test_try_from_with_invalid_length() {
         let s = "530070000"; // Too short
         let rustoku = Board::try_from(s);
-        assert!(matches!(rustoku, Err(RustokuError::InvalidInputLength)));
+        assert_eq!(rustoku, Err(RustokuError::InvalidInputLength));
     }
 
     #[test]
     fn test_try_from_with_invalid_character() {
         let s = "53007000060019500009800006080006000340080300170002000606000028000041900500008007X"; // 'X'
         let rustoku = Board::try_from(s);
-        assert!(matches!(rustoku, Err(RustokuError::InvalidInputCharacter)));
+        assert_eq!(rustoku, Err(RustokuError::InvalidInputCharacter));
     }
 }
 

@@ -407,14 +407,14 @@ mod tests {
     fn test_generate_with_too_few_clues() {
         let num_clues = 16;
         let result = generate_board(num_clues);
-        assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
+        assert_eq!(result, Err(RustokuError::InvalidClueCount));
     }
 
     #[test]
     fn test_generate_with_too_many_clues() {
         let num_clues = 82;
         let result = generate_board(num_clues);
-        assert!(matches!(result, Err(RustokuError::InvalidClueCount)));
+        assert_eq!(result, Err(RustokuError::InvalidClueCount));
     }
 
     #[test]

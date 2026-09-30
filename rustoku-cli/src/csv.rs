@@ -8,7 +8,7 @@ pub fn solve_csv_file(
     output_path: Option<String>,
     human: bool,
     stats_only: bool,
-) -> Result<(), rustoku_lib::RustokuError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let techniques = if human {
         TechniqueFlags::all()
     } else {
@@ -16,10 +16,8 @@ pub fn solve_csv_file(
     };
 
     // Open the input CSV file
-    let file = std::fs::File::open(file_path).map_err(|e| {
-        eprintln!("❌ Failed to open file '{}': {}", file_path, e);
-        rustoku_lib::RustokuError::GenerateFailure
-    })?;
+    let file = std::fs::File::open(file_path)
+        .map_err(|e| format!("Failed to open file '{file_path}': {e}"))?;
     let mut reader = csv::Reader::from_reader(file);
 
     let mut total = 0u32;
@@ -30,18 +28,13 @@ pub fn solve_csv_file(
     // Get headers to determine if solutions column exists
     let headers = reader
         .headers()
-        .map_err(|e| {
-            eprintln!("❌ Failed to read CSV headers: {}", e);
-            rustoku_lib::RustokuError::GenerateFailure
-        })?
+        .map_err(|e| format!("Failed to read CSV headers: {e}"))?
         .clone();
     let has_solutions = headers.iter().any(|h| h.eq_ignore_ascii_case("solutions"));
 
     for result in reader.records() {
-        let record = result.map_err(|e| {
-            eprintln!("❌ Failed to read CSV record at line {}: {}", total + 2, e);
-            rustoku_lib::RustokuError::GenerateFailure
-        })?;
+        let record =
+            result.map_err(|e| format!("Failed to read CSV record at line {}: {e}", total + 2))?;
         total += 1;
 
         // Get the puzzle (quizzes column)
@@ -53,15 +46,14 @@ pub fn solve_csv_file(
         }
 
         // Try to solve the puzzle
-        match Rustoku::builder()
+        let solution = Rustoku::builder()
             .board_from_str(puzzle)
             .and_then(|b| b.techniques(techniques).build())
-            .and_then(|mut rustoku| {
-                rustoku
-                    .solve_any()
-                    .ok_or(rustoku_lib::RustokuError::GenerateFailure)
-            }) {
-            Ok(solution) => {
+            .ok()
+            .and_then(|mut rustoku| rustoku.solve_any());
+
+        match solution {
+            Some(solution) => {
                 solved += 1;
                 if !stats_only {
                     // Convert board to 81-character string
@@ -72,11 +64,11 @@ pub fn solve_csv_file(
                         }
                     }
 
-                    let puzzle_clean = puzzle.replace(" ", "");
+                    let puzzle_clean = puzzle.replace(' ', "");
 
                     // Check if expected solution exists and matches
                     if has_solutions && record.len() > 1 {
-                        let expected = record.get(1).unwrap_or("").replace(" ", "");
+                        let expected = record.get(1).unwrap_or("").replace(' ', "");
                         let matches = solution_str == expected;
                         results_vec.push((
                             puzzle_clean,
@@ -88,7 +80,7 @@ pub fn solve_csv_file(
                     }
                 }
             }
-            Err(_) => {
+            None => {
                 unsolvable += 1;
                 if !stats_only {
                     results_vec.push((puzzle.to_string(), "UNSOLVABLE".to_string(), "fail"));
@@ -105,32 +97,22 @@ pub fn solve_csv_file(
     // Output results
     if let Some(out_path) = output_path {
         // Write to file
-        let mut out_file = std::fs::File::create(&out_path).map_err(|e| {
-            eprintln!("❌ Failed to create output file '{}': {}", out_path, e);
-            rustoku_lib::RustokuError::GenerateFailure
-        })?;
+        let mut out_file = std::fs::File::create(&out_path)
+            .map_err(|e| format!("Failed to create output file '{out_path}': {e}"))?;
 
         if has_solutions {
-            writeln!(out_file, "quizzes,solutions,match").map_err(|e| {
-                eprintln!("❌ Failed to write CSV header: {}", e);
-                rustoku_lib::RustokuError::GenerateFailure
-            })?;
+            writeln!(out_file, "quizzes,solutions,match")
+                .map_err(|e| format!("Failed to write CSV header: {e}"))?;
             for (idx, (puzzle, solution, matches)) in results_vec.iter().enumerate() {
-                writeln!(out_file, "{},{},{}", puzzle, solution, matches).map_err(|e| {
-                    eprintln!("❌ Failed to write CSV row {}: {}", idx + 1, e);
-                    rustoku_lib::RustokuError::GenerateFailure
-                })?;
+                writeln!(out_file, "{puzzle},{solution},{matches}")
+                    .map_err(|e| format!("Failed to write CSV row {}: {e}", idx + 1))?;
             }
         } else {
-            writeln!(out_file, "quizzes,solutions").map_err(|e| {
-                eprintln!("❌ Failed to write CSV header: {}", e);
-                rustoku_lib::RustokuError::GenerateFailure
-            })?;
+            writeln!(out_file, "quizzes,solutions")
+                .map_err(|e| format!("Failed to write CSV header: {e}"))?;
             for (idx, (puzzle, solution, _)) in results_vec.iter().enumerate() {
-                writeln!(out_file, "{},{}", puzzle, solution).map_err(|e| {
-                    eprintln!("❌ Failed to write CSV row {}: {}", idx + 1, e);
-                    rustoku_lib::RustokuError::GenerateFailure
-                })?;
+                writeln!(out_file, "{puzzle},{solution}")
+                    .map_err(|e| format!("Failed to write CSV row {}: {e}", idx + 1))?;
             }
         }
 
@@ -140,12 +122,12 @@ pub fn solve_csv_file(
         if has_solutions {
             println!("quizzes,solutions,match");
             for (puzzle, solution, matches) in &results_vec {
-                println!("{},{},{}", puzzle, solution, matches);
+                println!("{puzzle},{solution},{matches}");
             }
         } else {
             println!("quizzes,solutions");
             for (puzzle, solution, _) in &results_vec {
-                println!("{},{}", puzzle, solution);
+                println!("{puzzle},{solution}");
             }
         }
     }

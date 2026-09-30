@@ -206,3 +206,14 @@ fn test_solve_csv_dataset() {
 
     std::fs::remove_file(temp_file).ok();
 }
+
+#[test]
+fn test_solve_csv_nonexistent_file() {
+    get_rustoku_bin()
+        .arg("solve")
+        .arg("csv")
+        .arg("nonexistent_test_sudoku_file.csv")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("Failed to open file"));
+}
