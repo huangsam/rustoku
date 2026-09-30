@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Algorithmic docstrings for all 13 human deduction techniques with formal rules, LaTeX inferences, and references
+- Architectural solving pipeline documentation with bitmask invariant tables in `rustoku-lib::core`
+- Integration test for CLI behavior when solving nonexistent CSV files
+
+### Changed
+- Modularized `rustoku-lib::core` into `generator.rs`, `solver.rs`, and `solutions.rs` submodules
+- Derived `PartialEq` and `Eq` on `RustokuError` for exact error-variant assertions in tests
+- Refactored CLI subcommand handlers to use idiomatic `?` error propagation with `Box<dyn std::error::Error>`
+- Replaced multi-level relative imports in technique units with crate-rooted `crate::core::...` paths
+- Moved error documentation from private module declarations to public `RustokuError` docs for docs.rs
+- Updated workspace dependencies, GitHub Actions workflows, and demo packages
+
+### Removed
+- Removed `thiserror` dependency from `rustoku-lib`, eliminating 21 transitive proc-macro dependencies
+- Removed private module docstrings from `error` and `format` modules
+
 ## [0.15.3] - 2026-09-26
 
 ### Added
@@ -257,6 +276,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[Unreleased]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.3...HEAD
 [0.15.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.2...rustoku-lib-v0.15.3
 [0.15.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.1...rustoku-lib-v0.15.2
 [0.15.1]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.0...rustoku-lib-v0.15.1
