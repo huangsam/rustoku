@@ -1,8 +1,7 @@
-/// Masks for Rustoku puzzle, representing the state of rows, columns, and boxes.
+/// Constraint bitmasks tracking digit placement across rows, columns, and 3x3 boxes.
 ///
-/// This struct holds bitmasks for each row, column, and 3x3 box in the Rustoku board.
-/// Each bit in the masks corresponds to a number from 1 to 9, where a bit set to 1 indicates
-/// that the corresponding number is present in that row, column, or box.
+/// Each unit maintains a 9-bit bitmask (`u16`) where bit index `(num - 1)` represents digit `num`
+/// (e.g. bit 0 = 1, bit 8 = 9). A bit set to 1 indicates the digit is already placed in that unit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Masks {
     row_masks: [u16; 9],
@@ -19,13 +18,20 @@ impl Masks {
         }
     }
 
-    /// Computes the index of the 3x3 box based on the row and column indices.
+    /// Computes the 0-indexed 3x3 box index (`0..9`) from row and column coordinates.
+    ///
+    /// Boxes are indexed left-to-right, top-to-bottom:
+    /// - Box 0..2: Rows 0..3 (left, middle, right)
+    /// - Box 3..5: Rows 3..6 (left, middle, right)
+    /// - Box 6..8: Rows 6..9 (left, middle, right)
     #[inline]
     pub(super) fn get_box_idx(r: usize, c: usize) -> usize {
         (r / 3) * 3 + (c / 3)
     }
 
-    /// Adds a number to the masks for the specified row, column, and box.
+    /// Registers a placed digit across its row, column, and 3x3 box masks in $O(1)$.
+    ///
+    /// Maps 1-indexed digit `num` (1..=9) to 0-indexed bit `(num - 1)` (bit 0 = 1, bit 8 = 9).
     #[inline]
     pub(super) fn add_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_set = 1 << (num - 1);
@@ -35,7 +41,7 @@ impl Masks {
         self.box_masks[box_idx] |= bit_to_set;
     }
 
-    /// Removes a number from the masks for the specified row, column, and box.
+    /// Unsets a digit from row, column, and box masks during backtracking in $O(1)$.
     #[inline]
     pub(super) fn remove_number(&mut self, r: usize, c: usize, num: u8) {
         let bit_to_unset = 1 << (num - 1);
@@ -45,7 +51,9 @@ impl Masks {
         self.box_masks[box_idx] &= !bit_to_unset;
     }
 
-    /// Checks if a number can be safely placed in the specified cell.
+    /// Checks if placing `num` at `(r, c)` violates any row, column, or 3x3 box constraints.
+    ///
+    /// Returns `true` only if bit `1 << (num - 1)` is currently unset across all three units.
     #[inline]
     pub fn is_safe(&self, r: usize, c: usize, num: u8) -> bool {
         let bit_to_check = 1 << (num - 1);
@@ -56,14 +64,19 @@ impl Masks {
             && (self.box_masks[box_idx] & bit_to_check == 0)
     }
 
-    /// Computes the candidates mask for a specific cell based on the current masks.
+    /// Computes the valid candidate bitmask for cell `(r, c)` from current constraints.
+    ///
+    /// Bit `(v - 1)` is set if and only if digit `v` (1..=9) is not present in row `r`,
+    /// column `c`, or the cell's 3x3 box: `~(row | col | box) & 0x01FF`.
     #[inline]
     pub(super) fn compute_candidates_mask_for_cell(&self, r: usize, c: usize) -> u16 {
         let row_mask = self.row_masks[r];
         let col_mask = self.col_masks[c];
         let box_mask = self.box_masks[Self::get_box_idx(r, c)];
         let used = row_mask | col_mask | box_mask;
-        !used & 0x1FF
+        // Invert used bits. `& 0x01FF` masks off bits 9-15 flipped by `!` on u16,
+        // ensuring only valid Sudoku digits (bits 0-8) remain set.
+        !used & 0x01FF
     }
 }
 

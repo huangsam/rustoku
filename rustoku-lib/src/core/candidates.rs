@@ -1,13 +1,10 @@
 use super::board::Board;
 use super::masks::Masks;
 
-/// Represents the candidates cache for a Rustoku puzzle.
+/// Cache of available candidate digits (1–9) for each cell on the board.
 ///
-/// This struct holds a 9x9 grid of candidate masks for each cell in the Rustoku board.
-/// Each cell's candidates are represented as a bitmask, where each bit corresponds to a number
-/// from 1 to 9. A bit set to 1 indicates that the corresponding number is a candidate for that cell.
-/// This struct provides methods to get and set candidate masks for specific cells, as well as to
-/// update the candidates based on the current state of the board and masks.
+/// Maintains a 9x9 matrix of 9-bit bitmasks (`0x01FF`), where bit index `(num - 1)`
+/// indicates that digit `num` remains valid. Filled cells always store `0`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Candidates {
     cache: [[u16; 9]; 9],
@@ -18,13 +15,13 @@ impl Candidates {
         Candidates { cache: [[0; 9]; 9] }
     }
 
-    /// Returns the candidate mask for a specific cell in the cache.
+    /// Returns the raw 9-bit candidate bitmask for cell `(r, c)`.
     #[inline]
     pub(super) fn get(&self, r: usize, c: usize) -> u16 {
         self.cache[r][c]
     }
 
-    /// Returns the actual candidate numbers (1-9) for a specific cell.
+    /// Unpacks the candidate bitmask for `(r, c)` into a sorted vector of digits `1..=9`.
     pub fn get_candidates(&self, r: usize, c: usize) -> Vec<u8> {
         let mask = self.get(r, c);
         let mut candidates = Vec::new();
@@ -37,14 +34,16 @@ impl Candidates {
         candidates
     }
 
-    /// Sets the candidate mask for a specific cell in the cache.
+    /// Sets the 9-bit candidate bitmask for cell `(r, c)`.
     #[inline]
     pub(super) fn set(&mut self, r: usize, c: usize, mask: u16) {
         self.cache[r][c] = mask;
     }
 
-    /// Update affected cells in the cache based on the current state of the board and masks.
-    /// Used for both placement and removal.
+    /// Recomputes candidates for all peers sharing a row, column, or 3x3 box with `(r, c)`.
+    ///
+    /// Used during candidate removal or backtracking undo where all peer constraints must be
+    /// unconditionally refreshed (`placed_num: None`).
     pub(super) fn update_affected_cells(
         &mut self,
         r: usize,
@@ -55,10 +54,12 @@ impl Candidates {
         self.update_affected_cells_for(r, c, masks, board, None);
     }
 
-    /// Update affected cells, optionally filtering by a placed number.
-    /// When `placed_num` is Some, only recomputes cells that had that number as a candidate
-    /// (plus the placed cell itself and box cells). This is an optimization for placements.
-    /// When `placed_num` is None, recomputes all affected cells (needed for removals).
+    /// Recomputes candidates for affected peers, optionally filtering by a placed digit.
+    ///
+    /// - **Placement (`placed_num: Some(n)`)**: Fast path that only recomputes peer cells
+    ///   currently holding `n` as a candidate, skipping cells unaffected by the new constraint.
+    /// - **Removal / Undo (`placed_num: None`)**: Unconditional path that recomputes all peer cells,
+    ///   restoring candidate possibilities that were previously suppressed by the placed digit.
     pub(super) fn update_affected_cells_for(
         &mut self,
         r: usize,
@@ -67,21 +68,22 @@ impl Candidates {
         board: &Board,
         placed_num: Option<u8>,
     ) {
-        // Invalidate/update cache for the target cell
+        // 1. Invalidate/update cache for the target cell (r, c)
         if board.is_empty(r, c) {
             // Removal case: recompute candidates for the now-empty cell
             self.cache[r][c] = masks.compute_candidates_mask_for_cell(r, c);
         } else {
-            // Placement case: no candidates for a filled cell
+            // Placement case: filled cells have 0 available candidates
             self.cache[r][c] = 0;
         }
 
+        // 2. Precompute the placed digit's bitmask for fast-path peer filtering
         let num_bit = placed_num.map(|n| 1u16 << (n - 1));
 
-        // Update cache for affected row and column
+        // 3. Update peer cells in the same row and column
         for i in 0..9 {
             if board.is_empty(r, i) && i != c {
-                // Skip if we know the placed number and this cell didn't have it as a candidate
+                // Fast path: skip recomputing if cell did not contain the placed digit
                 if let Some(bit) = num_bit
                     && self.cache[r][i] & bit == 0
                 {
@@ -90,6 +92,7 @@ impl Candidates {
                 self.cache[r][i] = masks.compute_candidates_mask_for_cell(r, i);
             }
             if board.is_empty(i, c) && i != r {
+                // Fast path: skip recomputing if cell did not contain the placed digit
                 if let Some(bit) = num_bit
                     && self.cache[i][c] & bit == 0
                 {
@@ -99,7 +102,9 @@ impl Candidates {
             }
         }
 
-        // Update box cells (excluding cells already handled by row/col above)
+        // 4. Update remaining peer cells in the 3x3 box
+        // Skips (cur_r == r) and (cur_c == c) because the 4 peer cells sharing both box and row/column
+        // were already updated in the row/column loop above, avoiding redundant recalculations.
         let box_idx = Masks::get_box_idx(r, c);
         let start_row = (box_idx / 3) * 3;
         let start_col = (box_idx % 3) * 3;
@@ -107,11 +112,12 @@ impl Candidates {
             for c_offset in 0..3 {
                 let cur_r = start_row + r_offset;
                 let cur_c = start_col + c_offset;
-                // Skip the placed cell and cells already updated in the row/col pass
+                // Skip the target cell and peers already updated in the row/column loop
                 if (cur_r == r) || (cur_c == c) {
                     continue;
                 }
                 if board.is_empty(cur_r, cur_c) {
+                    // Fast path: skip recomputing if cell did not contain the placed digit
                     if let Some(bit) = num_bit
                         && self.cache[cur_r][cur_c] & bit == 0
                     {
