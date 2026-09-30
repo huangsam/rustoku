@@ -24,8 +24,8 @@ pub fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
 pub fn find_units_with_n_candidates(
     candidate_bit: u16,
     n: usize,
-    candidates: &super::super::Candidates,
-    board: &super::super::Board,
+    candidates: &crate::core::Candidates,
+    board: &crate::core::Board,
     unit_type: UnitType,
 ) -> Vec<(usize, Vec<usize>)> {
     let mut result = Vec::new();
@@ -66,9 +66,8 @@ pub enum UnitType {
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::board::Board;
-    use super::super::super::candidates::Candidates;
     use super::*;
+    use crate::core::{Board, Candidates};
 
     #[test]
     fn test_row_cells() {
