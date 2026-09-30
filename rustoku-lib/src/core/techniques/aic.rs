@@ -4,14 +4,32 @@ use std::collections::VecDeque;
 
 /// Alternating Inference Chain (AIC) Technique.
 ///
-/// An AIC is a continuous chain of alternating strong and weak links between candidates.
-/// If the first candidate is false, the chain implies the last candidate is true. Therefore,
-/// any candidate that sees both the first and last candidate in the chain must be false.
+/// An AIC is a continuous chain of alternating strong and weak inferences between candidate propositions.
+/// Because the chain begins and ends with strong links:
+/// - If the starting candidate is false, the ending candidate must be true.
+/// - Therefore, at least one of the two endpoints must be true.
+/// - Any candidate that sees both endpoints can be safely eliminated.
 ///
-/// - Strong link: Two candidates are the ONLY two possibilities in a unit (If A is false, B is true).
-/// - Weak link: Two candidates cannot BOTH be true (If A is true, B is false).
+/// ### Link Types
+/// - **Strong link** ($\neg A \implies B$): If $A$ is false, $B$ must be true. Arises in bivalue cells
+///   (only 2 candidates in a cell) or bilocal units (a digit appears in only 2 cells of a row, col, or box).
+/// - **Weak link** ($A \implies \neg B$): If $A$ is true, $B$ must be false. Arises between any two candidates
+///   in the same cell, or identical candidates in cells that see each other.
+///
+/// ### Elimination Types
+/// 1. **Mutual Peer Elimination** (X-Chain / XY-Chain): When endpoints share the same candidate value in
+///    different cells, any cell seeing both endpoints cannot hold that candidate.
+/// 2. **Discontinuous Nice Loop** (DNL): When endpoints occupy the same cell with different candidate values,
+///    one of the two must be true, eliminating all other candidates from that cell.
+///
+/// ### Example
+/// If `(0, 0)=5 == (0, 4)=5 -- (3, 4)=5 == (3, 7)=5`, then either `(0, 0)=5` or `(3, 7)=5` must be true.
+/// Candidate 5 can be eliminated from any cell seeing both `(0, 0)` and `(3, 7)` (such as `(0, 7)` or `(3, 0)`).
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_chains.php>
 pub struct AlternatingInferenceChain;
 
+/// A candidate proposition in the inference chain, representing digit `val` at cell `(r, c)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Node {
     r: usize,
@@ -19,12 +37,16 @@ struct Node {
     val: u8,
 }
 
+/// Inference strength connecting two candidate nodes in the chain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LinkType {
+    /// Strong inference ($\neg A \implies B$). If preceding node is false, following node is true.
     Strong,
+    /// Weak inference ($A \implies \neg B$). If preceding node is true, following node is false.
     Weak,
 }
 
+/// Tracks an active alternating inference path during breadth-first search.
 #[derive(Debug, Clone)]
 struct ChainPath {
     nodes: Vec<Node>,
@@ -32,23 +54,27 @@ struct ChainPath {
 }
 
 impl AlternatingInferenceChain {
-    /// Check if two nodes have a weak link (they see each other and cannot both be true).
+    /// Checks if two nodes share a weak link (cells see each other and share the same candidate value).
     fn is_weak_link(n1: &Node, n2: &Node) -> bool {
         (n1.r == n2.r || n1.c == n2.c || (n1.r / 3 == n2.r / 3 && n1.c / 3 == n2.c / 3))
             && n1.val == n2.val
     }
 
-    /// Check if two nodes have a strong link.
-    /// A strong link exists if they are the ONLY two cells in a unit (row, col, box) that
-    /// can hold the given value, OR if they are the ONLY two candidates in a single cell (bivalue).
+    /// Checks if two candidate nodes share a strong link.
+    ///
+    /// A strong link exists in two cases:
+    /// 1. **Bivalue cell**: Both nodes share the same cell with different candidate values,
+    ///    and the cell has exactly 2 candidates.
+    /// 2. **Bilocal unit**: Both nodes share the same candidate value in different cells,
+    ///    and the candidate appears in exactly 2 cells of their shared row, column, or 3x3 box.
     fn is_strong_link(prop: &TechniquePropagator, n1: &Node, n2: &Node) -> bool {
-        // Condition 1: Bivalue cell (n1 and n2 are in the same cell, different values)
+        // Condition 1: Bivalue cell (same cell, different values)
         if n1.r == n2.r && n1.c == n2.c && n1.val != n2.val {
             let mask = prop.candidates.get(n1.r, n1.c);
             return mask.count_ones() == 2;
         }
 
-        // Condition 2: Bilocal unit (n1 and n2 are in different cells, same value, only 2 places in unit)
+        // Condition 2: Bilocal unit (different cells, same value, only 2 places in unit)
         if n1.val == n2.val && (n1.r != n2.r || n1.c != n2.c) {
             let val_mask = 1 << (n1.val - 1);
 
@@ -101,11 +127,11 @@ impl AlternatingInferenceChain {
         false
     }
 
-    /// Finds all candidates that can be the next step in the chain
+    /// Finds all candidate nodes reachable from `current` via the requested link type (strong or weak).
     fn find_next_nodes(prop: &TechniquePropagator, current: &Node, need_strong: bool) -> Vec<Node> {
         let mut next_nodes = Vec::new();
 
-        // Check same cell (different values)
+        // Check same cell (different candidate values)
         let mask = prop.candidates.get(current.r, current.c);
         for v in 1..=9 {
             if v != current.val && (mask & (1 << (v - 1))) != 0 {
@@ -119,15 +145,15 @@ impl AlternatingInferenceChain {
                         next_nodes.push(next);
                     }
                 } else {
-                    next_nodes.push(next); // Any two candidates in a cell are weakly linked
+                    next_nodes.push(next); // Any two candidates in the same cell are weakly linked
                 }
             }
         }
 
-        // Check peers (same value)
+        // Check peers (same candidate value across row, column, or box)
         let val_mask = 1 << (current.val - 1);
 
-        // Row
+        // Row peers
         for c in 0..9 {
             if c != current.c && (prop.candidates.get(current.r, c) & val_mask) != 0 {
                 let next = Node {
@@ -140,12 +166,12 @@ impl AlternatingInferenceChain {
                         next_nodes.push(next);
                     }
                 } else {
-                    next_nodes.push(next); // Any two identical candidates in a row are weakly linked
+                    next_nodes.push(next);
                 }
             }
         }
 
-        // Col
+        // Column peers
         for r in 0..9 {
             if r != current.r && (prop.candidates.get(r, current.c) & val_mask) != 0 {
                 let next = Node {
@@ -163,7 +189,7 @@ impl AlternatingInferenceChain {
             }
         }
 
-        // Box
+        // Box peers
         let br = (current.r / 3) * 3;
         let bc = (current.c / 3) * 3;
         for r in br..br + 3 {
@@ -189,40 +215,31 @@ impl AlternatingInferenceChain {
         next_nodes
     }
 
-    /// Try to find a target node that sees both ends of a valid chain
+    /// Tests whether the endpoints of a valid even-length chain permit candidate eliminations.
     fn find_eliminations(
         prop: &mut TechniquePropagator,
         path: &mut SolvePath,
         chain: &ChainPath,
     ) -> bool {
+        // Valid AICs must have an even number of nodes (start and end are strong-linked to their neighbors)
         if chain.nodes.len() < 4 || !chain.nodes.len().is_multiple_of(2) {
-            return false; // Valid AICs have an even number of nodes (start/end are strong linked to their neighbors)
+            return false;
         }
-        // The chain starts with a strong link, alternates, and ends with a strong link.
-        // Therefore, if the first node is false, the last node MUST be true.
-        // Any node that sees BOTH the first and last node MUST be false.
 
         let start = &chain.nodes[0];
-        // Safe: we checked chain.nodes.len() >= 4 above
         let end = chain
             .nodes
             .last()
             .expect("chain should have at least 4 nodes");
 
-        // They must be different nodes but have the SAME value to eliminate that value from peers.
-        // (If they are different values, it's a completely different type of deduction, like a grouped chain).
-        // Let's stick to single-digit eliminations (X-Chains) or cross-digit eliminations (XY-Chains).
-        // If start and end have the SAME value, we eliminate that value from mutual peers.
-        // If start and end are in the SAME cell, we can safely say the true value MUST be one of them, effectively eliminating all OTHER candidates in that cell.
-        // If start and end have DIFFERENT values in DIFFERENT cells, we can only eliminate a candidate if it sees BOTH ends AND equals the respective end values (rare).
-
         let mut progress = false;
 
+        // Case 1: Same candidate value in different cells (X-Chain / XY-Chain).
+        // Candidate val is eliminated from all mutual peers seeing both start and end.
         if start.val == end.val {
             let val = start.val;
             let val_mask = 1 << (val - 1);
 
-            // Find mutual peers
             for r in 0..9 {
                 for c in 0..9 {
                     if (r == start.r && c == start.c) || (r == end.r && c == end.c) {
@@ -231,9 +248,7 @@ impl AlternatingInferenceChain {
 
                     if (prop.candidates.get(r, c) & val_mask) != 0 {
                         let target = Node { r, c, val };
-                        // Target must be weakly linked (see) both start and end
-                        // Note: Technically for different values, target just needs to "see" start and end.
-                        // But since start and end are the same value, "seeing" is equivalent to is_weak_link.
+                        // Target must see both start and end cells
                         if Self::is_weak_link(start, &target)
                             && Self::is_weak_link(end, &target)
                             && prop.eliminate_candidate(
@@ -250,8 +265,9 @@ impl AlternatingInferenceChain {
                 }
             }
         } else if start.r == end.r && start.c == end.c {
-            // Discontinuous Nice Loop type: start and end are the same cell, different values.
-            // This means one of these two MUST be true, so all other candidates in this cell are false.
+            // Case 2: Discontinuous Nice Loop (DNL).
+            // Start and end are in the same cell with different values: one of them MUST be true,
+            // so all other candidate values in this cell can be eliminated.
             let mask = prop.candidates.get(start.r, start.c);
             let keep_mask = (1 << (start.val - 1)) | (1 << (end.val - 1));
             let remove_mask = mask & !keep_mask;
@@ -274,8 +290,9 @@ impl AlternatingInferenceChain {
 }
 
 impl TechniqueRule for AlternatingInferenceChain {
+    /// Applies the AIC technique by performing breadth-first search from every candidate.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        // Collect all possible starting nodes (candidates)
+        // Step 1: Collect all candidate nodes as potential chain starting points
         let mut starts = Vec::new();
         for r in 0..9 {
             for c in 0..9 {
@@ -288,13 +305,14 @@ impl TechniqueRule for AlternatingInferenceChain {
             }
         }
 
-        let max_depth = 14; // Prevent infinite loops / too long chains
+        let max_depth = 14; // Bounded search depth to ensure fast execution
 
+        // Step 2: Perform BFS search starting from each candidate node
         for start in starts {
             let mut queue = VecDeque::new();
             queue.push_back(ChainPath {
                 nodes: vec![start],
-                last_link: LinkType::Weak, // First link outbound will be Strong
+                last_link: LinkType::Weak, // First outbound link must be Strong
             });
 
             while let Some(current_path) = queue.pop_front() {
@@ -302,7 +320,6 @@ impl TechniqueRule for AlternatingInferenceChain {
                     continue;
                 }
 
-                // Safe: we just popped current_path from queue, so nodes is not empty
                 let current_node = current_path
                     .nodes
                     .last()
@@ -312,8 +329,9 @@ impl TechniqueRule for AlternatingInferenceChain {
                 let next_nodes =
                     AlternatingInferenceChain::find_next_nodes(prop, current_node, need_strong);
 
+                // Step 3: Explore valid link extensions
                 for next in next_nodes {
-                    // Prevent loops (don't visit nodes already in the chain)
+                    // Prevent cycles (do not revisit nodes already present in this chain)
                     if current_path.nodes.contains(&next) {
                         continue;
                     }
@@ -326,13 +344,13 @@ impl TechniqueRule for AlternatingInferenceChain {
                         LinkType::Weak
                     };
 
-                    // If we just added a strong link, we can check for eliminations
-                    // (AICs must start and end with strong links, hence even number of nodes)
+                    // Step 4: When a strong link completes an even-length chain of length >= 4,
+                    // test for candidate eliminations.
                     if new_path.last_link == LinkType::Strong
                         && new_path.nodes.len() >= 4
                         && AlternatingInferenceChain::find_eliminations(prop, path, &new_path)
                     {
-                        return true; // We made an elimination, return to let propagator restart
+                        return true; // Elimination made, return to let propagator restart
                     }
 
                     queue.push_back(new_path);
