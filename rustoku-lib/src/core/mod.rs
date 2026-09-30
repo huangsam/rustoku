@@ -9,7 +9,7 @@
 //! - [`Candidates`]: Precomputed 9-bit bitmask cache per empty cell representing valid candidate digits.
 //!
 //! The solving pipeline combines deterministic human deduction with depth-first search:
-//! 1. **Deterministic Constraint Propagation**: Enabled human techniques run in [`TechniquePropagator`]
+//! 1. **Deterministic Constraint Propagation**: Enabled human techniques run in `TechniquePropagator`
 //!    to eliminate candidates and place forced digits without guessing.
 //! 2. **MRV-Guided Backtracking**: If techniques do not completely solve the puzzle, recursive DFS
 //!    explores the state space using the Minimum Remaining Values (MRV / "fail-first") heuristic.
@@ -24,9 +24,6 @@
 //! | :--- | :--- | :--- | :--- |
 //! | [`Masks`] | `[u16; 9]` per unit | Bit `1 << (d - 1)` set if digit `d` placed | Exactly one bit per placed digit per row, col, and box |
 //! | [`Candidates`] | `[[u16; 9]; 9]` | Bit `1 << (d - 1)` set if digit `d` valid | `~(row \| col \| box) & 0x01FF` for empty; `0` for filled |
-
-#[cfg(doc)]
-use techniques::TechniquePropagator;
 
 mod board;
 mod candidates;

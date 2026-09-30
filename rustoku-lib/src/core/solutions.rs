@@ -14,7 +14,7 @@ use super::techniques::flags::TechniqueFlags;
 /// solutions one-by-one without computing them all up-front.
 ///
 /// Unlike recursive search, `Solutions` maintains its state in an explicit heap-allocated
-/// stack of [`Frame`] structures. This allows caller-driven, memory-bounded solution streaming.
+/// stack of `Frame` structures. This allows caller-driven, memory-bounded solution streaming.
 #[derive(Debug)]
 pub struct Solutions {
     solver: Rustoku,
