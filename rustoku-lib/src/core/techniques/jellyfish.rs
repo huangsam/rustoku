@@ -2,26 +2,33 @@ use crate::core::SolvePath;
 
 use super::{TechniquePropagator, TechniqueRule, units};
 
-/// Jellyfish technique implementation.
+/// Jellyfish technique implementation (4-Fish).
 ///
-/// A Jellyfish is a generalization of Swordfish from 3 defining lines to 4.
-/// For a candidate digit, if it appears in at most 4 positions across exactly
-/// 4 rows, and those positions collectively span exactly 4 columns, then that
-/// candidate can be eliminated from those 4 columns in all other rows.
-/// The same logic applies symmetrically for columns → rows.
+/// A 4-Fish generalization of Swordfish. When a candidate digit appears in 2 to 4 cells across each
+/// of 4 parallel base lines (rows or columns) such that their union spans exactly 4 perpendicular
+/// cover lines, the digit is locked into those intersections and eliminated elsewhere along the cover lines.
+///
+/// ### Example (Row-based)
+/// If candidate 3 appears only in subsets of columns {0, 3, 5, 8} across rows 1, 3, 6, and 8,
+/// then 3 can be eliminated from columns 0, 3, 5, and 8 in all other rows.
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_fishb.php#bf4>
 pub struct Jellyfish;
 
 impl Jellyfish {
+    /// Finds row-based Jellyfish (4 base rows, 4 cover columns) and eliminates candidates from cover columns.
     fn find_row_based_jellyfish(
         prop: &mut TechniquePropagator,
         candidate_bit: u16,
         path: &mut SolvePath,
         flags: crate::core::TechniqueFlags,
     ) -> bool {
+        // Step 1: Collect eligible base rows with 2 to 4 candidate positions
         let eligible_rows = Self::find_eligible_units(prop, candidate_bit, units::UnitType::Row);
 
         let mut eliminations_made = false;
 
+        // Step 2: Test all distinct 4-row tuples (r1, r2, r3, r4)
         for i in 0..eligible_rows.len() {
             for j in (i + 1)..eligible_rows.len() {
                 for k in (j + 1)..eligible_rows.len() {
@@ -31,6 +38,7 @@ impl Jellyfish {
                         let (r3, ref cols3) = eligible_rows[k];
                         let (r4, ref cols4) = eligible_rows[l];
 
+                        // Step 3: Compute the union bitmask of candidate columns across the 4 rows
                         let mut col_set: u16 = 0;
                         for &c in cols1
                             .iter()
@@ -41,11 +49,15 @@ impl Jellyfish {
                             col_set |= 1 << c;
                         }
 
+                        // Jellyfish forms if the column union spans exactly 4 columns.
+                        // By the pigeonhole principle, 4 base rows requiring candidate X confined
+                        // to 4 cover columns lock candidate X into those intersections.
                         if col_set.count_ones() == 4 {
                             let defining_rows = [r1, r2, r3, r4];
                             let cols: Vec<usize> =
                                 (0..9).filter(|&c| col_set & (1 << c) != 0).collect();
 
+                            // Step 4: Eliminate candidate from cover columns outside the 4 defining rows
                             for &col in &cols {
                                 for row in 0..9 {
                                     if !defining_rows.contains(&row)
@@ -71,16 +83,19 @@ impl Jellyfish {
         eliminations_made
     }
 
+    /// Finds column-based Jellyfish (4 base columns, 4 cover rows) and eliminates candidates from cover rows.
     fn find_column_based_jellyfish(
         prop: &mut TechniquePropagator,
         candidate_bit: u16,
         path: &mut SolvePath,
         flags: crate::core::TechniqueFlags,
     ) -> bool {
+        // Step 1: Collect eligible base columns with 2 to 4 candidate positions
         let eligible_cols = Self::find_eligible_units(prop, candidate_bit, units::UnitType::Column);
 
         let mut eliminations_made = false;
 
+        // Step 2: Test all distinct 4-column tuples (c1, c2, c3, c4)
         for i in 0..eligible_cols.len() {
             for j in (i + 1)..eligible_cols.len() {
                 for k in (j + 1)..eligible_cols.len() {
@@ -90,6 +105,7 @@ impl Jellyfish {
                         let (c3, ref rows3) = eligible_cols[k];
                         let (c4, ref rows4) = eligible_cols[l];
 
+                        // Step 3: Compute the union bitmask of candidate rows across the 4 columns
                         let mut row_set: u16 = 0;
                         for &r in rows1
                             .iter()
@@ -100,11 +116,15 @@ impl Jellyfish {
                             row_set |= 1 << r;
                         }
 
+                        // Jellyfish forms if the row union spans exactly 4 rows.
+                        // By the pigeonhole principle, 4 base columns requiring candidate X confined
+                        // to 4 cover rows lock candidate X into those intersections.
                         if row_set.count_ones() == 4 {
                             let defining_cols = [c1, c2, c3, c4];
                             let rows: Vec<usize> =
                                 (0..9).filter(|&r| row_set & (1 << r) != 0).collect();
 
+                            // Step 4: Eliminate candidate from cover rows outside the 4 defining columns
                             for &row in &rows {
                                 for col in 0..9 {
                                     if !defining_cols.contains(&col)
@@ -130,6 +150,10 @@ impl Jellyfish {
         eliminations_made
     }
 
+    /// Finds units (rows or columns) where a candidate appears in 2 to 4 positions.
+    ///
+    /// Units with fewer than 2 candidates cannot contribute to a multi-line fish, while
+    /// units with more than 4 candidates cannot fit within 4 cover lines.
     fn find_eligible_units(
         prop: &TechniquePropagator,
         candidate_bit: u16,
@@ -152,6 +176,9 @@ impl Jellyfish {
                 .map(|(pos, _)| pos)
                 .collect();
 
+            // A base line in a Jellyfish must contain between 2 and 4 candidate cells.
+            // Incomplete lines with 2 or 3 candidate cells are valid as long as the union across
+            // all 4 base lines spans exactly 4 cover lines.
             if positions.len() >= 2 && positions.len() <= 4 {
                 result.push((unit_idx, positions));
             }
@@ -162,6 +189,7 @@ impl Jellyfish {
 }
 
 impl TechniqueRule for Jellyfish {
+    /// Applies row-based and column-based Jellyfish searches for each candidate digit 1..=9.
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
         let mut eliminations_made = false;
 

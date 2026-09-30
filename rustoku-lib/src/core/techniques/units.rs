@@ -1,23 +1,26 @@
-/// Returns an array of all cell coordinates in the specified row.
+/// Returns all 9 `(row, col)` cell coordinates in row `r` (columns 0..9).
 pub fn row_cells(r: usize) -> [(usize, usize); 9] {
     core::array::from_fn(|c| (r, c))
 }
 
-/// Returns an array of all cell coordinates in the specified column.
+/// Returns all 9 `(row, col)` cell coordinates in column `c` (rows 0..9).
 pub fn col_cells(c: usize) -> [(usize, usize); 9] {
     core::array::from_fn(|r| (r, c))
 }
 
-/// Returns an array of all cell coordinates in the specified 3x3 box.
-/// Box indices are numbered 0-8, left-to-right, top-to-bottom.
+/// Returns all 9 `(row, col)` cell coordinates in the specified 3x3 box.
+///
+/// Box indices are numbered 0–8, left-to-right, top-to-bottom.
 pub fn box_cells(box_idx: usize) -> [(usize, usize); 9] {
     let start_row = (box_idx / 3) * 3;
     let start_col = (box_idx % 3) * 3;
     core::array::from_fn(|i| (start_row + i / 3, start_col + i % 3))
 }
 
-/// Finds units (rows/columns/boxes) that have exactly N cells containing a specific candidate.
-/// Returns a vector of (unit_index, positions) tuples.
+/// Finds rows or columns containing exactly `n` empty cells with candidate `candidate_bit`.
+///
+/// Returns a list of `(unit_index, positions)` tuples where `positions` are the 0-indexed
+/// perpendicular offsets (columns for rows, rows for columns).
 pub fn find_units_with_n_candidates(
     candidate_bit: u16,
     n: usize,
@@ -33,6 +36,7 @@ pub fn find_units_with_n_candidates(
             UnitType::Column => col_cells(unit_idx),
         };
 
+        // Filter empty cells that still have candidate_bit set
         let positions: Vec<usize> = unit_cells
             .iter()
             .enumerate()
@@ -42,6 +46,7 @@ pub fn find_units_with_n_candidates(
             .map(|(pos, _)| pos)
             .collect();
 
+        // Keep unit only if it matches the target candidate count
         if positions.len() == n {
             result.push((unit_idx, positions));
         }
@@ -50,10 +55,12 @@ pub fn find_units_with_n_candidates(
     result
 }
 
-/// Represents the type of unit (row or column).
+/// Specifies the orientation of linear units (rows or columns) for line-based techniques.
 #[derive(Clone, Copy)]
 pub enum UnitType {
+    /// Row unit (positions correspond to column indices 0..9).
     Row,
+    /// Column unit (positions correspond to row indices 0..9).
     Column,
 }
 
