@@ -1,8 +1,3 @@
-//! Formatting module for Rustoku data structures.
-//!
-//! This module provides functions to format the Sudoku board and its solve path
-//! in a way that is suitable for terminals.
-
 use crate::core::{Board, Solution, SolvePath, SolveStep, TechniqueFlags};
 use std::fmt;
 
