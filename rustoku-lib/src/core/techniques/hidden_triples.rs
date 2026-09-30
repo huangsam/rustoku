@@ -4,13 +4,20 @@ use crate::core::SolvePath;
 
 /// Hidden triples technique implementation.
 ///
-/// A hidden triple occurs when three numbers in a unit (row, column, or box) can only appear
-/// in exactly three cells. Even if those cells contain other candidates, the fact that only
-/// those three cells can contain the triple means we can eliminate all other candidates from
-/// those cells.
+/// A hidden triple occurs when three candidate digits in a unit (row, column, or box)
+/// appear only within three cells. Even if those cells contain other candidates, those three
+/// cells must contain the three triple digits between them. Therefore, all other candidates
+/// in those three cells can be eliminated.
+///
+/// ### Example
+/// If candidate digits 1, 2, and 3 in a row appear only across cells `(0, 1)`, `(0, 4)`, and `(0, 8)`,
+/// all other candidate numbers in those three cells are eliminated.
+///
+/// See: <https://hodoku.sourceforge.net/en/tech_hidden.php#h3>
 pub struct HiddenTriples;
 
 impl HiddenTriples {
+    /// Processes a single unit (row, column, or box) for hidden triples.
     fn process_unit_for_hidden_triples(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -19,6 +26,7 @@ impl HiddenTriples {
     ) -> bool {
         let mut eliminations_made = false;
 
+        // Step 1: Iterate over all 3-digit candidate combinations (n1, n2, n3)
         for n1_val in 1..=7 {
             for n2_val in (n1_val + 1)..=8 {
                 for n3_val in (n2_val + 1)..=9 {
@@ -27,11 +35,12 @@ impl HiddenTriples {
                     let n3_bit = 1 << (n3_val - 1);
                     let triple_mask = n1_bit | n2_bit | n3_bit;
 
+                    // Step 2: Find cells in the unit containing each candidate
                     let cells1 = Self::find_cells_with_candidate(unit_cells, n1_bit, prop);
                     let cells2 = Self::find_cells_with_candidate(unit_cells, n2_bit, prop);
                     let cells3 = Self::find_cells_with_candidate(unit_cells, n3_bit, prop);
 
-                    // If any candidate has 0 or >3 positions, it can't be part of a hidden triple
+                    // If any candidate has 0 or >3 positions, it cannot be part of a hidden triple
                     if cells1.is_empty()
                         || cells1.len() > 3
                         || cells2.is_empty()
@@ -42,16 +51,15 @@ impl HiddenTriples {
                         continue;
                     }
 
-                    // Compute union of cells
+                    // Step 3: Compute the unique union of cells across all three digits
                     let mut all_cells = cells1.clone();
                     all_cells.extend(cells2.iter());
                     all_cells.extend(cells3.iter());
                     all_cells.sort_unstable();
                     all_cells.dedup();
 
+                    // Step 4: If the union consists of exactly 3 cells, eliminate all other candidates from them
                     if all_cells.len() == 3 {
-                        // We found 3 cells that contain all instances of n1, n2, n3.
-                        // Eliminate all other candidates from these 3 cells.
                         eliminations_made |= Self::eliminate_other_candidates_from_cells(
                             prop,
                             &all_cells,
@@ -105,29 +113,32 @@ impl HiddenTriples {
 
 impl TechniqueRule for HiddenTriples {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        let mut overall_placements_made = false;
+        let mut overall_eliminations_made = false;
 
+        // Step 1: Scan all rows for hidden triples
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_hidden_triples(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
+        // Step 2: Scan all columns for hidden triples
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_hidden_triples(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
+        // Step 3: Scan all 3x3 boxes for hidden triples
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_hidden_triples(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
-        overall_placements_made
+        overall_eliminations_made
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {

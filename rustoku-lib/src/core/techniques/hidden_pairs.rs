@@ -4,38 +4,23 @@ use crate::core::SolvePath;
 
 /// Hidden pairs technique implementation.
 ///
-/// A hidden pair occurs when two numbers in a unit (row, column, or box) can only appear
-/// in exactly two cells. Even if those cells contain other candidates, the fact that only
-/// those two cells can contain the pair means we can eliminate all other candidates from
-/// those cells.
+/// A hidden pair occurs when two candidate digits in a unit (row, column, or box) appear
+/// only within the exact same two cells. Even if those two cells contain additional candidates,
+/// those cells must contain the two pair numbers between them. Therefore, all other candidates
+/// in those two cells can be safely eliminated.
 ///
-/// If two numbers can only appear in two specific cells within a unit, then those cells
-/// must contain those two numbers (in some order). Therefore, any other candidates in
-/// those cells can be eliminated.
+/// ### Example
+/// If candidates 1 and 2 appear only in cells `(0, 0)` and `(0, 1)` of row 0, any other candidates
+/// in `(0, 0)` and `(0, 1)` (e.g. 3 or 4) are eliminated, leaving only `{1, 2}` in both cells.
 ///
-/// Consider this row: [1,2,3] [1,2,4] [5,6] [5,6] [5,6] [7,8,9] [7,8,9] [7,8,9] [7,8,9]
-///
-/// Numbers 1 and 2 only appear in the first two cells. Even though those cells have
-/// other candidates (3 and 4), we know they must contain 1 and 2 between them.
-/// We can eliminate 3 from the first cell and 4 from the second cell, leaving:
-/// [1,2] [1,2] [5,6] [5,6] [5,6] [7,8,9] [7,8,9] [7,8,9] [7,8,9]
-///
-/// 1. For each pair of numbers (n1, n2), find cells in the unit that contain n1 and n2
-/// 2. If exactly 2 cells contain n1 AND exactly 2 cells contain n2 AND they are the same cells,
-///    then we have a hidden pair
-/// 3. Eliminate all other candidates from those two cells
-/// 4. Repeat for rows, columns, and boxes
+/// See: <https://hodoku.sourceforge.net/en/tech_hidden.php#h2>
 pub struct HiddenPairs;
 
 impl HiddenPairs {
-    /// Process a single unit (row, column, or box) for hidden pairs.
+    /// Processes a single unit (row, column, or box) for hidden pairs.
     ///
-    /// This function implements the core hidden pairs algorithm for one unit:
-    /// - For each pair of numbers, check if they appear in exactly 2 cells
-    /// - If those cells are the same for both numbers, we have a hidden pair
-    /// - Eliminate other candidates from those cells
-    ///
-    /// Returns true if any eliminations were made.
+    /// Identifies pairs of digits confined to the exact same two cells in the unit
+    /// and eliminates all other candidates from those two cells.
     fn process_unit_for_hidden_pairs(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -44,17 +29,18 @@ impl HiddenPairs {
     ) -> bool {
         let mut eliminations_made = false;
 
+        // Step 1: Check each pair of candidate digits (n1, n2)
         for n1_val in 1..=9 {
             for n2_val in (n1_val + 1)..=9 {
                 let n1_bit = 1 << (n1_val - 1);
                 let n2_bit = 1 << (n2_val - 1);
                 let pair_mask = n1_bit | n2_bit; // The candidates we want to KEEP
 
-                // Find cells containing each candidate
+                // Step 2: Find cells in the unit containing each candidate
                 let cells_with_n1 = Self::find_cells_with_candidate(unit_cells, n1_bit, prop);
                 let cells_with_n2 = Self::find_cells_with_candidate(unit_cells, n2_bit, prop);
 
-                // Check if we have exactly 2 cells for each candidate and they match
+                // Step 3: Check if both candidates appear in exactly 2 cells and those cells match
                 if cells_with_n1.len() == 2
                     && cells_with_n2.len() == 2
                     && cells_with_n1 == cells_with_n2
@@ -62,7 +48,7 @@ impl HiddenPairs {
                     let (r1, c1) = cells_with_n1[0];
                     let (r2, c2) = cells_with_n1[1];
 
-                    // Eliminate other candidates from these cells
+                    // Eliminate all other candidates from these two cells
                     eliminations_made |= Self::eliminate_other_candidates_from_cells(
                         prop,
                         &[(r1, c1), (r2, c2)],
@@ -118,32 +104,32 @@ impl HiddenPairs {
 
 impl TechniqueRule for HiddenPairs {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        let mut overall_placements_made = false;
+        let mut overall_eliminations_made = false;
 
-        // Process rows
+        // Step 1: Scan all rows for hidden pairs
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
-        // Process columns
+        // Step 2: Scan all columns for hidden pairs
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
-        // Process 3x3 boxes
+        // Step 3: Scan all 3x3 boxes for hidden pairs
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_hidden_pairs(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
-        overall_placements_made
+        overall_eliminations_made
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {

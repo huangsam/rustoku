@@ -4,23 +4,20 @@ use crate::core::SolvePath;
 
 /// Hidden quads technique implementation.
 ///
-/// A hidden quad occurs when four candidate numbers in a unit (row, column, or box)
-/// appear in exactly four cells, and nowhere else in that unit.
+/// A hidden quad occurs when four candidate digits in a unit (row, column, or box)
+/// appear only within four cells. Even if those four cells contain other candidates, those four
+/// cells must contain the four quad digits between them. Therefore, all other candidates
+/// in those four cells can be safely eliminated.
 ///
-/// Even if those four cells contain other "extraneous" candidates, we know that
-/// those four specific cells *must* contain the four quad numbers between them.
-/// Therefore, we can safely eliminate all other candidates from those four cells.
+/// ### Example
+/// If candidate digits 2, 4, 7, and 8 in a row appear only across cells `(0, 1)`, `(0, 4)`,
+/// `(0, 5)`, and `(0, 8)`, all other candidate numbers in those four cells are eliminated.
 ///
-/// This is the "hidden" counterpart to Naked Quads. While Naked Quads are found by
-/// looking at cell candidate counts, Hidden Quads are found by looking at the
-/// distribution of candidate positions across a unit.
-///
-/// Example:
-/// If in a row, the numbers {2, 4, 7, 8} appear only in cells C2, C5, C6, and C9,
-/// then any other numbers in those four cells (like a 3 or a 5) can be removed.
+/// See: <https://hodoku.sourceforge.net/en/tech_hidden.php#h4>
 pub struct HiddenQuads;
 
 impl HiddenQuads {
+    /// Processes a single unit (row, column, or box) for hidden quads.
     fn process_unit_for_hidden_quads(
         prop: &mut TechniquePropagator,
         unit_cells: &[(usize, usize)],
@@ -29,6 +26,7 @@ impl HiddenQuads {
     ) -> bool {
         let mut eliminations_made = false;
 
+        // Step 1: Iterate over all 4-digit candidate combinations (n1, n2, n3, n4)
         for n1_val in 1..=6 {
             for n2_val in (n1_val + 1)..=7 {
                 for n3_val in (n2_val + 1)..=8 {
@@ -39,12 +37,13 @@ impl HiddenQuads {
                         let n4_bit = 1 << (n4_val - 1);
                         let quad_mask = n1_bit | n2_bit | n3_bit | n4_bit;
 
+                        // Step 2: Find cells in the unit containing each candidate
                         let cells1 = Self::find_cells_with_candidate(unit_cells, n1_bit, prop);
                         let cells2 = Self::find_cells_with_candidate(unit_cells, n2_bit, prop);
                         let cells3 = Self::find_cells_with_candidate(unit_cells, n3_bit, prop);
                         let cells4 = Self::find_cells_with_candidate(unit_cells, n4_bit, prop);
 
-                        // If any candidate has 0 or >4 positions, it can't be part of a hidden quad
+                        // If any candidate has 0 or >4 positions, it cannot be part of a hidden quad
                         if cells1.is_empty()
                             || cells1.len() > 4
                             || cells2.is_empty()
@@ -57,7 +56,7 @@ impl HiddenQuads {
                             continue;
                         }
 
-                        // Compute union of cells
+                        // Step 3: Compute the unique union of cells across all four digits
                         let mut all_cells = cells1.clone();
                         all_cells.extend(cells2.iter());
                         all_cells.extend(cells3.iter());
@@ -65,9 +64,8 @@ impl HiddenQuads {
                         all_cells.sort_unstable();
                         all_cells.dedup();
 
+                        // Step 4: If the union consists of exactly 4 cells, eliminate all other candidates from them
                         if all_cells.len() == 4 {
-                            // We found 4 cells that contain all instances of n1, n2, n3, n4.
-                            // Eliminate all other candidates from these 4 cells.
                             eliminations_made |= Self::eliminate_other_candidates_from_cells(
                                 prop, &all_cells, quad_mask, flags, path,
                             );
@@ -118,29 +116,32 @@ impl HiddenQuads {
 
 impl TechniqueRule for HiddenQuads {
     fn apply(&self, prop: &mut TechniquePropagator, path: &mut SolvePath) -> bool {
-        let mut overall_placements_made = false;
+        let mut overall_eliminations_made = false;
 
+        // Step 1: Scan all rows for hidden quads
         for i in 0..9 {
             let cells = units::row_cells(i);
             if Self::process_unit_for_hidden_quads(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
+        // Step 2: Scan all columns for hidden quads
         for i in 0..9 {
             let cells = units::col_cells(i);
             if Self::process_unit_for_hidden_quads(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
 
+        // Step 3: Scan all 3x3 boxes for hidden quads
         for i in 0..9 {
             let cells = units::box_cells(i);
             if Self::process_unit_for_hidden_quads(prop, &cells, path, self.flags()) {
-                overall_placements_made = true;
+                overall_eliminations_made = true;
             }
         }
-        overall_placements_made
+        overall_eliminations_made
     }
 
     fn flags(&self) -> crate::core::TechniqueFlags {
