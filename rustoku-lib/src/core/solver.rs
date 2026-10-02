@@ -203,17 +203,6 @@ impl Rustoku {
         }
     }
 
-    /// Extracts candidate digits (1–9) from a bitmask into a `Vec<u8>`.
-    pub(super) fn candidates_from_mask(mask: u16) -> Vec<u8> {
-        let mut nums = Vec::with_capacity(mask.count_ones() as usize);
-        for v in 1..=9u8 {
-            if mask & (1 << (v - 1)) != 0 {
-                nums.push(v);
-            }
-        }
-        nums
-    }
-
     /// Locates the empty cell with the fewest candidates (MRV heuristic).
     #[inline]
     pub(super) fn find_next_empty_cell(&self) -> Option<(usize, usize)> {
@@ -427,10 +416,20 @@ impl Rustoku {
             return Vec::new();
         }
 
-        // Phase 2: If empty cells remain, parallelize search across first MRV cell's candidates.
+        // Phase 2: If empty cells remain, decide whether to parallelize or solve sequentially.
         if let Some((r, c)) = self.find_next_empty_cell() {
+            // Adaptive heuristic: for small-to-moderate search spaces (<= 40 empty cells),
+            // sequential search completes in microseconds and avoids Rayon thread-pool dispatch overhead.
+            let empty_count = self.board.iter_empty_cells().count();
+            if empty_count <= 40 {
+                let mut solutions = Vec::new();
+                self.solve_until_recursive(&mut solutions, &mut path, 0);
+                return solutions;
+            }
+
             let mask = self.candidates.get(r, c);
-            let nums = Self::candidates_from_mask(mask);
+            let cands = CandidateList::from_mask(mask);
+            let nums = cands.as_slice().to_vec();
 
             let initial_path = path.clone();
 
