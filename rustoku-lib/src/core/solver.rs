@@ -352,6 +352,60 @@ impl Rustoku {
         solutions
     }
 
+    /// Recursively counts valid solutions up to `bound` (or all if bound == 0) without telemetry allocations.
+    fn count_solutions_recursive(&mut self, bound: usize) -> usize {
+        let Some((r, c)) = self.find_next_empty_cell() else {
+            return 1;
+        };
+
+        let mut count = 0;
+        let mask = self.candidates.get(r, c);
+        let cands = CandidateList::from_mask(mask);
+
+        for &num in cands.as_slice() {
+            if !self.masks.is_safe(r, c, num) {
+                continue;
+            }
+
+            self.place_number(r, c, num);
+            count += self.count_solutions_recursive(if bound > 0 {
+                bound.saturating_sub(count)
+            } else {
+                0
+            });
+            self.remove_number(r, c, num);
+
+            if bound > 0 && count >= bound {
+                return count;
+            }
+        }
+
+        count
+    }
+
+    /// Fast-path solution counter up to `bound` solutions (e.g. for uniqueness checking).
+    ///
+    /// Unlike [`Self::solve_until`], this method avoids constructing [`Solution`] objects,
+    /// cloning boards, or recording telemetry paths.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+    /// let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+    /// assert_eq!(solver.count_solutions_until(2), 1);
+    /// ```
+    pub fn count_solutions_until(&mut self, bound: usize) -> usize {
+        let mut path = SolvePath::default();
+        if !self.techniques_make_valid_changes(&mut path) {
+            return 0;
+        }
+
+        self.count_solutions_recursive(bound)
+    }
+
     /// Attempts to solve the Sudoku puzzle using backtracking with MRV (Minimum Remaining Values).
     ///
     /// This is an optimized convenience wrapper around `solve_until(1)` to find the first valid solution.

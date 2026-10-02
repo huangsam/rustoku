@@ -188,38 +188,42 @@ impl BoardGenerator {
                 break;
             }
 
-            // Collect clues currently filled in this symmetry group
-            let mut group_clues = Vec::new();
+            // Collect clues currently filled in this symmetry group (at most 4 cells)
+            let mut group_clues = [(0usize, 0usize, 0u8); 4];
+            let mut group_clues_count = 0;
             for &(r, c) in &group {
                 let val = board.cells[r][c];
                 if val != 0 {
-                    group_clues.push((r, c, val));
+                    group_clues[group_clues_count] = (r, c, val);
+                    group_clues_count += 1;
                 }
             }
 
-            if group_clues.is_empty() {
+            if group_clues_count == 0 {
                 continue;
             }
 
+            let active_group = &group_clues[..group_clues_count];
+
             // Tentatively clear the entire symmetry group
-            for &(r, c, _) in &group_clues {
+            for &(r, c, _) in active_group {
                 board.cells[r][c] = 0;
             }
 
-            // Uniqueness check: bounded solve to verify exactly 1 solution exists
-            if Rustoku::new(board)?.solve_until(2).len() != 1 {
+            // Uniqueness check: fast solution count without constructing Solution objects
+            if Rustoku::new(board)?.count_solutions_until(2) != 1 {
                 // More than 1 solution found (or 0): restore clues to maintain uniqueness
-                for &(r, c, val) in &group_clues {
+                for &(r, c, val) in active_group {
                     board.cells[r][c] = val;
                 }
             } else {
                 // Successfully removed clues while maintaining unique solvability
-                clues -= group_clues.len();
+                clues -= group_clues_count;
             }
         }
 
         // Final safety check to ensure generated board is valid and uniquely solvable
-        if Rustoku::new(board)?.solve_until(2).len() != 1 {
+        if Rustoku::new(board)?.count_solutions_until(2) != 1 {
             return Err(RustokuError::GenerateFailure);
         }
 
