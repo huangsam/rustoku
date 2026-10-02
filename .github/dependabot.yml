@@ -7,7 +7,7 @@ updates:
     groups:
       cargo-dependencies:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -16,7 +16,7 @@ updates:
     groups:
       actions-dependencies:
         patterns:
-          - "*"
+          - '*'
 
   # Keeps maturin for python builds up to date.
   - package-ecosystem: 'pip'
@@ -26,7 +26,7 @@ updates:
     groups:
       python-dependencies:
         patterns:
-          - "*"
+          - '*'
 
   # Keeps npm packages for demo up to date.
   - package-ecosystem: 'npm'
@@ -40,7 +40,7 @@ updates:
     groups:
       demo-dependencies:
         patterns:
-          - "*"
+          - '*'
 
   # Keeps npm packages for wasm bindings up to date.
   - package-ecosystem: 'npm'
@@ -50,4 +50,4 @@ updates:
     groups:
       wasm-dependencies:
         patterns:
-          - "*"
+          - '*'
