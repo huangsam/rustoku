@@ -487,6 +487,7 @@ proptest! {
 
 #[cfg(test)]
 mod edge_case_tests {
+    use super::count_clues;
     use rustoku_lib::RustokuError;
     use rustoku_lib::core::{Board, BoardGenerator, Rustoku, Symmetry, generate_board};
 
@@ -618,5 +619,121 @@ mod edge_case_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_rotational_90_symmetry() {
+        if let Ok(board) = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::Rotational90)
+            .generate()
+        {
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                for (pr, pc) in Symmetry::Rotational90.get_partners(r, c) {
+                    let partner_val = board.get(pr, pc);
+                    if val != 0 {
+                        assert!(
+                            partner_val != 0,
+                            "Cell ({}, {}) has value but 90-deg partner ({}, {}) is empty",
+                            r,
+                            c,
+                            pr,
+                            pc
+                        );
+                    } else {
+                        assert!(
+                            partner_val == 0,
+                            "Cell ({}, {}) is empty but 90-deg partner ({}, {}) has value",
+                            r,
+                            c,
+                            pr,
+                            pc
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_mirror_horizontal_symmetry() {
+        if let Ok(board) = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::MirrorHorizontal)
+            .generate()
+        {
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                let partner_val = board.get(8 - r, c);
+                if val != 0 {
+                    assert!(
+                        partner_val != 0,
+                        "Cell ({}, {}) has value but horizontal partner ({}, {}) is empty",
+                        r,
+                        c,
+                        8 - r,
+                        c
+                    );
+                } else {
+                    assert!(
+                        partner_val == 0,
+                        "Cell ({}, {}) is empty but horizontal partner ({}, {}) has value",
+                        r,
+                        c,
+                        8 - r,
+                        c
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_mirror_diagonal_symmetry() {
+        if let Ok(board) = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::MirrorDiagonal)
+            .generate()
+        {
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                let partner_val = board.get(c, r);
+                if val != 0 {
+                    assert!(
+                        partner_val != 0,
+                        "Cell ({}, {}) has value but diagonal partner ({}, {}) is empty",
+                        r,
+                        c,
+                        c,
+                        r
+                    );
+                } else {
+                    assert!(
+                        partner_val == 0,
+                        "Cell ({}, {}) is empty but diagonal partner ({}, {}) has value",
+                        r,
+                        c,
+                        c,
+                        r
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_none_symmetry() {
+        let board_res = BoardGenerator::new()
+            .clues(25)
+            .symmetry(Symmetry::None)
+            .generate();
+        assert!(
+            board_res.is_ok(),
+            "Generating puzzle with Symmetry::None should succeed"
+        );
+        let board = board_res.unwrap();
+        let clues = count_clues(&board);
+        assert!(clues >= 25, "Expected at least 25 clues, got {clues}");
     }
 }
