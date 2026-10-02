@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Fast `count_solutions_until` method on `Rustoku` for counting solutions without allocating solution objects
+- Dedicated `solve_random` method on `Rustoku` for randomized board generation
+- Expanded test coverage across property tests, edge cases, and Python/WASM binding validation
+- Criterion benchmarks for hard puzzle solving and technique configurations
+
+### Changed
+- Streamlined solver inner loop with zero-allocation candidate tracking and deterministic search
+- Faster puzzle generation via lightweight uniqueness checks
+- Converted `solve_all` to pure sequential search, eliminating thread-pool overhead
+- Normalized quality check commands across documentation
+- Updated workspace dependencies
+
+### Removed
+- Removed `rayon` dependency from `rustoku-lib`
+
 ## [0.15.4] - 2026-09-30
 
 ### Added
@@ -272,6 +290,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
+[Unreleased]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.4...HEAD
 [0.15.4]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.3...rustoku-lib-v0.15.4
 [0.15.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.2...rustoku-lib-v0.15.3
 [0.15.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.1...rustoku-lib-v0.15.2
@@ -292,4 +311,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.4]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.9.3...rustoku-lib-v0.9.4
 [0.9.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.9.2...rustoku-lib-v0.9.3
 [0.9.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.9.1...rustoku-lib-v0.9.2
-[0.9.1]: https://github.com/huangsam/rustoku/releases/tag/rustoku-lib-v0.9.1</content>
+[0.9.1]: https://github.com/huangsam/rustoku/releases/tag/rustoku-lib-v0.9.1
