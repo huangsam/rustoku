@@ -10,12 +10,11 @@
 Run before completing tasks:
 ```bash
 cargo fmt --all
-cargo clippy --all-targets --all-features -- -D warnings
+cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace
 cargo bench                    # in rustoku-lib/benches/
 
 # Binding checks
-cargo check -p rustoku-py -p rustoku-wasm
 cd rustoku-wasm && wasm-pack build && npm test
 cd rustoku-py && maturin develop && python3 tests/test_api.py
 ```
