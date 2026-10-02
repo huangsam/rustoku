@@ -34,6 +34,76 @@ fn board_string_81_strategy() -> impl Strategy<Value = String> {
         .prop_map(|chars| chars.into_iter().collect())
 }
 
+// Strategy for generating random cell assignments (0 to 35 placements)
+fn sparse_cells_strategy() -> impl Strategy<Value = [[u8; 9]; 9]> {
+    prop::collection::vec(
+        (
+            cell_index_strategy(),
+            cell_index_strategy(),
+            digit_strategy(),
+        ),
+        0..=35,
+    )
+    .prop_map(|placements| {
+        let mut cells = [[0u8; 9]; 9];
+        for (r, c, val) in placements {
+            cells[r][c] = val;
+        }
+        cells
+    })
+}
+
+// Independent duplicate-checking oracle for rows, columns, and 3x3 boxes
+fn board_has_duplicates(board: &Board) -> bool {
+    // Check rows
+    for r in 0..9 {
+        let mut seen = 0u16;
+        for c in 0..9 {
+            let val = board.get(r, c);
+            if val != 0 {
+                let bit = 1 << val;
+                if seen & bit != 0 {
+                    return true;
+                }
+                seen |= bit;
+            }
+        }
+    }
+    // Check columns
+    for c in 0..9 {
+        let mut seen = 0u16;
+        for r in 0..9 {
+            let val = board.get(r, c);
+            if val != 0 {
+                let bit = 1 << val;
+                if seen & bit != 0 {
+                    return true;
+                }
+                seen |= bit;
+            }
+        }
+    }
+    // Check 3x3 boxes
+    for box_row in 0..3 {
+        for box_col in 0..3 {
+            let mut seen = 0u16;
+            for r in (box_row * 3)..(box_row * 3 + 3) {
+                for c in (box_col * 3)..(box_col * 3 + 3) {
+                    let val = board.get(r, c);
+                    if val != 0 {
+                        let bit = 1 << val;
+                        if seen & bit != 0 {
+                            return true;
+                        }
+                        seen |= bit;
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
 // Helper to count the number of non-zero cells in a board
 fn count_clues(board: &Board) -> usize {
     board
@@ -369,6 +439,48 @@ proptest! {
         // Rustoku::new_from_str should only fail on duplicate values
         if let Err(e) = Rustoku::new_from_str(&s) {
             prop_assert_eq!(e, RustokuError::DuplicateValues);
+        }
+    }
+
+    #[test]
+    fn prop_rustoku_duplicate_detection_and_bitmask_invariants(cells in sparse_cells_strategy()) {
+        let board = Board::new(cells);
+        let has_dups = board_has_duplicates(&board);
+        let result = Rustoku::new(board);
+
+        if has_dups {
+            prop_assert_eq!(result.err(), Some(RustokuError::DuplicateValues));
+        } else {
+            prop_assert!(result.is_ok());
+            let solver = result.unwrap();
+
+            // Verify Candidate cache bitmask invariants:
+            // For every empty cell, candidate presence must strictly match masks.is_safe(r, c, digit)
+            for (r, c) in board.iter_empty_cells() {
+                let candidates = solver.candidates.get_candidates(r, c);
+                for v in 1..=9u8 {
+                    let has_candidate = candidates.contains(&v);
+                    let safe = solver.masks.is_safe(r, c, v);
+                    prop_assert_eq!(
+                        has_candidate,
+                        safe,
+                        "Candidate digit {} presence at ({}, {}) should equal is_safe",
+                        v, r, c
+                    );
+                }
+            }
+
+            // For every filled cell, its digit must be recorded in masks
+            for (r, c) in board.iter_cells() {
+                let val = board.get(r, c);
+                if val != 0 {
+                    prop_assert!(
+                        !solver.masks.is_safe(r, c, val),
+                        "Placed digit {} at ({}, {}) should be recorded in masks",
+                        val, r, c
+                    );
+                }
+            }
         }
     }
 }
