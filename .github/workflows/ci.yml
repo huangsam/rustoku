@@ -47,7 +47,7 @@ jobs:
       - name: Build and Test Python extension
         run: |
           pip install .
-          python3 tests/test_basic.py
+          python3 tests/test_api.py
         working-directory: rustoku-py
 
   wasm-demo-build:
