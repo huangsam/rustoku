@@ -60,6 +60,44 @@ class TestRustoku(unittest.TestCase):
         result = rustoku.solve_steps(unsolvable, "expert")
         self.assertIsNone(result)
 
+    def test_solve_invalid_inputs(self):
+        # Invalid length
+        with self.assertRaises(ValueError):
+            rustoku.solve("too_short")
+        with self.assertRaises(ValueError):
+            rustoku.solve("1" * 80)
+        with self.assertRaises(ValueError):
+            rustoku.solve("1" * 82)
+
+        # Invalid characters
+        with self.assertRaises(ValueError):
+            rustoku.solve("X" + "0" * 80)
+
+        # Duplicate initial clues
+        with self.assertRaises(ValueError):
+            rustoku.solve("55" + "0" * 79)
+
+    def test_solve_all_invalid_inputs(self):
+        with self.assertRaises(ValueError):
+            rustoku.solve_all("invalid")
+
+    def test_solve_steps_invalid_difficulty(self):
+        puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"
+        with self.assertRaises(ValueError):
+            rustoku.solve_steps(puzzle, "unknown_difficulty")
+
+    def test_candidates_invalid_inputs(self):
+        with self.assertRaises(ValueError):
+            rustoku.candidates("invalid")
+
+    def test_check_invalid_inputs(self):
+        with self.assertRaises(ValueError):
+            rustoku.check("invalid")
+
+    def test_generate_advanced_invalid_difficulty(self):
+        with self.assertRaises(ValueError):
+            rustoku.generate_advanced(symmetry="none", difficulty="unknown_difficulty")
+
 
 if __name__ == "__main__":
     unittest.main()
