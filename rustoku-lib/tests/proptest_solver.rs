@@ -3,6 +3,11 @@ use proptest::prelude::*;
 use rustoku_lib::RustokuError;
 use rustoku_lib::core::{Board, Rustoku, Solutions, generate_board};
 
+const TWO_PUZZLE: &str =
+    "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
+const SIX_PUZZLE: &str =
+    "295743001431865900876192543387459216612387495549216738763500000000000000000000000";
+
 // Strategy for generating valid Sudoku clue counts (17-81)
 fn clue_count_strategy() -> impl Strategy<Value = usize> {
     17..=81usize
@@ -310,6 +315,100 @@ proptest! {
                     solutions.len()
                 );
             }
+        }
+    }
+
+    #[test]
+    fn prop_solve_until_bounds_two_solution_puzzle(limit in 0..=5usize) {
+        let mut solver = Rustoku::new_from_str(TWO_PUZZLE).expect("valid puzzle");
+        let solutions = solver.solve_until(limit);
+        let expected = if limit == 0 { 2 } else { limit.min(2) };
+
+        prop_assert_eq!(
+            solutions.len(),
+            expected,
+            "solve_until({}) on TWO_PUZZLE should yield exactly {} solutions",
+            limit,
+            expected
+        );
+
+        // All returned solutions must be distinct
+        for i in 0..solutions.len() {
+            for j in (i + 1)..solutions.len() {
+                prop_assert_ne!(
+                    solutions[i].board,
+                    solutions[j].board,
+                    "Duplicate solution found at index {} and {}",
+                    i,
+                    j
+                );
+            }
+        }
+
+        // All returned solutions must be valid solved boards
+        for sol in &solutions {
+            prop_assert!(
+                Rustoku::new(sol.board).is_ok_and(|r| r.is_solved()),
+                "Every solution from solve_until must be a valid completed board"
+            );
+        }
+
+        // Solutions iterator must match when limit > 0
+        if limit > 0 {
+            let iter_solver = Rustoku::new_from_str(TWO_PUZZLE).unwrap();
+            let iter_count = Solutions::from_solver(iter_solver).take(limit).count();
+            prop_assert_eq!(
+                iter_count, expected,
+                "Solutions iterator .take({}) count ({}) must match solve_until count ({})",
+                limit, iter_count, expected
+            );
+        }
+    }
+
+    #[test]
+    fn prop_solve_until_bounds_six_solution_puzzle(limit in 0..=10usize) {
+        let mut solver = Rustoku::new_from_str(SIX_PUZZLE).expect("valid puzzle");
+        let solutions = solver.solve_until(limit);
+        let expected = if limit == 0 { 6 } else { limit.min(6) };
+
+        prop_assert_eq!(
+            solutions.len(),
+            expected,
+            "solve_until({}) on SIX_PUZZLE should yield exactly {} solutions",
+            limit,
+            expected
+        );
+
+        // All returned solutions must be distinct
+        for i in 0..solutions.len() {
+            for j in (i + 1)..solutions.len() {
+                prop_assert_ne!(
+                    solutions[i].board,
+                    solutions[j].board,
+                    "Duplicate solution found at index {} and {}",
+                    i,
+                    j
+                );
+            }
+        }
+
+        // All returned solutions must be valid solved boards
+        for sol in &solutions {
+            prop_assert!(
+                Rustoku::new(sol.board).is_ok_and(|r| r.is_solved()),
+                "Every solution from solve_until must be a valid completed board"
+            );
+        }
+
+        // Solutions iterator must match when limit > 0
+        if limit > 0 {
+            let iter_solver = Rustoku::new_from_str(SIX_PUZZLE).unwrap();
+            let iter_count = Solutions::from_solver(iter_solver).take(limit).count();
+            prop_assert_eq!(
+                iter_count, expected,
+                "Solutions iterator .take({}) count ({}) must match solve_until count ({})",
+                limit, iter_count, expected
+            );
         }
     }
 
