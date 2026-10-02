@@ -35,7 +35,7 @@ mod solver;
 mod techniques;
 
 pub use board::Board;
-pub use candidates::Candidates;
+pub use candidates::{CandidateList, Candidates};
 pub use generator::{BoardGenerator, Symmetry, generate_board, generate_board_by_difficulty};
 pub use masks::Masks;
 pub use solution::{Solution, SolvePath, SolveStep};

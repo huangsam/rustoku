@@ -3,7 +3,7 @@ use rand::rng;
 use rayon::prelude::*;
 
 use super::board::Board;
-use super::candidates::Candidates;
+use super::candidates::{CandidateList, Candidates};
 use super::masks::Masks;
 use super::solution::{Solution, SolvePath, SolveStep};
 use super::techniques::TechniquePropagator;
@@ -250,11 +250,22 @@ impl Rustoku {
     }
 
     /// Recursive depth-first backtracking search guided by MRV and forward checking.
-    fn solve_until_recursive(
+    pub(super) fn solve_until_recursive(
         &mut self,
         solutions: &mut Vec<Solution>,
         path: &mut SolvePath,
         bound: usize,
+    ) -> usize {
+        self.solve_until_recursive_internal(solutions, path, bound, false)
+    }
+
+    /// Internal recursive depth-first backtracking search with optional candidate randomization.
+    fn solve_until_recursive_internal(
+        &mut self,
+        solutions: &mut Vec<Solution>,
+        path: &mut SolvePath,
+        bound: usize,
+        randomize: bool,
     ) -> usize {
         // Base case: no empty cells remain -> board is completely and validly solved
         let Some((r, c)) = self.find_next_empty_cell() else {
@@ -266,13 +277,14 @@ impl Rustoku {
         };
 
         let mut count = 0;
-        // Query candidate bitmask for the chosen MRV cell and unpack to candidate numbers
+        // Query candidate bitmask for the chosen MRV cell and unpack to stack candidate list
         let mask = self.candidates.get(r, c);
-        let mut nums = Self::candidates_from_mask(mask);
-        // Shuffle candidates for randomized exploration (useful during puzzle generation)
-        nums.shuffle(&mut rng());
+        let mut cands = CandidateList::from_mask(mask);
+        if randomize {
+            cands.as_mut_slice().shuffle(&mut rng());
+        }
 
-        for &num in &nums {
+        for &num in cands.as_slice() {
             // Forward checking: ensure placement does not violate current masks
             if !self.masks.is_safe(r, c, num) {
                 continue;
@@ -293,7 +305,7 @@ impl Rustoku {
             });
 
             // Recurse into child state space
-            count += self.solve_until_recursive(solutions, path, bound);
+            count += self.solve_until_recursive_internal(solutions, path, bound, randomize);
 
             // Backtrack: undo move, restore masks, recalculate candidates, pop solve step
             path.steps.pop();
@@ -367,6 +379,30 @@ impl Rustoku {
     /// ```
     pub fn solve_any(&mut self) -> Option<Solution> {
         self.solve_until(1).into_iter().next()
+    }
+
+    /// Solves the Sudoku puzzle using randomized exploration (used during puzzle generation).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustoku_lib::core::Board;
+    /// use rustoku_lib::Rustoku;
+    ///
+    /// let mut solver = Rustoku::new(Board::default()).unwrap();
+    /// let solution = solver.solve_random();
+    /// assert!(solution.is_some());
+    /// ```
+    pub fn solve_random(&mut self) -> Option<Solution> {
+        let mut solutions = Vec::new();
+        let mut path = SolvePath::default();
+
+        if !self.techniques_make_valid_changes(&mut path) {
+            return None;
+        }
+
+        self.solve_until_recursive_internal(&mut solutions, &mut path, 1, true);
+        solutions.into_iter().next()
     }
 
     /// Finds all possible solutions for the Sudoku puzzle, parallelizing top-level MRV branches.

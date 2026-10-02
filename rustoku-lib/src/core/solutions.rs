@@ -1,6 +1,4 @@
-use rand::prelude::SliceRandom;
-use rand::rng;
-
+use super::candidates::CandidateList;
 use super::solution::{Solution, SolvePath, SolveStep};
 use super::solver::Rustoku;
 use super::techniques::flags::TechniqueFlags;
@@ -26,7 +24,7 @@ struct Frame {
     /// Column index of the cell being decided at this search depth.
     c: usize,
     /// Remaining candidate digits available for cell `(r, c)`.
-    nums: Vec<u8>,
+    nums: CandidateList,
     /// Index into `nums` pointing to the next candidate to evaluate.
     idx: usize,
     /// Digit currently placed on the board by this frame, if any.
@@ -63,8 +61,7 @@ impl Solutions {
             // Find the most constrained variable (MRV) on the board to form the root of the DFS stack.
             if let Some((r, c)) = solver.find_next_empty_cell() {
                 let mask = solver.candidates.get(r, c);
-                let mut nums = Rustoku::candidates_from_mask(mask);
-                nums.shuffle(&mut rng());
+                let nums = CandidateList::from_mask(mask);
                 stack.push(Frame {
                     r,
                     c,
@@ -101,8 +98,7 @@ impl Iterator for Solutions {
             if self.stack.is_empty() {
                 if let Some((r, c)) = self.solver.find_next_empty_cell() {
                     let mask = self.solver.candidates.get(r, c);
-                    let mut nums = Rustoku::candidates_from_mask(mask);
-                    nums.shuffle(&mut rng());
+                    let nums = CandidateList::from_mask(mask);
                     self.stack.push(Frame {
                         r,
                         c,
@@ -132,7 +128,7 @@ impl Iterator for Solutions {
             }
 
             // 3. Candidate Exhaustion & Backtracking
-            if frame.idx >= frame.nums.len() {
+            if frame.idx >= frame.nums.len as usize {
                 self.stack.pop();
                 if self.stack.is_empty() {
                     self.finished = true;
@@ -142,7 +138,7 @@ impl Iterator for Solutions {
             }
 
             // 4. Evaluate Next Candidate Digit
-            let num = frame.nums[frame.idx];
+            let num = frame.nums.digits[frame.idx];
             frame.idx += 1;
 
             if self.solver.masks.is_safe(frame.r, frame.c, num) {
@@ -165,8 +161,7 @@ impl Iterator for Solutions {
                 if let Some((nr, nc)) = self.solver.find_next_empty_cell() {
                     // Empty cells remain: push new child frame for the next MRV cell and descend
                     let mask = self.solver.candidates.get(nr, nc);
-                    let mut nums2 = Rustoku::candidates_from_mask(mask);
-                    nums2.shuffle(&mut rng());
+                    let nums2 = CandidateList::from_mask(mask);
                     self.stack.push(Frame {
                         r: nr,
                         c: nc,

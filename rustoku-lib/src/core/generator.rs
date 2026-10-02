@@ -154,7 +154,9 @@ impl BoardGenerator {
 
         // 1. Generate a complete, randomized, valid 81-cell solved board
         let mut rustoku = Rustoku::new(Board::default())?;
-        let solution = rustoku.solve_any().ok_or(RustokuError::DuplicateValues)?;
+        let solution = rustoku
+            .solve_random()
+            .ok_or(RustokuError::DuplicateValues)?;
         let mut board = solution.board;
 
         // 2. Partition all 81 cells into symmetry groups

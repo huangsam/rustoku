@@ -10,6 +10,44 @@ pub struct Candidates {
     cache: [[u16; 9]; 9],
 }
 
+/// Compact stack-allocated candidate list (up to 9 digits).
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct CandidateList {
+    /// Number of valid candidate digits stored in `digits`.
+    pub len: u8,
+    /// Candidate digits 1..=9.
+    pub digits: [u8; 9],
+}
+
+impl CandidateList {
+    /// Extracts candidate digits from a 9-bit bitmask in $O(k)$ where $k$ is candidate count.
+    #[inline]
+    pub fn from_mask(mask: u16) -> Self {
+        let mut digits = [0u8; 9];
+        let mut len = 0;
+        let mut m = mask & 0x01FF;
+        while m != 0 {
+            let trailing = m.trailing_zeros() as u8;
+            digits[len as usize] = trailing + 1;
+            len += 1;
+            m &= m - 1;
+        }
+        Self { len, digits }
+    }
+
+    /// Returns a slice of candidate digits.
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        &self.digits[..self.len as usize]
+    }
+
+    /// Returns a mutable slice of candidate digits (e.g. for shuffling).
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.digits[..self.len as usize]
+    }
+}
+
 impl Candidates {
     pub(super) fn new() -> Self {
         Candidates { cache: [[0; 9]; 9] }
@@ -24,14 +62,7 @@ impl Candidates {
     /// Unpacks the candidate bitmask for `(r, c)` into a sorted vector of digits `1..=9`.
     pub fn get_candidates(&self, r: usize, c: usize) -> Vec<u8> {
         let mask = self.get(r, c);
-        let mut candidates = Vec::new();
-        for i in 0..9 {
-            // Check if the i-th bit is set (representing number i+1)
-            if (mask >> i) & 1 == 1 {
-                candidates.push((i + 1) as u8);
-            }
-        }
-        candidates
+        CandidateList::from_mask(mask).as_slice().to_vec()
     }
 
     /// Sets the 9-bit candidate bitmask for cell `(r, c)`.
