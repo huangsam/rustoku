@@ -1,7 +1,7 @@
 #![allow(clippy::collapsible_if)]
 use proptest::prelude::*;
 use rustoku_lib::RustokuError;
-use rustoku_lib::core::{Board, Rustoku, generate_board};
+use rustoku_lib::core::{Board, Rustoku, Solutions, generate_board};
 
 // Strategy for generating valid Sudoku clue counts (17-81)
 fn clue_count_strategy() -> impl Strategy<Value = usize> {
@@ -239,6 +239,67 @@ proptest! {
                         clues
                     );
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn prop_solutions_iterator_matches_solve_all(clues in clue_count_strategy()) {
+        if let Ok(board) = generate_board(clues) {
+            if let (Ok(solver1), Ok(mut solver2)) = (Rustoku::new(board), Rustoku::new(board)) {
+                let iter_solutions: Vec<_> = Solutions::from_solver(solver1).collect();
+                let all_solutions = solver2.solve_all();
+
+                prop_assert_eq!(
+                    iter_solutions.len(),
+                    all_solutions.len(),
+                    "Solutions iterator count ({}) must match solve_all count ({})",
+                    iter_solutions.len(),
+                    all_solutions.len()
+                );
+
+                for sol in &iter_solutions {
+                    prop_assert!(
+                        Rustoku::new(sol.board).is_ok_and(|r| r.is_solved()),
+                        "Board yielded by Solutions iterator must be a valid solved board"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn prop_solutions_iterator_bounded_matches_solve_until(
+        r1 in cell_index_strategy(),
+        c1 in cell_index_strategy(),
+        val1 in digit_strategy(),
+        r2 in cell_index_strategy(),
+        c2 in cell_index_strategy(),
+        val2 in digit_strategy(),
+        limit in 1..=3usize,
+    ) {
+        let mut cells = [[0u8; 9]; 9];
+        cells[r1][c1] = val1;
+        cells[r2][c2] = val2;
+        let board = Board::new(cells);
+
+        if let (Ok(solver1), Ok(mut solver2)) = (Rustoku::new(board), Rustoku::new(board)) {
+            let iter_solutions: Vec<_> = Solutions::from_solver(solver1).take(limit).collect();
+            let until_solutions = solver2.solve_until(limit);
+
+            prop_assert_eq!(
+                iter_solutions.len(),
+                until_solutions.len(),
+                "Bounded Solutions iterator count ({}) must match solve_until count ({})",
+                iter_solutions.len(),
+                until_solutions.len()
+            );
+
+            for sol in &iter_solutions {
+                prop_assert!(
+                    Rustoku::new(sol.board).is_ok_and(|r| r.is_solved()),
+                    "Board yielded by bounded Solutions iterator must be a valid solved board"
+                );
             }
         }
     }
