@@ -13,8 +13,8 @@
 //!    to eliminate candidates and place forced digits without guessing.
 //! 2. **MRV-Guided Backtracking**: If techniques do not completely solve the puzzle, recursive DFS
 //!    explores the state space using the Minimum Remaining Values (MRV / "fail-first") heuristic.
-//! 3. **Parallel Search**: In [`Rustoku::solve_all`], top-level branches of the root MRV cell are
-//!    explored in parallel across CPU threads via Rayon.
+//! 3. **Exhaustive Backtracking**: In [`Rustoku::solve_all`], MRV depth-first backtracking
+//!    discovers all valid solutions for the puzzle without thread dispatch overhead.
 //! 4. **Lazy Iteration**: For on-demand solution streaming, [`Solutions`] provides an explicit-stack
 //!    iterator that avoids computing all solutions up front.
 //!

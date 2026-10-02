@@ -1,6 +1,5 @@
 use rand::prelude::SliceRandom;
 use rand::rng;
-use rayon::prelude::*;
 
 use super::board::Board;
 use super::candidates::{CandidateList, Candidates};
@@ -448,10 +447,10 @@ impl Rustoku {
         solutions.into_iter().next()
     }
 
-    /// Finds all possible solutions for the Sudoku puzzle, parallelizing top-level MRV branches.
+    /// Finds all possible solutions for the Sudoku puzzle.
     ///
-    /// Runs deterministic constraint propagation once on the root state, then uses Rayon (`par_iter`)
-    /// to explore independent candidate branches of the first MRV cell across CPU worker threads.
+    /// Runs deterministic constraint propagation once on the root state, then executes
+    /// depth-first backtracking search guided by MRV forward checking.
     ///
     /// # Examples
     ///
@@ -464,70 +463,15 @@ impl Rustoku {
     /// assert_eq!(solutions.len(), 1);
     /// ```
     pub fn solve_all(&mut self) -> Vec<Solution> {
-        // Phase 1: Run technique propagation once on the current solver state.
+        let mut solutions = Vec::new();
         let mut path = SolvePath::default();
+
         if !self.techniques_make_valid_changes(&mut path) {
-            return Vec::new();
+            return solutions;
         }
 
-        // Phase 2: If empty cells remain, decide whether to parallelize or solve sequentially.
-        if let Some((r, c)) = self.find_next_empty_cell() {
-            // Adaptive heuristic: for small-to-moderate search spaces (<= 40 empty cells),
-            // sequential search completes in microseconds and avoids Rayon thread-pool dispatch overhead.
-            let empty_count = self.board.iter_empty_cells().count();
-            if empty_count <= 40 {
-                let mut solutions = Vec::new();
-                self.solve_until_recursive(&mut solutions, &mut path, 0);
-                return solutions;
-            }
-
-            let mask = self.candidates.get(r, c);
-            let cands = CandidateList::from_mask(mask);
-            let nums = cands.as_slice().to_vec();
-
-            let initial_path = path.clone();
-
-            // Parallelize each top-level candidate branch across worker threads.
-            let chunks: Vec<Vec<Solution>> = nums
-                .par_iter()
-                .map(|&num| {
-                    let mut cloned = *self; // Rustoku is Copy/Clone (cheap 1KB copy)
-                    let mut local_solutions: Vec<Solution> = Vec::new();
-                    let mut local_path = initial_path.clone();
-
-                    // Place the candidate and record the placement in the thread-local path.
-                    cloned.place_number(r, c, num);
-                    let step_number = local_path.steps.len() as u32;
-                    local_path.steps.push(SolveStep::Placement {
-                        row: r,
-                        col: c,
-                        value: num,
-                        flags: TechniqueFlags::empty(),
-                        step_number,
-                        candidates_eliminated: 0,
-                        related_cell_count: 0,
-                        difficulty_point: 0,
-                    });
-
-                    // Continue DFS from this state without re-running the propagator.
-                    cloned.solve_until_recursive(&mut local_solutions, &mut local_path, 0);
-                    local_solutions
-                })
-                .collect();
-
-            // Flatten results collected from all parallel branches
-            let mut solutions = Vec::new();
-            for mut s in chunks {
-                solutions.append(&mut s);
-            }
-            solutions
-        } else {
-            // Already solved after propagation
-            vec![Solution {
-                board: self.board,
-                solve_path: path,
-            }]
-        }
+        self.solve_until_recursive(&mut solutions, &mut path, 0);
+        solutions
     }
 
     /// Checks if the Sudoku puzzle is solved correctly.
