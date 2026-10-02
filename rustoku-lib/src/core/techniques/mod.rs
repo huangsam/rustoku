@@ -291,7 +291,7 @@ impl<'a> TechniquePropagator<'a> {
     /// - **Fixpoint**: Terminates with `true` when a complete pass produces no further changes.
     pub fn propagate_constraints(&mut self, path: &mut SolvePath, initial_path_len: usize) -> bool {
         // Techniques registered in ascending order of complexity/difficulty
-        let techniques: Vec<&dyn TechniqueRule> = vec![
+        static TECHNIQUES: &[&dyn TechniqueRule] = &[
             &NakedSingles,
             &HiddenSingles,
             &NakedPairs,
@@ -316,7 +316,7 @@ impl<'a> TechniquePropagator<'a> {
             let mut changed_this_iter = false;
 
             // Iterate through registered techniques in priority order
-            for technique in &techniques {
+            for &technique in TECHNIQUES {
                 if self.techniques_enabled.contains(technique.flags()) {
                     // Apply technique via Mediator pattern: technique inspects candidates/board
                     // and calls propagator helper methods to register placements or eliminations.
@@ -382,7 +382,7 @@ impl<'a> TechniquePropagator<'a> {
 /// For intuition and background on these solving patterns, consult
 /// [SudokuWiki](https://www.sudokuwiki.org/Introduction) and
 /// [HoDoKu](https://hodoku.sourceforge.net/en/tech_intro.php).
-pub trait TechniqueRule {
+pub trait TechniqueRule: Sync {
     /// Applies the technique to the given propagator.
     ///
     /// Returns `true` if any candidate was eliminated or cell value was placed.
