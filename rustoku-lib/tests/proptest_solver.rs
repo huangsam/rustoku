@@ -18,6 +18,22 @@ fn digit_strategy() -> impl Strategy<Value = u8> {
     1..=9u8
 }
 
+// Strategy for generating valid board characters: '0'-'9', '.', '_'
+fn valid_board_char_strategy() -> impl Strategy<Value = char> {
+    prop_oneof![
+        Just('0'),
+        Just('.'),
+        Just('_'),
+        (1..=9u32).prop_map(|d| char::from_digit(d, 10).unwrap()),
+    ]
+}
+
+// Strategy for generating valid 81-character board strings
+fn board_string_81_strategy() -> impl Strategy<Value = String> {
+    prop::collection::vec(valid_board_char_strategy(), 81)
+        .prop_map(|chars| chars.into_iter().collect())
+}
+
 // Helper to count the number of non-zero cells in a board
 fn count_clues(board: &Board) -> usize {
     board
@@ -301,6 +317,58 @@ proptest! {
                     "Board yielded by bounded Solutions iterator must be a valid solved board"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn prop_board_from_arbitrary_string_does_not_panic(s in any::<String>()) {
+        match Board::try_from(s.as_str()) {
+            Ok(board) => {
+                prop_assert_eq!(s.len(), 81);
+                for (r, c) in board.iter_cells() {
+                    prop_assert!(board.get(r, c) <= 9);
+                }
+            }
+            Err(e) => {
+                prop_assert!(
+                    matches!(
+                        e,
+                        RustokuError::InvalidInputLength | RustokuError::InvalidInputCharacter
+                    ),
+                    "Unexpected error for input {s:?}: {e:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn prop_rustoku_from_arbitrary_string_does_not_panic(s in any::<String>()) {
+        match Rustoku::new_from_str(&s) {
+            Ok(_) => {
+                prop_assert_eq!(s.len(), 81);
+            }
+            Err(e) => {
+                prop_assert!(
+                    matches!(
+                        e,
+                        RustokuError::InvalidInputLength
+                            | RustokuError::InvalidInputCharacter
+                            | RustokuError::DuplicateValues
+                    ),
+                    "Unexpected error for input {s:?}: {e:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn prop_board_from_valid_syntax_string_always_succeeds(s in board_string_81_strategy()) {
+        let board_res = Board::try_from(s.as_str());
+        prop_assert!(board_res.is_ok());
+
+        // Rustoku::new_from_str should only fail on duplicate values
+        if let Err(e) = Rustoku::new_from_str(&s) {
+            prop_assert_eq!(e, RustokuError::DuplicateValues);
         }
     }
 }
