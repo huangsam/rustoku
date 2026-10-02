@@ -45,4 +45,28 @@ describe('Rustoku WASM API', () => {
     const puzzle = rustoku.generate_advanced('rotational180', 'medium');
     expect(puzzle).toHaveLength(81);
   });
+
+  it('should return step-by-step solution trace', () => {
+    const puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    const result = rustoku.solve_steps(puzzle, "expert");
+    expect(result).not.toBeNull();
+    expect(result.board).toHaveLength(81);
+    expect(Array.isArray(result.steps)).toBe(true);
+    expect(result.steps.length).toBeGreaterThan(0);
+    const firstStep = result.steps[0];
+    expect(firstStep).toHaveProperty('type');
+    expect(firstStep).toHaveProperty('row');
+    expect(firstStep).toHaveProperty('col');
+    expect(firstStep).toHaveProperty('value');
+    expect(firstStep).toHaveProperty('technique');
+    expect(firstStep).toHaveProperty('step_number');
+  });
+
+  it('should return null for solve_steps with invalid difficulty or unsolvable puzzle', () => {
+    const puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    expect(rustoku.solve_steps(puzzle, "invalid_difficulty")).toBeNull();
+
+    const unsolvable = "55..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    expect(rustoku.solve_steps(unsolvable, "expert")).toBeNull();
+  });
 });

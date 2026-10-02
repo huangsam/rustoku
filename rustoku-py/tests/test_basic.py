@@ -33,6 +33,33 @@ class TestRustoku(unittest.TestCase):
         puzzle = rustoku.generate_advanced(symmetry="invalid")
         self.assertEqual(len(puzzle), 81)
 
+    def test_solve_steps(self):
+        puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"
+        result = rustoku.solve_steps(puzzle, "expert")
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result["board"]), 81)
+        self.assertIsInstance(result["steps"], list)
+        self.assertGreater(len(result["steps"]), 0)
+        first_step = result["steps"][0]
+        for key in [
+            "type",
+            "row",
+            "col",
+            "value",
+            "technique",
+            "step_number",
+            "candidates_eliminated",
+            "related_cell_count",
+            "difficulty_point",
+        ]:
+            self.assertIn(key, first_step)
+
+    def test_solve_steps_unsolvable(self):
+        # A valid Sudoku format with no initial duplicate clues, but impossible to complete
+        unsolvable = "078002609030008020002000083000000040043090000007300090200001036001840902050003007"
+        result = rustoku.solve_steps(unsolvable, "expert")
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()
