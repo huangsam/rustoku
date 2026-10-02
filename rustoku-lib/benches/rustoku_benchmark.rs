@@ -10,6 +10,9 @@ const UNIQUE_PUZZLE: &str =
 const TWO_PUZZLE: &str =
     "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
 
+const HARD_PUZZLE: &str =
+    "100007090030020008009600500005300900010080002600004000300000010040000007007000300";
+
 fn benchmark_solve_any(c: &mut Criterion) {
     let mut group = c.benchmark_group("Solve Sudoku Puzzles");
 
@@ -26,6 +29,15 @@ fn benchmark_solve_any(c: &mut Criterion) {
     // Benchmark `solve_any` for a puzzle with two solutions (might be slightly different behavior)
     group.bench_function("solve_any_two_solutions", |b| {
         let board = Board::try_from(TWO_PUZZLE).unwrap();
+        let rustoku = Rustoku::new(board).unwrap();
+        b.iter(|| {
+            black_box(rustoku.clone().solve_any());
+        });
+    });
+
+    // Benchmark `solve_any` for a notoriously hard backtracking puzzle (AI Escargot)
+    group.bench_function("solve_any_hard", |b| {
+        let board = Board::try_from(HARD_PUZZLE).unwrap();
         let rustoku = Rustoku::new(board).unwrap();
         b.iter(|| {
             black_box(rustoku.clone().solve_any());
@@ -59,6 +71,34 @@ fn benchmark_solve_all(c: &mut Criterion) {
     group.finish();
 }
 
+fn benchmark_technique_modes(c: &mut Criterion) {
+    use rustoku_lib::core::TechniqueFlags;
+
+    let mut group = c.benchmark_group("Technique Modes");
+
+    group.bench_function("solve_unique_easy_techniques", |b| {
+        let board = Board::try_from(UNIQUE_PUZZLE).unwrap();
+        let rustoku = Rustoku::new(board)
+            .unwrap()
+            .with_techniques(TechniqueFlags::EASY);
+        b.iter(|| {
+            black_box(rustoku.clone().solve_any());
+        });
+    });
+
+    group.bench_function("solve_unique_all_techniques", |b| {
+        let board = Board::try_from(UNIQUE_PUZZLE).unwrap();
+        let rustoku = Rustoku::new(board)
+            .unwrap()
+            .with_techniques(TechniqueFlags::all());
+        b.iter(|| {
+            black_box(rustoku.clone().solve_any());
+        });
+    });
+
+    group.finish();
+}
+
 fn benchmark_generate_board(c: &mut Criterion) {
     let mut group = c.benchmark_group("Generate Sudoku Puzzles");
 
@@ -83,6 +123,7 @@ criterion_group!(
     benches,
     benchmark_solve_any,
     benchmark_solve_all,
+    benchmark_technique_modes,
     benchmark_generate_board
 );
 criterion_main!(benches);
