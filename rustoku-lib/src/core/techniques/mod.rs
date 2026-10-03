@@ -341,7 +341,6 @@ impl<'a> TechniquePropagator<'a> {
                                 row,
                                 col,
                                 value,
-                                flags: _,
                                 ..
                             } => {
                                 // Undo board placement and restore constraint masks & peer candidates
@@ -351,7 +350,6 @@ impl<'a> TechniquePropagator<'a> {
                                 row,
                                 col,
                                 value,
-                                flags: _,
                                 ..
                             } => {
                                 // Restore eliminated candidate bit in cell's candidate mask
