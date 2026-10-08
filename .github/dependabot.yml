@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: 'cargo'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       cargo-dependencies:
         patterns:
@@ -12,7 +12,7 @@ updates:
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       actions-dependencies:
         patterns:
@@ -22,7 +22,7 @@ updates:
   - package-ecosystem: 'pip'
     directory: '/rustoku-py'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       python-dependencies:
         patterns:
@@ -32,7 +32,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/demo'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     ignore:
       - dependency-name: 'rustoku-wasm'
       - dependency-name: 'typescript'
@@ -46,7 +46,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/rustoku-wasm'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     groups:
       wasm-dependencies:
         patterns:
