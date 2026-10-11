@@ -60,6 +60,16 @@ class TestRustoku(unittest.TestCase):
         result = rustoku.solve_steps(unsolvable, "expert")
         self.assertIsNone(result)
 
+    def test_count_solutions(self):
+        unique = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"
+        self.assertEqual(rustoku.count_solutions(unique), 1)
+        self.assertEqual(rustoku.count_solutions(unique, until=2), 1)
+
+        two_solutions = "295743861431865900876192543387459216612387495549216738763504189928671354154938600"
+        self.assertEqual(rustoku.count_solutions(two_solutions, until=1), 1)
+        self.assertEqual(rustoku.count_solutions(two_solutions, until=2), 2)
+        self.assertEqual(rustoku.count_solutions(two_solutions), 2)
+
     def test_solve_invalid_inputs(self):
         # Invalid length
         with self.assertRaises(ValueError):
@@ -80,6 +90,10 @@ class TestRustoku(unittest.TestCase):
     def test_solve_all_invalid_inputs(self):
         with self.assertRaises(ValueError):
             rustoku.solve_all("invalid")
+
+    def test_count_solutions_invalid_inputs(self):
+        with self.assertRaises(ValueError):
+            rustoku.count_solutions("invalid")
 
     def test_solve_steps_invalid_difficulty(self):
         puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"

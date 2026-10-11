@@ -69,6 +69,13 @@ Solves a puzzle and returns a full step-by-step trace.
   `"elimination"`), `row`, `col`, `value`, `technique`, `step_number`,
   `candidates_eliminated`, `related_cell_count`, `difficulty_point`.
 
+### `count_solutions(board_str: string, until?: number): number`
+
+Counts solutions without allocating solution objects.
+
+- **`until`**: Maximum number of solutions to count before stopping (defaults to `0` / all). Pass `2` for fast uniqueness checks.
+- **Output**: Total number of solutions found up to `until`, or `0` if unsolvable or input is invalid.
+
 ### `candidates(board_str: string): number[][][]`
 
 Returns the valid candidate digits for every cell.

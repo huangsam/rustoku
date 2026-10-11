@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Fast `count_solutions_until` method on `Rustoku` for counting solutions without allocating solution objects
+- Fast `count_solutions_until` method across Python and WebAssembly bindings
 - Dedicated `solve_random` method on `Rustoku` for randomized board generation
 - Expanded test coverage across property tests, edge cases, and Python/WASM binding validation
-- Criterion benchmarks for hard puzzle solving and technique configurations
+- Criterion benchmarks for solution counting, hard puzzle solving, and technique configurations
 
 ### Changed
 - Streamlined solver inner loop with zero-allocation candidate tracking and deterministic search

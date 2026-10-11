@@ -76,4 +76,19 @@ describe("Rustoku WASM API", () => {
       "55..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
     expect(rustoku.solve_steps(unsolvable, "expert")).toBeNull();
   });
+
+  it("should count solutions with bound or unbounded", () => {
+    const unique =
+      "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
+    expect(rustoku.count_solutions(unique)).toBe(1);
+    expect(rustoku.count_solutions(unique, 2)).toBe(1);
+
+    const twoSolutions =
+      "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
+    expect(rustoku.count_solutions(twoSolutions, 1)).toBe(1);
+    expect(rustoku.count_solutions(twoSolutions, 2)).toBe(2);
+    expect(rustoku.count_solutions(twoSolutions)).toBe(2);
+
+    expect(rustoku.count_solutions("invalid")).toBe(0);
+  });
 });

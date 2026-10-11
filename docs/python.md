@@ -74,6 +74,14 @@ Solves a puzzle and returns a full step-by-step trace.
   `"hard"`, or `"expert"`. Higher levels produce richer technique annotations.
 - **Raises**: `ValueError` if the input or difficulty is invalid.
 
+### `count_solutions(puzzle: str, until: int | None = None) -> int`
+
+Counts solutions without allocating solution objects.
+
+- **`until`**: Maximum number of solutions to count before stopping (defaults to `None` / all). Pass `2` for fast uniqueness checks.
+- **Output**: Total number of solutions found up to `until`, or `0` if unsolvable.
+- **Raises**: `ValueError` if the input string is malformed.
+
 ### `candidates(puzzle: str) -> list[list[list[int]]]`
 
 Returns the valid candidate digits for every cell.

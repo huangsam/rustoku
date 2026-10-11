@@ -119,10 +119,35 @@ fn benchmark_generate_board(c: &mut Criterion) {
     group.finish();
 }
 
+fn benchmark_count_solutions(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Count Sudoku Solutions");
+
+    // Benchmark `count_solutions_until` for a unique puzzle (uniqueness probing bound = 2)
+    group.bench_function("count_solutions_until_2_unique", |b| {
+        let board = Board::try_from(UNIQUE_PUZZLE).unwrap();
+        let rustoku = Rustoku::new(board).unwrap();
+        b.iter(|| {
+            black_box(rustoku.clone().count_solutions_until(2));
+        });
+    });
+
+    // Benchmark `count_solutions_until` for a puzzle with two solutions
+    group.bench_function("count_solutions_until_2_two_solutions", |b| {
+        let board = Board::try_from(TWO_PUZZLE).unwrap();
+        let rustoku = Rustoku::new(board).unwrap();
+        b.iter(|| {
+            black_box(rustoku.clone().count_solutions_until(2));
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_solve_any,
     benchmark_solve_all,
+    benchmark_count_solutions,
     benchmark_technique_modes,
     benchmark_generate_board
 );

@@ -17,8 +17,8 @@
 //! ```
 
 use rustoku_lib::bind::{
-    candidates_grid, generate_complex_str, generate_str, is_valid_solution, solve_all_str,
-    solve_any_str, solve_with_steps,
+    candidates_grid, count_solutions_str, generate_complex_str, generate_str, is_valid_solution,
+    solve_all_str, solve_any_str, solve_with_steps,
 };
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
@@ -56,6 +56,16 @@ pub fn solve_steps(board_str: &str, difficulty: &str) -> JsValue {
         Ok(Some(output)) => serde_wasm_bindgen::to_value(&output).unwrap_or(JsValue::NULL),
         _ => JsValue::NULL,
     }
+}
+
+/// Counts solutions for a Sudoku puzzle up to `until` without allocating solution objects.
+///
+/// If `until` is omitted, `undefined`, or `0`, counts all solutions.
+/// Returns `0` if no solution exists or the input is invalid.
+#[wasm_bindgen]
+pub fn count_solutions(board_str: &str, until: Option<usize>) -> usize {
+    let bound = until.unwrap_or(0);
+    count_solutions_str(board_str, bound).unwrap_or(0)
 }
 
 /// Returns the candidate digits for every cell as a 9×9 array.

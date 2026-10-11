@@ -237,10 +237,6 @@ pub fn solve_all_str(puzzle: &str) -> Result<Vec<String>, RustokuError> {
         .collect())
 }
 
-/// Solves `puzzle` using human techniques for the given `difficulty` and returns a full
-/// step trace, or `None` if unsolvable.
-///
-/// `difficulty` is one of `"easy"`, `"medium"`, `"hard"`, `"expert"`.
 pub fn solve_with_steps(
     puzzle: &str,
     difficulty: &str,
@@ -254,6 +250,25 @@ pub fn solve_with_steps(
         })),
         None => Ok(None),
     }
+}
+
+/// Counts solutions for `puzzle` up to `bound` without allocating solution objects.
+///
+/// Stops searching as soon as `bound` solutions are found. Passing `bound = 0` counts
+/// all solutions.
+/// This provides lightweight, non-allocating probing for uniqueness verification (`bound = 2`).
+///
+/// # Examples
+///
+/// ```
+/// use rustoku_lib::bind::count_solutions_str;
+///
+/// let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+/// assert_eq!(count_solutions_str(puzzle, 2).unwrap(), 1);
+/// ```
+pub fn count_solutions_str(puzzle: &str, bound: usize) -> Result<usize, RustokuError> {
+    let mut rustoku = Rustoku::new_from_str(puzzle)?;
+    Ok(rustoku.count_solutions_until(bound))
 }
 
 /// Returns the candidate digits for every cell as a 9×9 grid.
@@ -407,6 +422,26 @@ mod tests {
                 .iter()
                 .all(|change| change.before != change.after)
         }));
+    }
+
+    #[test]
+    fn test_count_solutions_str() {
+        let unique =
+            "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......";
+        assert_eq!(count_solutions_str(unique, 2), Ok(1));
+        assert_eq!(count_solutions_str(unique, 0), Ok(1)); // 0 = count all
+
+        let two_solutions =
+            "295743861431865900876192543387459216612387495549216738763504189928671354154938600";
+        assert_eq!(count_solutions_str(two_solutions, 1), Ok(1));
+        assert_eq!(count_solutions_str(two_solutions, 2), Ok(2));
+        assert_eq!(count_solutions_str(two_solutions, 10), Ok(2));
+
+        let invalid = "invalid";
+        assert_eq!(
+            count_solutions_str(invalid, 2),
+            Err(RustokuError::InvalidInputLength)
+        );
     }
 
     #[test]

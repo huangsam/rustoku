@@ -12,7 +12,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rustoku-lib = "0.15.0"
+rustoku-lib = "0.16.0"
 ```
 
 ## Core Concepts
@@ -66,6 +66,31 @@ let mut solver = Rustoku::new_from_str(puzzle).unwrap();
 solver.with_techniques(TechniqueFlags::EASY | TechniqueFlags::X_WING);
 
 let solution = solver.solve_any();
+```
+
+### Counting Solutions Without Allocation
+
+For lightweight uniqueness probing or solution counting without constructing `Solution` objects or recording trace paths:
+
+```rust
+use rustoku_lib::Rustoku;
+
+let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+let count = solver.count_solutions_until(2); // stops after finding 2 solutions
+let is_unique = count == 1;
+```
+
+### Randomized Solving
+
+To solve with randomized candidate selection (used internally by board generation):
+
+```rust
+use rustoku_lib::Rustoku;
+
+let mut solver = Rustoku::new_from_str(puzzle).unwrap();
+if let Some(solution) = solver.solve_random() {
+    println!("Random solution:\n{}", solution.board);
+}
 ```
 
 ### Serializing with Serde

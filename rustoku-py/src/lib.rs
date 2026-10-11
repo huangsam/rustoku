@@ -15,8 +15,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use rustoku_lib::RustokuError;
 use rustoku_lib::bind::{
-    SolveOutput, candidates_grid, generate_complex_str, generate_str, is_valid_solution,
-    solve_all_str, solve_any_str, solve_with_steps,
+    SolveOutput, candidates_grid, count_solutions_str, generate_complex_str, generate_str,
+    is_valid_solution, solve_all_str, solve_any_str, solve_with_steps,
 };
 
 // ── internal helpers ──────────────────────────────────────────────────────────
@@ -93,6 +93,18 @@ fn solve_steps<'py>(
     output.map(|o| solve_output_to_dict(py, o)).transpose()
 }
 
+/// Counts solutions for a Sudoku puzzle up to `until` without allocating solution objects.
+///
+/// If `until` is omitted or `0`, counts all solutions.
+///
+/// Raises `ValueError` if the input is malformed.
+#[pyfunction]
+#[pyo3(signature = (puzzle, until = None))]
+fn count_solutions(puzzle: &str, until: Option<usize>) -> PyResult<usize> {
+    let bound = until.unwrap_or(0);
+    count_solutions_str(puzzle, bound).map_err(to_py_err)
+}
+
 /// Returns the candidate digits for every cell in the puzzle.
 ///
 /// Returns a 9×9 list of lists. Each inner list contains the valid candidate
@@ -145,6 +157,7 @@ fn rustoku(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(solve, m)?)?;
     m.add_function(wrap_pyfunction!(solve_all, m)?)?;
     m.add_function(wrap_pyfunction!(solve_steps, m)?)?;
+    m.add_function(wrap_pyfunction!(count_solutions, m)?)?;
     m.add_function(wrap_pyfunction!(candidates, m)?)?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(generate_advanced, m)?)?;
