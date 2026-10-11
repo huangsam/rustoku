@@ -1,5 +1,6 @@
-import rustoku
 import unittest
+
+import rustoku
 
 
 class TestRustoku(unittest.TestCase):
