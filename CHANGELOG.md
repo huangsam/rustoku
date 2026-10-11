@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-10
+
 ### Added
 - Fast `count_solutions_until` method across Python and WebAssembly bindings
 - Dedicated `solve_random` method on `Rustoku` for randomized board generation
@@ -290,7 +292,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic CLI interface
 - Support for standard Sudoku solving techniques
 
-[Unreleased]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.4...HEAD
+[Unreleased]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.16.0...HEAD
+[0.16.0]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.4...rustoku-lib-v0.16.0
 [0.15.4]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.3...rustoku-lib-v0.15.4
 [0.15.3]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.2...rustoku-lib-v0.15.3
 [0.15.2]: https://github.com/huangsam/rustoku/compare/rustoku-lib-v0.15.1...rustoku-lib-v0.15.2
