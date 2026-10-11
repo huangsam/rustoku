@@ -338,19 +338,13 @@ impl<'a> TechniquePropagator<'a> {
                     if let Some(step) = path.steps.pop() {
                         match step {
                             SolveStep::Placement {
-                                row,
-                                col,
-                                value,
-                                ..
+                                row, col, value, ..
                             } => {
                                 // Undo board placement and restore constraint masks & peer candidates
                                 self.remove_and_update(row, col, value);
                             }
                             SolveStep::CandidateElimination {
-                                row,
-                                col,
-                                value,
-                                ..
+                                row, col, value, ..
                             } => {
                                 // Restore eliminated candidate bit in cell's candidate mask
                                 let initial_mask = self.candidates.get(row, col);
